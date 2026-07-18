@@ -26,9 +26,10 @@ def create_app() -> FastAPI:
         return {"status": "ok", "env": settings.app_env}
 
     # Inbound webhooks — Meta (P0), Razorpay (P3), Exotel (P2). TRD §5.1.
-    from app.gateway import meta, razorpay
+    from app.gateway import meta, razorpay, exotel
     app.include_router(meta.router, prefix="/webhooks")
     app.include_router(razorpay.router, prefix="/webhooks")
+    app.include_router(exotel.router, prefix="/webhooks")
 
     # Owner dashboard REST — JWT auth, all tenant-scoped. TRD §5.2.
     from app.owner_api import routes as owner_routes

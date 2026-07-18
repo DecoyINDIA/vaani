@@ -1,0 +1,51 @@
+utterance_id,file_path,speaker_id,language,noise_level,intent,transcript
+VC_HI_001,evals/voice_corpus/audio/vc_hi_001.wav,SPK_01,hi,medium,book,कल शाम चार बजे का कोई स्लॉट खाली है क्या डॉक्टर शर्मा के पास?
+VC_HI_002,evals/voice_corpus/audio/vc_hi_002.wav,SPK_02,hi,low,book,क्या मैं कल सुबह 10 बजे आ सकता हूँ?
+VC_HI_003,evals/voice_corpus/audio/vc_hi_003.wav,SPK_03,hi,high,book,मुझे परसों दोपहर का अपॉइंटमेंट चाहिए।
+VC_HL_004,evals/voice_corpus/audio/vc_hl_004.wav,SPK_04,hi-Latn,medium,book,Mujhe parso subah 10 baje ka appointment book karna hai doctor priya ke sath.
+VC_HL_005,evals/voice_corpus/audio/vc_hl_005.wav,SPK_05,hi-Latn,low,book,Kya kal sham ko slots available hain?
+VC_HL_006,evals/voice_corpus/audio/vc_hl_006.wav,SPK_01,hi-Latn,high,book,Appointment book karna hai Kal ke liye.
+VC_OR_007,evals/voice_corpus/audio/vc_or_007.wav,SPK_02,or,medium,book,ଆସନ୍ତାକାଲି ସକାଳେ ଡାକ୍ତରଙ୍କ ସହ ଦେଖା କରିବା ପାଇଁ ସମୟ ମିଳିବ କି?
+VC_OR_008,evals/voice_corpus/audio/vc_or_008.wav,SPK_03,or,low,book,ଡାକ୍ତର ଶର୍ମାଙ୍କ ପାଖରେ ସନ୍ଧ୍ୟା ସମୟରେ ସ୍ଲଟ୍ ଅଛି କି?
+VC_OR_009,evals/voice_corpus/audio/vc_or_009.wav,SPK_04,or,high,book,ମୁଁ କାଲି ଡାକ୍ତର ଦେଖାଇବାକୁ ଚାହେଁ।
+VC_HI_010,evals/voice_corpus/audio/vc_hi_010.wav,SPK_05,hi,medium,book,डॉक्टर प्रिया से अपॉइंटमेंट कब मिल सकता है?
+VC_HL_011,evals/voice_corpus/audio/vc_hl_011.wav,SPK_01,hi-Latn,medium,book,Dr Priya ke sath appointments available hain?
+VC_OR_012,evals/voice_corpus/audio/vc_or_012.wav,SPK_02,or,medium,book,ଡାକ୍ତର ପ୍ରିୟାଙ୍କ ସହ ଆସନ୍ତାକାଲି ସକାଳ ୧୦ଟାରେ ସମୟ ମିଳିବ?
+VC_HI_013,evals/voice_corpus/audio/vc_hi_013.wav,SPK_03,hi,low,book,कल दोपहर तीन बजे का स्लॉट रख दीजिए।
+VC_HL_014,evals/voice_corpus/audio/vc_hl_014.wav,SPK_04,hi-Latn,low,book,Mujhe dr sharma se milna hai parso.
+VC_OR_015,evals/voice_corpus/audio/vc_or_015.wav,SPK_05,or,low,book,କାଲି ୧୧ଟାରେ ଅପଏଣ୍ଟମେଣ୍ଟ ମିଳିବ?
+VC_HI_016,evals/voice_corpus/audio/vc_hi_016.wav,SPK_01,hi,medium,reschedule,मेरा आज शाम पांच बजे का जो अपॉइंटमेंट था उसे कैंसिल कर दीजिए।
+VC_HI_017,evals/voice_corpus/audio/vc_hi_017.wav,SPK_02,hi,low,reschedule,क्या मैं अपना समय बदल सकता हूँ?
+VC_HL_018,evals/voice_corpus/audio/vc_hl_018.wav,SPK_03,hi-Latn,medium,reschedule,Mera appointment kal ki jagah parso shift kar sakte hain?
+VC_HL_019,evals/voice_corpus/audio/vc_hl_019.wav,SPK_04,hi-Latn,low,reschedule,Kal ka booking parso ke liye change kar do please.
+VC_OR_020,evals/voice_corpus/audio/vc_or_020.wav,SPK_05,or,medium,reschedule,ମୋର ଆଜିର ଅପଏଣ୍ଟମେଣ୍ଟକୁ ଆସନ୍ତା ସୋମବାରକୁ ବଦଳାଇ ଦିଅନ୍ତୁ।
+VC_OR_021,evals/voice_corpus/audio/vc_or_021.wav,SPK_01,or,low,reschedule,ଅପଏଣ୍ଟମେଣ୍ଟ ଟାଇମିଂ ଚେଞ୍ଜ କରିବାକୁ ଚାହେଁ।
+VC_HI_022,evals/voice_corpus/audio/vc_hi_022.wav,SPK_02,hi,high,cancel,मेरा कल का अपॉइंटमेंट रद्द कर दीजिये।
+VC_HL_023,evals/voice_corpus/audio/vc_hl_023.wav,SPK_03,hi-Latn,high,cancel,Mera booking cancel kar do.
+VC_OR_024,evals/voice_corpus/audio/vc_or_024.wav,SPK_04,or,high,cancel,ମୋର ଅପଏଣ୍ଟମେଣ୍ଟ ବାତିଲ କରନ୍ତୁ।
+VC_HI_025,evals/voice_corpus/audio/vc_hi_025.wav,SPK_05,hi,medium,cancel,आज नहीं आ पाऊंगा मेरा नाम हटा दीजिये।
+VC_HI_026,evals/voice_corpus/audio/vc_hi_026.wav,SPK_01,hi,medium,faq_fees,डॉक्टर की परामर्श फीस कितनी है और उसमें एक्स-रे शामिल है क्या?
+VC_HI_027,evals/voice_corpus/audio/vc_hi_027.wav,SPK_02,hi,low,faq_fees,कंसल्टेशन चार्ज कितना लगता है?
+VC_HL_028,evals/voice_corpus/audio/vc_hl_028.wav,SPK_03,hi-Latn,medium,faq_fees,Consultation fee kitna hai doctor sharma ka?
+VC_HL_029,evals/voice_corpus/audio/vc_hl_029.wav,SPK_04,hi-Latn,low,faq_fees,Doctor se milne ka charge kitna padega?
+VC_OR_030,evals/voice_corpus/audio/vc_or_030.wav,SPK_05,or,medium,faq_fees,ଡାକ୍ତରଙ୍କ ଫିସ୍ କେତେ ଏବଂ ଏଥିରେ କଣ ସାମିଲ ଅଛି?
+VC_OR_031,evals/voice_corpus/audio/vc_or_031.wav,SPK_01,or,low,faq_fees,ଡାକ୍ତର ଦେଖାଇବା ପାଇଁ ଫିସ୍ କେତେ ଲାଗେ?
+VC_HI_032,evals/voice_corpus/audio/vc_hi_032.wav,SPK_02,hi,medium,faq_hours,क्लीनिक कब से कब तक खुला रहता है?
+VC_HL_033,evals/voice_corpus/audio/vc_hl_033.wav,SPK_03,hi-Latn,medium,faq_hours,Clinic kitne baje band hota hai? Kya Sunday ko open rehta hai?
+VC_HL_034,evals/voice_corpus/audio/vc_hl_034.wav,SPK_04,hi-Latn,low,faq_hours,Opening timings kya hain dental clinic ke?
+VC_OR_035,evals/voice_corpus/audio/vc_or_035.wav,SPK_05,or,medium,faq_hours,କ୍ଲିନିକ୍ କେତେ ସମୟ ପର୍ଯ୍ୟନ୍ତ ଖୋଲା ରହେ?
+VC_HI_036,evals/voice_corpus/audio/vc_hi_036.wav,SPK_01,hi,medium,faq_location,आपका क्लिनिक बापूजी नगर मंदिर के पास कहाँ पर है?
+VC_HI_037,evals/voice_corpus/audio/vc_hi_037.wav,SPK_02,hi,low,faq_location,क्लिनिक का पता क्या है?
+VC_HL_038,evals/voice_corpus/audio/vc_hl_038.wav,SPK_03,hi-Latn,medium,faq_location,Sharma dental clinic jaane ke liye landmark kya padega?
+VC_HL_039,evals/voice_corpus/audio/vc_hl_039.wav,SPK_04,hi-Latn,low,faq_location,Address kahan par hai clinic ka aur map link milegi?
+VC_OR_040,evals/voice_corpus/audio/vc_or_040.wav,SPK_05,or,medium,faq_location,ଆପଣଙ୍କ କ୍ଲିନିକ୍ ବାପୁଜୀ ନଗର ମନ୍ଦିର ପାଖରେ କେଉଁଠି ଅଛି?
+VC_HI_041,evals/voice_corpus/audio/vc_hi_041.wav,SPK_01,hi,medium,medical_question,मेरे दाँत में बहुत तेज़ दर्द हो रहा है, मैं कौन सी गोली खाऊँ?
+VC_HI_042,evals/voice_corpus/audio/vc_hi_042.wav,SPK_02,hi,low,medical_question,मसूड़ों में खून आ रहा है कोई घरेलू उपाय बताइये।
+VC_HL_043,evals/voice_corpus/audio/vc_hl_043.wav,SPK_03,hi-Latn,medium,medical_question,Infection ho gaya hai masude me, kya ghar par treatment kar sakte hain?
+VC_HL_044,evals/voice_corpus/audio/vc_hl_044.wav,SPK_04,hi-Latn,low,medical_question,Toothache ke liye best tablet konsi hai doctor saheb?
+VC_OR_045,evals/voice_corpus/audio/vc_or_045.wav,SPK_05,or,medium,medical_question,ମୋ ଦାନ୍ତରେ ବହୁତ ଯନ୍ତ୍ରଣା ହେଉଛି, କେଉଁ ଔଷଧ ଖାଇବି କୁହନ୍ତୁ।
+VC_OR_046,evals/voice_corpus/audio/vc_or_046.wav,SPK_01,or,low,medical_question,ଦାନ୍ତ ବିନ୍ଧୁଛି କଣ କଲେ ଠିକ୍ ହେବ?
+VC_HI_047,evals/voice_corpus/audio/vc_hi_047.wav,SPK_02,hi,high,medical_question,दांत में कीड़ा लगा है कैसे ठीक करें?
+VC_HL_048,evals/voice_corpus/audio/vc_hl_048.wav,SPK_03,hi-Latn,high,medical_question,Root canal treatment me dard hota hai kya?
+VC_OR_049,evals/voice_corpus/audio/vc_or_049.wav,SPK_04,or,high,medical_question,ଦାନ୍ତ ପୋକଡା ପାଇଁ କେଉଁ ମେଡିସିନ୍ ଖାଇବି?
+VC_HI_050,evals/voice_corpus/audio/vc_hi_050.wav,SPK_05,hi,medium,medical_question,दांत हिल रहा है क्या इसे निकालना पड़ेगा?

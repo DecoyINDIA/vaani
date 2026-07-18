@@ -20,6 +20,10 @@ class Tenants(TenantScoped):
     async def find_by_wa_number(cls, wa_number: str) -> dict | None:
         return await get_db()[cls.collection].find_one({"wa_number": wa_number})
 
+    @classmethod
+    async def find_by_voice_number(cls, voice_number: str) -> dict | None:
+        return await get_db()[cls.collection].find_one({"voice_number": voice_number})
+
 
 
 class Users(TenantScoped):
