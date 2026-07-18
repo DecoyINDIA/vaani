@@ -7,7 +7,7 @@ WebSocket /webhooks/exotel/stream — bidirectional real-time audio stream.
 from __future__ import annotations
 
 import logging
-from typing import Any
+from datetime import UTC
 
 from fastapi import APIRouter, Request, Response, WebSocket, WebSocketDisconnect
 
@@ -34,26 +34,27 @@ async def receive(request: Request) -> Response:
         # Exotel sends form URL-encoded parameters on webhook
         form_data = await request.form()
         to_number = form_data.get("To")
-        from_number = form_data.get("From")
         call_sid = form_data.get("CallSid")
     except Exception:
         # Fallback for JSON testing/script payloads
         try:
             body = await request.json()
             to_number = body.get("To")
-            from_number = body.get("From")
             call_sid = body.get("CallSid")
         except Exception:
             to_number = None
-            from_number = None
             call_sid = None
 
     if not to_number or not call_sid:
         logger.warning("Exotel webhook missing To or CallSid parameter")
-        return Response(content="<Response><Hangup/></Response>", media_type="application/xml", status_code=400)
+        return Response(
+            content="<Response><Hangup/></Response>",
+            media_type="application/xml",
+            status_code=400,
+        )
 
     try:
-        tenant_id = await resolve_voice_tenant(to_number)
+        tenant_id = await resolve_voice_tenant(str(to_number))
     except ValueError as e:
         logger.warning(f"Tenant resolution failed: {e}")
         # Return static refusal XML
@@ -104,7 +105,7 @@ async def missed_call(request: Request) -> Response:
         return Response(content="Missing parameter", status_code=400)
 
     try:
-        tenant_id = await resolve_voice_tenant(to_number)
+        tenant_id = await resolve_voice_tenant(str(to_number))
     except ValueError as e:
         logger.warning(f"Tenant resolution failed for missed call: {e}")
         return Response(content="Tenant not found", status_code=404)
@@ -126,15 +127,17 @@ async def missed_call(request: Request) -> Response:
 
     # 2. Check or open conversation
     convs_accessor = Conversations(tenant_id)
-    existing_conv = await convs_accessor.find_one({"contact_id": contact_id, "state": {"$ne": "closed"}})
+    existing_conv = await convs_accessor.find_one(
+        {"contact_id": contact_id, "state": {"$ne": "closed"}}
+    )
     if not existing_conv:
-        from datetime import datetime, timezone
+        from datetime import datetime
         await convs_accessor.insert_one({
             "contact_id": contact_id,
             "channel": "wa",
             "state": "bot",
-            "started_at": datetime.now(timezone.utc).replace(tzinfo=None),
-            "last_msg_at": datetime.now(timezone.utc).replace(tzinfo=None)
+            "started_at": datetime.now(UTC).replace(tzinfo=None),
+            "last_msg_at": datetime.now(UTC).replace(tzinfo=None)
         })
 
     # 3. Dispatch template bridge
@@ -190,7 +193,7 @@ async def websocket_stream(
                 })
 
             # 2. Process query payload triggers
-            # For testing/harness, we allow sending query commands prefixed with b"QUERY:" or b"DTMF_"
+            # Test harness: query commands prefixed with b"QUERY:" or b"DTMF_"
             if data.startswith(b"QUERY:") or data.startswith(b"DTMF_"):
                 if data.startswith(b"QUERY:"):
                     payload_str = data[6:].decode("utf-8", errors="ignore")

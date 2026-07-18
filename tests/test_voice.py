@@ -7,11 +7,9 @@ barge-in interruption, latency budgets, and cross-model overrides.
 from __future__ import annotations
 
 import pytest
-from fastapi.testclient import TestClient
-
 from app.config import settings
 from app.main import app
-from app.models.base import get_db
+from fastapi.testclient import TestClient
 from ops.seed_tenant import seed_async
 
 

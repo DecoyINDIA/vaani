@@ -9,23 +9,24 @@ the booking tools; this module owns generation + closure logic.
 from __future__ import annotations
 
 import datetime
-from datetime import date, datetime as dt, timedelta, timezone
+from datetime import date, timedelta
+from datetime import datetime as dt
 from typing import Any
 
-from app.models.base import get_db
+from app.models.collections import Bookings, Practitioners, Slots, Tenants, Waitlist
 
 
 async def expand_schedule(tenant_id: str, practitioner_id: str, horizon_days: int = 30) -> int:
     """Generate open slots for the horizon, skipping holiday_calendar closures."""
-    db = get_db()
-    
+    slots_acc = Slots(tenant_id)
+
     # 1. Load practitioner
-    practitioner = await db["practitioners"].find_one({"_id": practitioner_id, "tenant_id": tenant_id})
+    practitioner = await Practitioners(tenant_id).find_one({"_id": practitioner_id})
     if not practitioner:
         return 0
-    
+
     # 2. Load tenant holiday calendar
-    tenant = await db["tenants"].find_one({"_id": tenant_id})
+    tenant = await Tenants.find_by_id(tenant_id)
     holidays = tenant.get("holiday_calendar", []) if tenant else []
     holidays_str = {str(h) for h in holidays} # "YYYY-MM-DD"
     
@@ -72,16 +73,14 @@ async def expand_schedule(tenant_id: str, practitioner_id: str, horizon_days: in
             end_dt = dt.combine(target_date, datetime.time(end_h, end_m))
             
             # Check if slot exists
-            existing = await db["slots"].find_one({
-                "tenant_id": tenant_id,
+            existing = await slots_acc.find_one({
                 "practitioner_id": practitioner_id,
                 "start": start_dt
             })
-            
+
             if not existing:
                 try:
-                    await db["slots"].insert_one({
-                        "tenant_id": tenant_id,
+                    await slots_acc.insert_one({
                         "practitioner_id": practitioner_id,
                         "start": start_dt,
                         "end": end_dt,
@@ -98,62 +97,59 @@ async def expand_schedule(tenant_id: str, practitioner_id: str, horizon_days: in
 
 async def hold_slot(tenant_id: str, slot_id: str) -> bool:
     """Atomically hold a slot for 120 seconds if open or expired."""
-    db = get_db()
-    now = dt.now(timezone.utc).replace(tzinfo=None)
-    
+    now = dt.now(datetime.UTC).replace(tzinfo=None)
+
     query = {
         "_id": slot_id,
-        "tenant_id": tenant_id,
         "$or": [
             {"status": "open"},
             {"status": "held", "hold_expiry": {"$lt": now}}
         ]
     }
-    
+
     update = {
         "$set": {
             "status": "held",
             "hold_expiry": now + timedelta(seconds=120)
         }
     }
-    
-    result = await db["slots"].find_one_and_update(query, update)
+
+    result = await Slots(tenant_id).find_one_and_update(query, update)
     return result is not None
 
 
-async def confirm_booking(tenant_id: str, slot_id: str, contact_id: str, service: str) -> dict | None:
+async def confirm_booking(
+    tenant_id: str, slot_id: str, contact_id: str, service: str
+) -> dict[str, Any] | None:
     """Atomically confirm a held slot and create a booking record."""
-    db = get_db()
-    now = dt.now(timezone.utc).replace(tzinfo=None)
-    
+    now = dt.now(datetime.UTC).replace(tzinfo=None)
+
     query = {
         "_id": slot_id,
-        "tenant_id": tenant_id,
         "status": "held",
         "hold_expiry": {"$gt": now}
     }
-    
+
     update = {
         "$set": {
             "status": "booked"
         }
     }
-    
-    slot = await db["slots"].find_one_and_update(query, update)
+
+    slot = await Slots(tenant_id).find_one_and_update(query, update)
     if not slot:
         return None
-        
+
     booking = {
-        "tenant_id": tenant_id,
         "slot_id": slot_id,
         "contact_id": contact_id,
         "service": service,
         "status": "confirmed",
         "ts": now
     }
-    
-    await db["bookings"].insert_one(booking)
-    return booking
+
+    await Bookings(tenant_id).insert_one(booking)
+    return {"tenant_id": tenant_id, **booking}
 
 
 async def claim_waitlist_slot(tenant_id: str, slot_id: str, contact_id: str, service: str) -> bool:
@@ -171,16 +167,14 @@ async def claim_waitlist_slot(tenant_id: str, slot_id: str, contact_id: str, ser
         return False
         
     # 3. Update waitlist entry to fulfilled
-    db = get_db()
-    slot = await db["slots"].find_one({"_id": slot_id, "tenant_id": tenant_id})
+    slot = await Slots(tenant_id).find_one({"_id": slot_id})
     if slot:
         practitioner_id = slot.get("practitioner_id")
         slot_date = slot.get("start")
         if practitioner_id and slot_date:
             date_str = slot_date.strftime("%Y-%m-%d")
-            await db["waitlist"].update_one(
+            await Waitlist(tenant_id).update_one(
                 {
-                    "tenant_id": tenant_id,
                     "contact_id": contact_id,
                     "practitioner_id": practitioner_id,
                     "date": date_str,

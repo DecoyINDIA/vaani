@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from app.booking.engine import hold_slot, confirm_booking
+from app.booking.engine import confirm_booking, hold_slot
 
 logger = logging.getLogger(__name__)
 

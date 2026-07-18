@@ -8,13 +8,14 @@ from __future__ import annotations
 
 import logging
 import time
-from datetime import datetime as dt, timezone
-from typing import Any, Dict
+from datetime import UTC
+from datetime import datetime as dt
+from typing import Any
 
 from app.agent.graph import build_graph
 from app.channels.voice.stt import transcribe_audio
 from app.channels.voice.tts import synthesize
-from app.models.base import get_db
+from app.models.collections import Contacts, Conversations, Messages
 
 logger = logging.getLogger(__name__)
 
@@ -39,23 +40,20 @@ class VoiceSession:
         self.consent_accepted = False
         self.is_speaking = False
         self.interrupted = False
-        self.latencies: Dict[str, float] = {}
+        self.latencies: dict[str, float] = {}
 
     async def initialize(self) -> None:
         """Fetch or create the contact and active voice conversation."""
-        db = get_db()
-        now = dt.now(timezone.utc).replace(tzinfo=None)
+        now = dt.now(UTC).replace(tzinfo=None)
+        contacts = Contacts(self.tenant_id)
+        conversations = Conversations(self.tenant_id)
 
         # 1. Resolve or create contact
-        contact = await db["contacts"].find_one({
-            "tenant_id": self.tenant_id,
-            "phone": self.caller_phone
-        })
+        contact = await contacts.find_one({"phone": self.caller_phone})
         if not contact:
             contact_id = f"cnt_{self.call_sid}"
-            await db["contacts"].insert_one({
+            await contacts.insert_one({
                 "_id": contact_id,
-                "tenant_id": self.tenant_id,
                 "phone": self.caller_phone,
                 "created_at": now
             })
@@ -63,17 +61,15 @@ class VoiceSession:
             contact_id = contact["_id"]
 
         # 2. Resolve or create active conversation
-        conv = await db["conversations"].find_one({
-            "tenant_id": self.tenant_id,
+        conv = await conversations.find_one({
             "contact_id": contact_id,
             "channel": "voice",
             "state": {"$ne": "closed"}
         })
         if not conv:
             self.conversation_id = f"conv_{self.call_sid}"
-            await db["conversations"].insert_one({
+            await conversations.insert_one({
                 "_id": self.conversation_id,
-                "tenant_id": self.tenant_id,
                 "contact_id": contact_id,
                 "channel": "voice",
                 "state": "bot",
@@ -168,10 +164,9 @@ class VoiceSession:
         self.latencies["llm_ms"] = int(t_llm * 1000)
 
         # Log query to DB message history
-        db = get_db()
-        now = dt.now(timezone.utc).replace(tzinfo=None)
-        await db["messages"].insert_one({
-            "tenant_id": self.tenant_id,
+        messages = Messages(self.tenant_id)
+        now = dt.now(UTC).replace(tzinfo=None)
+        await messages.insert_one({
             "conversation_id": self.conversation_id,
             "direction": "inbound",
             "type": "text",
@@ -192,8 +187,7 @@ class VoiceSession:
         self.latencies["total_ms"] = int(t_total * 1000)
 
         # Log response to DB
-        await db["messages"].insert_one({
-            "tenant_id": self.tenant_id,
+        await messages.insert_one({
             "conversation_id": self.conversation_id,
             "direction": "outbound",
             "type": "voice",

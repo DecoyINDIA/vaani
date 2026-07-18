@@ -1,11 +1,12 @@
-import re
 import os
+import re
+
 
 def load_file_content(relative_path):
     # Determine the directory of the current test file and construct absolute path
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     file_path = os.path.join(base_dir, relative_path)
-    with open(file_path, "r", encoding="utf-8") as f:
+    with open(file_path, encoding="utf-8") as f:
         return f.read()
 
 def test_whatsapp_templates_compliance():

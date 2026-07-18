@@ -48,6 +48,22 @@ select = ["E", "F", "I", "UP", "B"]
 # Custom rule (enforced in review + CI, see 06-engineering-plan §0 rule 1):
 # raw `db[...].find` outside app/models/ is forbidden — greppable in ci.yml.
 
+[tool.ruff.lint.per-file-ignores]
+# Line-length is enforced on core logic. It is NOT enforced where a line is a
+# single indivisible string literal — i18n message tables, few-shot prompt
+# examples, and offline mock transcripts — nor on test/eval/seed scripts, whose
+# long lines are fixture data. Wrapping those would hurt, not help, readability.
+"app/agent/templates/__init__.py" = ["E501"]  # 4-language message tables
+"app/agent/llm.py" = ["E501"]                  # mock responses + multilingual keyword lists
+"app/agent/nodes/intent.py" = ["E501"]         # few-shot classifier prompt
+"app/agent/nodes/responder.py" = ["E501"]      # grounded-responder system prompt
+"app/channels/voice/session.py" = ["E501"]     # multilingual IVR prompt strings
+"app/channels/voice/stt.py" = ["E501"]         # offline mock transcripts
+"app/channels/voice/tts.py" = ["E501"]         # offline mock/error strings
+"evals/*" = ["E501"]                           # eval harness + fixture data
+"tests/*" = ["E501"]                           # test fixtures
+"ops/seed_tenant.py" = ["E501"]                # seed fixture data
+
 [tool.mypy]
 python_version = "3.12"
 strict = true

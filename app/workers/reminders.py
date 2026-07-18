@@ -6,24 +6,20 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
-from app.models.base import get_db
-from app.models.collections import Bookings, Slots, Tenants, Contacts
 from app import audit
+from app.models.collections import Bookings, Contacts, Slots, Tenants
 
 logger = logging.getLogger(__name__)
 
 
 async def run_reminders() -> None:
     """Scan all tenants and send upcoming booking reminders."""
-    db = get_db()
-    
     # 1. Fetch all tenants
-    tenants_cursor = db["tenants"].find({})
-    tenants = await tenants_cursor.to_list(length=1000)
+    tenants = await Tenants.all()
     
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = datetime.now(UTC).replace(tzinfo=None)
     
     for tenant in tenants:
         tenant_id = str(tenant["_id"])
@@ -55,7 +51,9 @@ async def run_reminders() -> None:
                     contact = await contacts_accessor.find_one({"_id": contact_id})
                     patient_name = contact.get("name", "Patient") if contact else "Patient"
                     
-                    logger.info(f"Sending 24h reminder to {patient_name} for booking {booking['_id']}")
+                    logger.info(
+                        "Sending 24h reminder to %s for booking %s", patient_name, booking["_id"]
+                    )
                     
                     await audit.record(
                         tenant_id,
@@ -81,7 +79,9 @@ async def run_reminders() -> None:
                     contact = await contacts_accessor.find_one({"_id": contact_id})
                     patient_name = contact.get("name", "Patient") if contact else "Patient"
                     
-                    logger.info(f"Sending 2h reminder to {patient_name} for booking {booking['_id']}")
+                    logger.info(
+                        "Sending 2h reminder to %s for booking %s", patient_name, booking["_id"]
+                    )
                     
                     await audit.record(
                         tenant_id,

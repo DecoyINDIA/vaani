@@ -1,5 +1,25 @@
-{"lang":"hi","text":"kal subah appointment mil sakta hai?","expected_intent":"book","expected_facts":[]}
-{"lang":"hi-Latn","text":"clinic ke timings kya hain","expected_intent":"faq_hours","expected_facts":["business_hours"]}
-{"lang":"en","text":"how much is the consultation fee","expected_intent":"faq_fees","expected_facts":["fee"]}
-{"lang":"or","text":"ଡାକ୍ତରଙ୍କ ସହ ଦେଖା କରିବି","expected_intent":"book","expected_facts":[]}
-{"lang":"hi","text":"mujhe sar dard ho raha hai kya karu","expected_intent":"medical_question","expected_facts":[]}
+{"lang":"en","text":"hello","expected_intent":"greet","expected_source_ref":null}
+{"lang":"en","text":"how much is the consultation fee","expected_intent":"faq_fees","expected_source_ref":"faq_fees"}
+{"lang":"en","text":"what are your clinic hours","expected_intent":"faq_hours","expected_source_ref":"faq_hours"}
+{"lang":"en","text":"what is the clinic address","expected_intent":"faq_location","expected_source_ref":"faq_location"}
+{"lang":"en","text":"I want to book an appointment for tomorrow","expected_intent":"book","expected_source_ref":"slots_list"}
+{"lang":"en","text":"I need to reschedule my appointment","expected_intent":"reschedule","expected_source_ref":null}
+{"lang":"en","text":"cancel my appointment please","expected_intent":"cancel","expected_source_ref":null}
+{"lang":"en","text":"what is the status of my booking","expected_intent":"booking_status","expected_source_ref":null}
+{"lang":"en","text":"can I talk to a human","expected_intent":"human_request","expected_source_ref":null}
+{"lang":"en","text":"my tooth hurts, which medicine should I take","expected_intent":"medical_question","expected_source_ref":null}
+{"lang":"en","text":"what is the weather in bhubaneswar today","expected_intent":"out_of_scope","expected_source_ref":null}
+{"lang":"hi","text":"मुझे अपॉइंटमेंट बुक करना है","expected_intent":"book","expected_source_ref":"slots_list"}
+{"lang":"hi","text":"क्लिनिक का समय क्या है","expected_intent":"faq_hours","expected_source_ref":"faq_hours"}
+{"lang":"hi","text":"फीस कितनी है","expected_intent":"faq_fees","expected_source_ref":"faq_fees"}
+{"lang":"hi","text":"दांत में दर्द है, कौन सी दवा लूं","expected_intent":"medical_question","expected_source_ref":null}
+{"lang":"hi-Latn","text":"kal subah appointment mil sakta hai?","expected_intent":"book","expected_source_ref":"slots_list"}
+{"lang":"hi-Latn","text":"mujhe sar dard ho raha hai kya karu","expected_intent":"medical_question","expected_source_ref":null}
+{"lang":"hi-Latn","text":"clinic ke timings kya hain","expected_intent":"faq_hours","expected_source_ref":"faq_hours"}
+{"lang":"hi-Latn","text":"clinic kahan hai","expected_intent":"faq_location","expected_source_ref":"faq_location"}
+{"lang":"hi-Latn","text":"mera appointment cancel kar do","expected_intent":"cancel","expected_source_ref":null}
+{"lang":"hi-Latn","text":"staff se baat karwao","expected_intent":"human_request","expected_source_ref":null}
+{"lang":"or","text":"ଡାକ୍ତରଙ୍କ ସହ ଦେଖା କରିବି","expected_intent":"book","expected_source_ref":"slots_list"}
+{"lang":"or","text":"କ୍ଲିନିକ୍ ସମୟ କ'ଣ","expected_intent":"faq_hours","expected_source_ref":"faq_hours"}
+{"lang":"or","text":"ଫିସ୍ କେତେ","expected_intent":"faq_fees","expected_source_ref":"faq_fees"}
+{"lang":"or","text":"ଦାନ୍ତରେ ଯନ୍ତ୍ରଣା ହେଉଛି, କେଉଁ ଔଷଧ ଖାଇବି","expected_intent":"medical_question","expected_source_ref":null}

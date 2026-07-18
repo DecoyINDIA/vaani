@@ -7,6 +7,8 @@ Week 3, task 3.4). Index creation lives in `ensure_indexes()`.
 
 from __future__ import annotations
 
+from typing import Any
+
 from app.models.base import TenantScoped, get_db
 
 
@@ -17,7 +19,7 @@ class Tenants(TenantScoped):
         super().__init__(tenant_id)
 
     @classmethod
-    async def find_by_id(cls, tenant_id: str) -> dict | None:
+    async def find_by_id(cls, tenant_id: str) -> dict[str, Any] | None:
         return await get_db()[cls.collection].find_one({"_id": tenant_id})
 
     @classmethod
@@ -28,12 +30,17 @@ class Tenants(TenantScoped):
         )
 
     @classmethod
-    async def find_by_wa_number(cls, wa_number: str) -> dict | None:
+    async def find_by_wa_number(cls, wa_number: str) -> dict[str, Any] | None:
         return await get_db()[cls.collection].find_one({"wa_number": wa_number})
 
     @classmethod
-    async def find_by_voice_number(cls, voice_number: str) -> dict | None:
+    async def find_by_voice_number(cls, voice_number: str) -> dict[str, Any] | None:
         return await get_db()[cls.collection].find_one({"voice_number": voice_number})
+
+    @classmethod
+    async def all(cls, limit: int = 1000) -> list[dict[str, Any]]:
+        """Cross-tenant scan for platform workers (reminders, weekly summaries)."""
+        return await get_db()[cls.collection].find({}).to_list(length=limit)
 
 
 
@@ -51,6 +58,18 @@ class Conversations(TenantScoped):
 
 class Messages(TenantScoped):
     collection = "messages"
+
+    @classmethod
+    async def seen_unscoped(cls, message_id: str) -> bool:
+        """Idempotency check before tenant resolution — has this id been sighted?"""
+        return await get_db()[cls.collection].find_one({"_id": message_id}) is not None
+
+    @classmethod
+    async def reserve_placeholder_unscoped(cls, message_id: str) -> None:
+        """Reserve a message id pre-tenant-resolution to block concurrent reprocessing."""
+        await get_db()[cls.collection].insert_one(
+            {"_id": message_id, "direction": "inbound", "type": "placeholder"}
+        )
 
 
 class KbEntries(TenantScoped):
@@ -73,7 +92,7 @@ class Payments(TenantScoped):
     collection = "payments"
 
     @classmethod
-    async def find_by_link_id_unscoped(cls, rzp_link_id: str) -> dict | None:
+    async def find_by_link_id_unscoped(cls, rzp_link_id: str) -> dict[str, Any] | None:
         return await get_db()[cls.collection].find_one({"rzp_link_id": rzp_link_id})
 
 

@@ -9,8 +9,8 @@ Writes to the `audit_log` collection (TRD §3): append-only, TTL 90d default.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Any, Literal
-from datetime import datetime, timezone
 
 from app.models.collections import AuditLog
 
@@ -30,7 +30,7 @@ async def record(
         "actor": actor,
         "event_type": event_type,
         "payload": payload,
-        "ts": datetime.now(timezone.utc).replace(tzinfo=None)
+        "ts": datetime.now(UTC).replace(tzinfo=None)
     }
     if conversation_id:
         audit_entry["conversation_id"] = conversation_id

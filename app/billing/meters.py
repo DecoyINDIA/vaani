@@ -7,13 +7,14 @@ not an afterthought (cost visibility per TRD §6).
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from app.models.collections import UsageMeters
 
 
 async def record_usage(tenant_id: str, **counters: int) -> None:
     """Increment usage counters for the tenant in the current period (YYYY-MM)."""
-    period = datetime.now(timezone.utc).strftime("%Y-%m")
+    period = datetime.now(UTC).strftime("%Y-%m")
 
     update_fields = {}
     for key, val in counters.items():

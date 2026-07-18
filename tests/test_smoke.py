@@ -3,9 +3,8 @@ otherwise-stubbed skeleton so the pipeline is exercised from day one."""
 
 from __future__ import annotations
 
-from fastapi.testclient import TestClient
-
 from app.main import app
+from fastapi.testclient import TestClient
 
 
 def test_health() -> None:

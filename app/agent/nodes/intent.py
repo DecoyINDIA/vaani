@@ -13,8 +13,9 @@ import json
 import logging
 from typing import Any
 
-from app.config import settings
 from app.agent.llm import query_llm
+from app.agent.state import AgentState
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ TAXONOMY = {
 }
 
 
-async def intent(state: dict[str, Any]) -> dict[str, Any]:
+async def intent(state: AgentState) -> dict[str, Any]:
     """Node 2 — intent classifier (TRD §4.1/§4.2 input gate).
 
     Small model, temperature 0, few-shot per language. MUST emit a label from the

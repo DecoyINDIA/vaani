@@ -9,13 +9,16 @@ from __future__ import annotations
 
 import re
 from typing import Any
+
 from lingua import Language, LanguageDetectorBuilder
+
+from app.agent.state import AgentState
 
 # Build the detector once globally
 _detector = LanguageDetectorBuilder.from_languages(Language.ENGLISH, Language.HINDI).build()
 
 
-async def lang_detect(state: dict[str, Any]) -> dict[str, Any]:
+async def lang_detect(state: AgentState) -> dict[str, Any]:
     """Node 1 — language detection (TRD §4.3).
 
     lingua + script heuristics. Hinglish (Latin-script Hindi) is its own register:
@@ -42,7 +45,7 @@ async def lang_detect(state: dict[str, Any]) -> dict[str, Any]:
         "hai", "hain", "hein", "kya", "ko", "se", "ki", "ka", "ke", "baje",
         "mujhe", "mera", "meri", "aap", "dijiye", "mil", "sakta", "sakte", "rha",
         "raha", "kar", "karna", "karne", "parso", "kal", "aaj", "namaste", "ji",
-        "karo", "kijiye", "kab", "ab", "tum", "ter", "mera", "apna", "apni"
+        "karo", "kijiye", "kab", "ab", "tum", "ter", "apna", "apni"
     }
     
     words = re.findall(r"[a-z']+", text_lower)

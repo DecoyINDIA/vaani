@@ -1,17 +1,17 @@
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
+import pytest
 from app import audit
-from app.billing.meters import record_usage
+from app.agent.nodes.responder import responder
+from app.agent.tools.booking_cancel import booking_cancel
 from app.billing.invoice import generate_invoice
+from app.billing.meters import record_usage
+from app.booking.engine import claim_waitlist_slot
 from app.gateway.razorpay import verify_razorpay_signature
+from app.models.base import get_db
 from app.workers.reminders import run_reminders
 from app.workers.weekly_summary import run_weekly_summaries
-from app.booking.engine import claim_waitlist_slot
-from app.agent.tools.booking_cancel import booking_cancel
-from app.agent.nodes.responder import responder
-from app.models.base import get_db
-from app.models.collections import Tenants, Bookings, Slots, Contacts, Conversations, Payments, Waitlist
+
 
 @pytest.fixture(autouse=True)
 async def clean_db():
@@ -46,7 +46,7 @@ async def test_audit_logging():
 
 async def test_usage_metering():
     tenant_id = "tenant_meter_test"
-    period = datetime.now(timezone.utc).strftime("%Y-%m")
+    period = datetime.now(UTC).strftime("%Y-%m")
     
     await record_usage(tenant_id, voice_minutes=10, llm_tokens_in=500)
     await record_usage(tenant_id, voice_minutes=5, llm_tokens_out=250)
@@ -70,7 +70,7 @@ async def test_gst_invoice_starter():
         "status": "active"
     })
     
-    period = datetime.now(timezone.utc).strftime("%Y-%m")
+    period = datetime.now(UTC).strftime("%Y-%m")
     invoice = await generate_invoice(tenant_id, period)
     
     assert invoice["invoice_number"] == f"INV-{tenant_id[:4].upper()}-{period.replace('-', '')}"
@@ -91,7 +91,7 @@ async def test_gst_invoice_pro_with_overage():
         "status": "active"
     })
     
-    period = datetime.now(timezone.utc).strftime("%Y-%m")
+    period = datetime.now(UTC).strftime("%Y-%m")
     
     # Pro includes 300 mins; we simulate 350 mins (50 mins overage at Rs 2.0/min = Rs 100 overage)
     await record_usage(tenant_id, voice_minutes=350)
@@ -115,8 +115,8 @@ async def test_razorpay_webhook_signature():
 
 
 async def test_razorpay_payment_paid_webhook():
-    from fastapi.testclient import TestClient
     from app.main import app
+    from fastapi.testclient import TestClient
     
     tenant_id = "test_tenant"
     db = get_db()
@@ -135,7 +135,7 @@ async def test_razorpay_payment_paid_webhook():
         "tenant_id": tenant_id,
         "slot_id": "slot_123",
         "status": "rescheduled",
-        "ts": datetime.now(timezone.utc).replace(tzinfo=None)
+        "ts": datetime.now(UTC).replace(tzinfo=None)
     })
     
     link_id = "plink_xyz"
@@ -178,8 +178,8 @@ async def test_razorpay_payment_paid_webhook():
 
 
 async def test_razorpay_subscription_activated_webhook():
-    from fastapi.testclient import TestClient
     from app.main import app
+    from fastapi.testclient import TestClient
     
     tenant_id = "tenant_sub_test"
     db = get_db()
@@ -225,7 +225,7 @@ async def test_reminders_worker():
         "status": "active"
     })
     
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = datetime.now(UTC).replace(tzinfo=None)
     
     # 1. 24h reminder booking (starts in 24 hours)
     slot_id_24h = "slot_24h"
@@ -307,7 +307,7 @@ async def test_weekly_summaries():
     })
     
     # Create conversations (some active, one escalated)
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = datetime.now(UTC).replace(tzinfo=None)
     await db["conversations"].insert_one({
         "tenant_id": tenant_id,
         "state": "bot",
@@ -370,8 +370,8 @@ async def test_weekly_summaries():
 
 
 async def test_exotel_missed_call_bridge():
-    from fastapi.testclient import TestClient
     from app.main import app
+    from fastapi.testclient import TestClient
     
     tenant_id = "tenant_missed_call_test"
     db = get_db()
@@ -416,7 +416,7 @@ async def test_waitlist_cancellation_and_backfill():
     
     # 1. Setup slot and booking
     slot_id = "slot_to_cancel"
-    start_dt = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=2)
+    start_dt = datetime.now(UTC).replace(tzinfo=None) + timedelta(days=2)
     
     await db["slots"].insert_one({
         "_id": slot_id,

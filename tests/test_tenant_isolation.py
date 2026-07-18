@@ -10,7 +10,6 @@ The accessor-requires-tenant_id contract is testable today.
 from __future__ import annotations
 
 import pytest
-
 from app.models.collections import Bookings
 
 

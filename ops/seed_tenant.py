@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import asyncio
 import sys
+
+from app.booking.engine import expand_schedule
 from app.models.base import get_db
 
 
@@ -67,27 +69,33 @@ async def seed_async(yaml_path: str) -> None:
         }
     })
 
+    # 2b. Expand schedule_template into concrete bookable slots (normally the
+    # nightly job's work) — without this a fresh tenant has zero slots.
+    await expand_schedule(tenant_id, practitioner_id, horizon_days=14)
+
     # 3. Seed KB FAQs
     await db["kb_entries"].delete_many({"tenant_id": tenant_id})
     await db["kb_entries"].insert_many([
+        # Questions carry Hindi/Odia variants so the BM25/regex fallback in
+        # kb_search can retrieve entries for non-English queries too.
         {
             "tenant_id": tenant_id,
             "key": "faq_hours",
-            "question": "What are the clinic timings?",
+            "question": "What are the clinic timings / hours? क्लिनिक का समय क्या है? क्लीनिक कब खुला रहता है? କ୍ଲିନିକ୍ ସମୟ କ'ଣ?",
             "answer": "Sharma Dental Clinic is open from 9:00 AM to 6:00 PM Monday through Saturday. [source_ref: faq_hours]",
             "ts": 0
         },
         {
             "tenant_id": tenant_id,
             "key": "faq_fees",
-            "question": "What is the consultation fee?",
+            "question": "What is the consultation fee? फीस / शुल्क कितनी है? ଫିସ୍ କେତେ?",
             "answer": "The consultation fee is Rs 500. [source_ref: faq_fees]",
             "ts": 0
         },
         {
             "tenant_id": tenant_id,
             "key": "faq_location",
-            "question": "Where is the clinic located?",
+            "question": "Where is the clinic located? What is the address? क्लिनिक का पता क्या है? କ୍ଲିନିକ୍ ଠିକଣା କ'ଣ?",
             "answer": "Sharma Dental Clinic is located near Main Market, Bhubaneswar. Landmark: Opposite HDFC Bank. [source_ref: faq_location]",
             "ts": 0
         }

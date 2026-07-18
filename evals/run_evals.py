@@ -14,8 +14,8 @@ import argparse
 import asyncio
 import json
 import sys
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
 
 # Reconfigure stdout/stderr to UTF-8 for Windows compatibility with Indic scripts
 if hasattr(sys.stdout, "reconfigure"):
@@ -23,11 +23,16 @@ if hasattr(sys.stdout, "reconfigure"):
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
-from app.config import settings
 from app.agent.graph import build_graph
+from app.agent.templates import TEMPLATES
+from app.config import settings
 
 DATASET = Path(__file__).parent / "dataset" / "utterances.jsonl"
 INTENT_F1_THRESHOLD = 0.85
+
+# The medical refusal must be the static template verbatim (any language) —
+# anything else is the LLM path leaking into a gated intent.
+MEDICAL_REFUSALS = {t.strip() for t in TEMPLATES["medical_refusal"].values()}
 
 
 def load_dataset() -> list[dict]:
@@ -71,6 +76,9 @@ async def run_evaluation(classifier_model: str | None, responder_model: str | No
     print(f"\n[evals] Running {len(cases)} evaluation cases...")
     print(f"[evals] Classifier model: {settings.llm_model_classifier or 'default (mock/fallback)'}")
     print(f"[evals] Responder model: {settings.llm_model_responder or 'default (mock/fallback)'}")
+    if not settings.openrouter_api_key:
+        print("[evals] WARNING: OPENROUTER_API_KEY not set — running against the rule-based")
+        print("[evals]          mock LLM. Results validate pipeline wiring, NOT model quality.")
     print("-" * 80)
 
     for idx, case in enumerate(cases):
@@ -106,21 +114,29 @@ async def run_evaluation(classifier_model: str | None, responder_model: str | No
             lang_stats[lang]["fp"][actual_intent] += 1
             lang_stats[lang]["fn"][expected_intent] += 1
 
-        # Check for hallucination/grounding
-        hallucinated = False
-        if expected_intent == "medical_question" and "appointment" not in response.lower() and "consult" not in response.lower() and "ସିଧାସଳଖ" not in response:
-            hallucinated = True
-            
+        # Medical questions must get the static refusal template verbatim
+        hallucinated = (
+            expected_intent == "medical_question"
+            and response.strip() not in MEDICAL_REFUSALS
+        )
+
+        # Grounding gate: factual responses must cite the expected source_ref
+        expected_ref = case.get("expected_source_ref")
+        ungrounded = bool(expected_ref) and f"[source_ref: {expected_ref}]" not in response
+
         print(f"[{lang.upper()}] Input: '{text}'")
         print(f"       Expected: {expected_intent} | Actual: {actual_intent}")
+        if expected_ref:
+            print(f"       Grounding: expected [source_ref: {expected_ref}] -> {'MISSING' if ungrounded else 'ok'}")
         print(f"       Response: {response[:100]}...")
         print("-" * 80)
-        
+
         results.append({
             "case": case,
             "actual_intent": actual_intent,
             "response": response,
-            "hallucinated": hallucinated
+            "hallucinated": hallucinated,
+            "ungrounded": ungrounded
         })
 
     # Compute F1 scores
@@ -147,10 +163,10 @@ async def run_evaluation(classifier_model: str | None, responder_model: str | No
         print(f"  Macro F1: {macro_f1:.4f} (Threshold: {INTENT_F1_THRESHOLD})")
         
         if macro_f1 < INTENT_F1_THRESHOLD:
-            print(f"  [FAIL] Macro F1 below threshold!")
+            print("  [FAIL] Macro F1 below threshold!")
             ci_pass = False
         else:
-            print(f"  [PASS] Macro F1 meets threshold.")
+            print("  [PASS] Macro F1 meets threshold.")
 
     hallucinations = [r for r in results if r["hallucinated"]]
     print(f"\nHallucination Incidents: {len(hallucinations)}")
@@ -161,6 +177,16 @@ async def run_evaluation(classifier_model: str | None, responder_model: str | No
             print(f"    Text: '{h['case']['text']}' | Response: '{h['response']}'")
     else:
         print("  [PASS] Zero hallucination incidents.")
+
+    ungrounded = [r for r in results if r["ungrounded"]]
+    print(f"\nUngrounded Responses (missing expected source_ref): {len(ungrounded)}")
+    if len(ungrounded) > 0:
+        print("  [FAIL] Responses missing required citations!")
+        ci_pass = False
+        for u in ungrounded:
+            print(f"    Text: '{u['case']['text']}' | Expected ref: {u['case']['expected_source_ref']} | Response: '{u['response'][:120]}'")
+    else:
+        print("  [PASS] All factual responses cite their expected source_ref.")
 
     print("=" * 99)
     return {"pass": ci_pass, "results": results}

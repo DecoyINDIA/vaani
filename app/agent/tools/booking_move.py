@@ -7,7 +7,7 @@ import logging
 from typing import Any
 
 from app.booking.engine import hold_slot
-from app.models.base import get_db
+from app.models.collections import Bookings, Slots
 
 logger = logging.getLogger(__name__)
 
@@ -19,15 +19,14 @@ async def booking_move(
     if not date_confirmed:
         raise ValueError("date_confirmed required — echo weekday+date before move (TRD §4.3)")
 
-    db = get_db()
-    
+    bookings = Bookings(tenant_id)
+    slots = Slots(tenant_id)
+
     logger.info(f"Finding booking {booking_id} to reschedule")
-    booking = await db["bookings"].find_one({"_id": booking_id, "tenant_id": tenant_id})
+    booking = await bookings.find_one({"_id": booking_id})
     if not booking:
-        booking = await db["bookings"].find_one({"_id": booking_id})
-        if not booking:
-            logger.warning(f"Booking {booking_id} not found")
-            return {"status": "failed", "reason": "booking_not_found"}
+        logger.warning(f"Booking {booking_id} not found")
+        return {"status": "failed", "reason": "booking_not_found"}
 
     old_slot_id = booking.get("slot_id")
 
@@ -39,22 +38,16 @@ async def booking_move(
 
     # Free old slot
     logger.info(f"Releasing old slot {old_slot_id}")
-    await db["slots"].update_one(
-        {"_id": old_slot_id, "tenant_id": tenant_id},
-        {"$set": {"status": "open"}}
-    )
+    await slots.update_one({"_id": old_slot_id}, {"$set": {"status": "open"}})
 
     # Confirm new slot
     logger.info(f"Confirming new slot {new_slot_id}")
-    await db["slots"].update_one(
-        {"_id": new_slot_id, "tenant_id": tenant_id},
-        {"$set": {"status": "booked"}}
-    )
+    await slots.update_one({"_id": new_slot_id}, {"$set": {"status": "booked"}})
 
     # Update booking reference
-    await db["bookings"].update_one(
-        {"_id": booking_id, "tenant_id": tenant_id},
-        {"$set": {"slot_id": new_slot_id, "status": "rescheduled"}}
+    await bookings.update_one(
+        {"_id": booking_id},
+        {"$set": {"slot_id": new_slot_id, "status": "rescheduled"}},
     )
 
     return {

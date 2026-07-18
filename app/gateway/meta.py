@@ -9,16 +9,15 @@ from __future__ import annotations
 
 import json
 import logging
-from fastapi import APIRouter, Request, Response, HTTPException
+from datetime import UTC, datetime
+from typing import Any, cast
 
+from fastapi import APIRouter, Request, Response
+
+from app import audit
 from app.config import settings
-from app.gateway.middleware import (
-    verify_meta_signature,
-    resolve_tenant,
-    claim_message,
-    get_redis
-)
-from app.models.base import get_db
+from app.gateway.middleware import claim_message, get_redis, resolve_tenant, verify_meta_signature
+from app.models.collections import Messages
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["webhooks"])
@@ -56,7 +55,8 @@ async def receive(request: Request) -> Response:
         payload = json.loads(body)
     except json.JSONDecodeError:
         logger.error("Malformed webhook JSON payload")
-        return Response(content="Malformed JSON", status_code=200)  # Ack malformed payloads to avoid retries
+        # Ack malformed payloads to avoid Meta retries
+        return Response(content="Malformed JSON", status_code=200)
 
     # Extract messages and metadata
     entry = payload.get("entry", [])
@@ -68,7 +68,7 @@ async def receive(request: Request) -> Response:
     messages = value.get("messages", [])
 
     if not messages:
-        # Ping or status updates (e.g. read/delivered status updates) — ack and ignore for MVP worker
+        # Ping or read/delivered status updates — ack and ignore for the MVP worker
         return Response(content='{"status":"ignored"}', status_code=200)
 
     msg = messages[0]
@@ -91,22 +91,20 @@ async def receive(request: Request) -> Response:
         tenant_id = await resolve_tenant(wa_number)
     except ValueError as e:
         logger.warning(f"Tenant resolution failed: {e}")
-        # Audit entry for unknown wa_number
+        # Audit entry for unknown wa_number (platform-level, tenant "SYSTEM")
         try:
-            db = get_db()
-            await db["audit_log"].insert_one({
-                "tenant_id": "SYSTEM",
-                "actor": "system",
-                "event_type": "unknown_recipient",
-                "payload": {"wa_number": wa_number, "message_id": message_id},
-                "ts": db.client.loop.time() if hasattr(db.client, "loop") else 0
-            })
+            await audit.record(
+                "SYSTEM",
+                actor="system",
+                event_type="unknown_recipient",
+                payload={"wa_number": wa_number, "message_id": message_id},
+            )
         except Exception as audit_err:
             logger.error(f"Failed to write audit log for unknown recipient: {audit_err}")
         return Response(content='{"status":"unknown_recipient"}', status_code=200)
 
     # 5. Enqueue Message
-    stream_payload = {
+    stream_payload: dict[str, str] = {
         "tenant_id": tenant_id,
         "message_id": message_id,
         "payload": json.dumps(payload)
@@ -114,24 +112,23 @@ async def receive(request: Request) -> Response:
 
     try:
         r = get_redis()
-        # Enqueue to Redis stream
-        await r.xadd("vaani:inbound_stream", stream_payload)
+        # Enqueue to Redis stream. redis-py's xadd stub declares an invariant dict
+        # type that a plain dict[str, str] never satisfies; cast to Any to bypass.
+        await r.xadd("vaani:inbound_stream", cast(Any, stream_payload))
         logger.info(f"Enqueued message {message_id} to Redis Stream")
     except Exception as e:
         logger.warning(f"Redis enqueuing failed, falling back to MongoDB: {e}")
         try:
             # MongoDB Fallback Queue
-            db = get_db()
-            await db["messages"].insert_one({
+            await Messages(tenant_id).insert_one({
                 "_id": message_id,
-                "tenant_id": tenant_id,
                 "conversation_id": "fallback_queue",
                 "direction": "inbound",
                 "type": "text",
                 "text": msg.get("text", {}).get("body", ""),
                 "status": "queued",
                 "payload": payload,
-                "ts": db.client.loop.time() if hasattr(db.client, "loop") else 0
+                "ts": datetime.now(UTC).replace(tzinfo=None),
             })
             logger.info(f"Enqueued message {message_id} to MongoDB fallback queue")
         except Exception as db_err:
