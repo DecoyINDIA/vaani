@@ -18,6 +18,17 @@ from __future__ import annotations
 from typing import Any, TypedDict
 
 
+from langgraph.graph import StateGraph, END
+
+from app.agent.nodes.lang_detect import lang_detect
+from app.agent.nodes.intent import intent
+from app.agent.nodes.scope_gate import scope_gate
+from app.agent.nodes.tool_router import tool_router
+from app.agent.nodes.responder import responder
+from app.agent.nodes.output_gate import output_gate
+from app.agent.nodes.handoff import handoff
+
+
 class AgentState(TypedDict, total=False):
     """State threaded through the graph. tenant_id is always present."""
 
@@ -31,8 +42,70 @@ class AgentState(TypedDict, total=False):
     tool_results: list[dict[str, Any]]
     response: str
     escalate: bool
+    retry_count: int
+    regenerate: bool
 
 
 def build_graph() -> Any:
     """Compile and return the LangGraph app. Wired in Week 3 (task 3.5)."""
-    raise NotImplementedError("graph assembly — 06-engineering-plan task 3.5")
+    workflow = StateGraph(AgentState)
+    
+    # 1. Add all nodes
+    workflow.add_node("lang_detect", lang_detect)
+    workflow.add_node("intent", intent)
+    workflow.add_node("scope_gate", scope_gate)
+    workflow.add_node("tool_router", tool_router)
+    workflow.add_node("responder", responder)
+    workflow.add_node("output_gate", output_gate)
+    workflow.add_node("handoff", handoff)
+    
+    # 2. Set entry point
+    workflow.set_entry_point("lang_detect")
+    
+    # 3. Static edges
+    workflow.add_edge("lang_detect", "intent")
+    workflow.add_edge("intent", "scope_gate")
+    
+    # 4. Conditional edge from scope_gate
+    def route_scope_gate(state: AgentState) -> str:
+        if state.get("escalate"):
+            return "handoff"
+        # If response is already set by a static template, go straight to output_gate
+        if state.get("response"):
+            return "output_gate"
+        return "tool_router"
+        
+    workflow.add_conditional_edges(
+        "scope_gate",
+        route_scope_gate,
+        {
+            "handoff": "handoff",
+            "output_gate": "output_gate",
+            "tool_router": "tool_router"
+        }
+    )
+    
+    # 5. Core flow edges
+    workflow.add_edge("tool_router", "responder")
+    workflow.add_edge("responder", "output_gate")
+    
+    # 6. Conditional edge from output_gate for regeneration
+    def route_output_gate(state: AgentState) -> str:
+        if state.get("regenerate"):
+            return "responder"
+        return END
+        
+    workflow.add_conditional_edges(
+        "output_gate",
+        route_output_gate,
+        {
+            "responder": "responder",
+            END: END
+        }
+    )
+    
+    # 7. Edge from handoff
+    workflow.add_edge("handoff", END)
+    
+    return workflow.compile()
+
