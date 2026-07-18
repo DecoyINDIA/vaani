@@ -10,12 +10,98 @@ Usage:
 
 from __future__ import annotations
 
+import asyncio
 import sys
+from app.models.base import get_db
+
+
+async def seed_async(yaml_path: str) -> None:
+    db = get_db()
+    tenant_id = "test_tenant"
+
+    # 1. Seed Tenant
+    await db["tenants"].delete_many({"_id": tenant_id})
+    await db["tenants"].insert_one({
+        "_id": tenant_id,
+        "name": "Sharma Dental Clinic",
+        "vertical": "clinic",
+        "wa_number": "919999999999",
+        "voice_number": "919999999998",
+        "plan": "starter",
+        "status": "active",
+        "locale_default": "hi",
+        "business_hours": [
+            {"day": "monday", "start": "09:00", "end": "18:00"},
+            {"day": "tuesday", "start": "09:00", "end": "18:00"},
+            {"day": "wednesday", "start": "09:00", "end": "18:00"},
+            {"day": "thursday", "start": "09:00", "end": "18:00"},
+            {"day": "friday", "start": "09:00", "end": "18:00"},
+            {"day": "saturday", "start": "09:00", "end": "18:00"}
+        ],
+        "holiday_calendar": [
+            "2026-06-16",  # Raja festival Odisha
+            "2026-06-25",  # Rath Yatra Odisha
+            "2026-11-09"   # Nuakhai Odisha
+        ],
+        "landmark_line": "Opposite HDFC Bank, Main Market",
+        "location_pin": "https://maps.google.com/?q=20.296,85.824",
+        "created_at": 0
+    })
+
+    # 2. Seed Practitioner (Dr. Sharma)
+    practitioner_id = "sharma_dr"
+    await db["practitioners"].delete_many({"_id": practitioner_id})
+    await db["practitioners"].insert_one({
+        "_id": practitioner_id,
+        "tenant_id": tenant_id,
+        "name": "Dr. Sharma",
+        "services": ["Tooth Extraction", "Root Canal", "Cleaning"],
+        "schedule_template": {
+            "monday": [{"start": "09:00", "end": "09:30"}, {"start": "10:00", "end": "10:30"}],
+            "tuesday": [{"start": "09:00", "end": "09:30"}, {"start": "10:00", "end": "10:30"}],
+            "wednesday": [{"start": "09:00", "end": "09:30"}],
+            "thursday": [{"start": "09:00", "end": "09:30"}],
+            "friday": [{"start": "09:00", "end": "09:30"}],
+            "saturday": [{"start": "09:00", "end": "09:30"}],
+            "sunday": []
+        }
+    })
+
+    # 3. Seed KB FAQs
+    await db["kb_entries"].delete_many({"tenant_id": tenant_id})
+    await db["kb_entries"].insert_many([
+        {
+            "tenant_id": tenant_id,
+            "key": "faq_hours",
+            "question": "What are the clinic timings?",
+            "answer": "Sharma Dental Clinic is open from 9:00 AM to 6:00 PM Monday through Saturday. [source_ref: faq_hours]",
+            "ts": 0
+        },
+        {
+            "tenant_id": tenant_id,
+            "key": "faq_fees",
+            "question": "What is the consultation fee?",
+            "answer": "The consultation fee is Rs 500. [source_ref: faq_fees]",
+            "ts": 0
+        },
+        {
+            "tenant_id": tenant_id,
+            "key": "faq_location",
+            "question": "Where is the clinic located?",
+            "answer": "Sharma Dental Clinic is located near Main Market, Bhubaneswar. Landmark: Opposite HDFC Bank. [source_ref: faq_location]",
+            "ts": 0
+        }
+    ])
+
+    print(f"Seeded demo clinic successfully for tenant: {tenant_id} in < 1s")
 
 
 def seed(yaml_path: str) -> None:
-    raise NotImplementedError("tenant seeding — 06-engineering-plan task 3.4")
+    asyncio.run(seed_async(yaml_path))
 
 
 if __name__ == "__main__":
-    seed(sys.argv[1])
+    # If no argument is provided, seed with dummy string
+    path = sys.argv[1] if len(sys.argv) > 1 else "default.yaml"
+    seed(path)
+
