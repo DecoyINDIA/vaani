@@ -1,12 +1,14 @@
 # GTM & Pricing Plan — Project Vaani
 
-**Version:** 1.0 | **Date:** 07 Jul 2026
+**Version:** 2.0 | **Date:** 18 Jul 2026
 
 ---
 
 ## 1. Positioning
 
 **One-liner:** "Your clinic's AI receptionist — answers every call and WhatsApp in Hindi, Odia or English, books appointments, and never takes a day off. ₹2,999/month."
+
+**Time-to-wow:** live on the clinic's own number, answering real patients, within 24 hours of "yes" — the demo *is* the onboarding (KB auto-draft, F-23). "Watch it answer your patients tomorrow" is a claim competitors doing 2-week flow-builder setups cannot match.
 
 **Against alternatives:**
 | Alternative | Their weakness | Our wedge |
@@ -45,7 +47,8 @@ Disqualifiers (do not sell to): hospitals/chains (procurement cycles), clinics w
 2. **Build-in-public (@subhamjena.ai, from Week 3):** weekly artifact from real pilot data — "Clinic X recovered ₹47K of missed bookings in 30 days" carousel; agent-call recordings (consented, anonymized); build logs. Purpose: inbound demos + talent/investor optionality. Fits existing Wired to Win series.
 3. **Referral loop (Month 4+):** 1 month free per referred paying clinic, both sides. Clinic owners cluster in WhatsApp groups and associations — one happy dentist is a distribution node.
 4. **Dental associations / dealer channel (Month 5+):** local IDA chapter demos; dental-supply salespeople as commissioned referrers (₹1,500/converted clinic).
-5. **NOT doing in v1:** paid ads (CAC unknowable pre-case-study), marketplaces, cold email at scale.
+5. **Product-led loops (Phase 3+):** discreet "Powered by Vaani" footer on patient-facing messages (removable on Pro) pointing to a demo-by-missed-call number — every patient conversation doubles as an ad to other SMB owners in the same WhatsApp ecosystem; referral CTA embedded in the weekly ROI summary owners already screenshot into their clinic-owner WhatsApp groups.
+6. **NOT doing in v1:** paid ads (CAC unknowable pre-case-study), marketplaces, cold email at scale.
 
 ## 5. Phase-0 Interview Script (validation)
 
@@ -77,6 +80,8 @@ Scoring: a qualified LOI = ≥10 missed contacts/day claimed + owner signed + au
 | Churned | — | ≤1 | ≤2 |
 
 CAC target (founder time excluded): <₹2,000/customer through Month 6. Payback <1 month at Starter pricing.
+
+**PMF instrumentation (don't scale on vibes):** Sean Ellis survey per owner at day 45 — ≥40% "very disappointed if Vaani disappeared" is the green light for city 2; <25% means fix value before scaling sales. Patient CSAT ≥4.3 (F-21) and the cohort retention curve (flat after month 2 = scale signal) reviewed monthly alongside logo counts — 25 logos with a decaying curve is a treadmill, not PMF.
 
 ## 8. Brand & Naming Note
 

@@ -1,6 +1,6 @@
 # Risk Register & Compliance Plan — Project Vaani
 
-**Version:** 1.0 | **Date:** 07 Jul 2026
+**Version:** 2.0 | **Date:** 18 Jul 2026
 
 ---
 
@@ -33,6 +33,7 @@ Scoring: Likelihood (L) and Impact (I) 1–5. Exposure = L×I. Review monthly; o
 5. **Auditability** — immutable per-message log incl. intent + gate decisions; monthly self-audit of 50 random transcripts against taxonomy; results filed in this register.
 6. **BSP-only access** — no unofficial libraries, no number rotation, single verified WABA per deployment.
 7. **Change control** — any new intent added to taxonomy requires a compliance note (is it a business task? is a template needed?) before release.
+8. **Interactive-feature discipline (v2)** — reply buttons, list messages, and WhatsApp Flows are service-window features and stay inside the closed taxonomy (a Flow is a structured form, not a conversation — it *narrows* scope risk vs free text). The in-window CSAT prompt (F-21) is a service message. Recall/re-visit nudges ("time for your 6-month cleaning") are **marketing-category** templates: excluded in v1 (PRD P2); if ever introduced, they require explicit marketing opt-in separate from booking consent and go through change control (#7).
 
 **Residual risk:** Meta's enforcement detection mechanics are not publicly documented; conservative posture above is the mitigation. Monitor BSP advisories monthly.
 

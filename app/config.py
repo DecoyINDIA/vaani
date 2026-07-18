@@ -1,0 +1,75 @@
+"""Central settings — the single place every environment variable is read.
+
+Grouped to mirror `.env.example` and the TRD ADRs. Nothing else in the codebase
+should call `os.environ`; import `settings` from here instead.
+"""
+
+from __future__ import annotations
+
+from functools import lru_cache
+from typing import Literal
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    # --- App ---
+    app_env: Literal["dev", "staging", "prod"] = "dev"
+    jwt_secret: str = "changeme"
+    jwt_access_ttl_min: int = 15
+    jwt_refresh_ttl_days: int = 30
+
+    # --- Datastore (ADR-03: MongoDB Atlas ap-south-1 + Redis) ---
+    mongodb_uri: str = "mongodb://localhost:27017/vaani"
+    redis_url: str = "redis://localhost:6379/0"
+
+    # --- WhatsApp / BSP (ADR-04: Meta Cloud API via BSP) ---
+    meta_app_secret: str = ""
+    meta_webhook_verify_token: str = ""
+    bsp_access_token: str = ""
+    bsp_waba_id: str = ""
+    bsp_phone_number_id: str = ""
+
+    # --- LLM (ADR-02: OpenRouter, model-pinned per node) ---
+    openrouter_api_key: str = ""
+    llm_model_classifier: str = ""       # small/cheap model, temp 0
+    llm_model_responder: str = ""        # frontier model
+    llm_model_fallback_provider: str = ""
+
+    # --- Voice (ADR-05, Phase 2: Exotel + Sarvam-first STT/TTS) ---
+    exotel_sid: str = ""
+    exotel_api_key: str = ""
+    exotel_api_token: str = ""
+    exotel_subdomain: str = ""
+    stt_provider: Literal["sarvam", "deepgram", "google"] = "sarvam"
+    tts_provider: Literal["sarvam", "elevenlabs"] = "sarvam"
+    sarvam_api_key: str = ""
+    deepgram_api_key: str = ""
+    elevenlabs_api_key: str = ""
+
+    # --- Payments (Razorpay: subscriptions, UPI Autopay, payment links) ---
+    razorpay_key_id: str = ""
+    razorpay_key_secret: str = ""
+    razorpay_webhook_secret: str = ""
+
+    # --- Billing / GST (F-17) ---
+    xolver_gstin: str = ""
+    invoice_sac_code: str = "998314"
+
+    # --- Observability ---
+    sentry_dsn: str = ""
+
+    # --- Ops ---
+    audit_log_retention_days: int = 90
+    media_purge_days: int = 30
+
+
+@lru_cache
+def get_settings() -> Settings:
+    """Cached accessor so settings are parsed once per process."""
+    return Settings()
+
+
+settings = get_settings()
