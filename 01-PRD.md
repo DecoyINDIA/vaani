@@ -1,6 +1,6 @@
 # PRD — Project Vaani: AI Front-Desk Agent for Indian SMBs
 
-**Version:** 1.0 | **Date:** 07 Jul 2026 | **Owner:** Subham Jena (Xolver) | **Status:** Draft for validation
+**Version:** 2.0 | **Date:** 18 Jul 2026 | **Owner:** Subham Jena (Xolver) | **Status:** Draft for validation — v2.0 adds the top-1% experience layer (interactive booking UX, patient memory, CSAT, activation metric)
 
 ---
 
@@ -33,6 +33,10 @@ Every Indian SMB hires an AI employee before it builds a website. Vaani is that 
 | G3 | Retention | Monthly logo churn | <5% | <3% |
 | G4 | Unit economics | Gross margin after AI + telephony + BSP costs | >60% | >70% |
 | G5 | Containment | % of conversations resolved without human handoff | >70% | >85% |
+| G6 | Patient experience | In-chat CSAT (1-tap, post-resolution — F-21) | ≥4.3/5 | ≥4.6/5 |
+| G7 | Activation | Clinics with first organic booking ≤72h of go-live | 100% | ≤24h |
+
+**North-star metric: confirmed bookings handled end-to-end by Vaani per tenant per week.** Every feature must move this number or a direct input to it (containment, conversion, retention). If a proposed feature can't name its input, it doesn't ship.
 
 ## 5. Non-Goals (v1)
 
@@ -94,6 +98,9 @@ Every Indian SMB hires an AI employee before it builds a website. Vaani is that 
 | F-07 | Audit log | Every message, intent classification, tool call, and handoff logged immutably per tenant, retained 90 days (configurable), exportable. Required for Meta scope audits and DPDP. |
 | F-08 | DPDP consent & notice | First-contact message includes purpose notice + link to privacy notice; consent state stored; data principal request handling process documented (see Compliance doc §3). |
 | F-09 | Multi-tenant isolation | Tenant ID enforced at every query; cross-tenant data access impossible by construction (tested). |
+| F-18 | Interactive booking UX (buttons + list picker) | Slot selection presented as a WhatsApp list message (top 8 slots + "more options"); confirmations via reply buttons (Confirm / Change / Cancel). A patient completes a booking in ≤3 taps after stating intent; free-text always works as fallback. Booking conversion target raised to ≥70% (from 60%) — taps beat typing, especially for low-literacy and elderly patients. |
+
+**P0 experience bar (applies to every P0 flow):** p50 message→reply ≤3s (p95 ≤10s); mark-as-read + typing indicator fired ≤1s after receipt — perceived latency is product, budgeted like COGS; returning patients greeted by name with language remembered; no flow makes the patient type a date/time when a picker can be offered.
 
 ### P1 — Nice-to-Have (fast follows, weeks 7–16)
 | ID | Requirement |
@@ -106,22 +113,30 @@ Every Indian SMB hires an AI employee before it builds a website. Vaani is that 
 | F-15 | Waitlist + no-show recovery flow. |
 | F-16 | Missed-call-to-WhatsApp bridge: patient gives the clinic a missed call → Vaani auto-opens a WhatsApp conversation ("Aapne call kiya tha — appointment book karna chahenge?") via approved utility template. Converts India's missed-call habit into bookings; also the cheapest patient-acquisition hook for the clinic ("miss call do, appointment pao" on the clinic board). Requires prior opt-in or existing-patient relationship per Meta policy. |
 | F-17 | GST-compliant subscription invoicing for owners: auto-generated tax invoice (Xolver GSTIN, SAC code, 18% GST, clinic GSTIN if registered) emailed/WhatsApped monthly. SMB owners' accountants ask for this on day one. |
+| F-19 | WhatsApp Flows native booking form (in-chat date + slot picker); A/B against the F-18 list picker on conversion — keep whichever wins per language cohort. |
+| F-20 | Returning-patient memory: greet by name, recall language/practitioner preference and last service; one-tap rebook ("Same as last time — Dr. Mehta, cleaning?"). Repeat booking in ≤2 taps. |
+| F-21 | In-chat CSAT: single-tap 👍/👎 (optional star follow-up) after each resolved conversation. Feeds G6 and the quality flywheel — every 👎 auto-queued as an eval candidate (TRD §10). |
+| F-22 | Cancellation auto-backfill: on any cancellation, waitlisted patients instantly get a slot offer (first tap wins the slot). Upgrades F-15 from a list into a revenue engine — cancelled slots refill themselves. |
+| F-23 | KB auto-draft at onboarding: scrape Google Business Profile + clinic website (+ OCR of a price-list photo) into a draft KB the owner approves line-by-line on WhatsApp. Onboarding ≤1 hour; go-live same day. |
 
 ### P2 — Future (architectural insurance only; do not build)
-- Self-serve onboarding & KB editor; owner Expo app; salon/coaching vertical packs; outbound invoice chasing for service SMBs; multi-branch support; analytics benchmarking across tenants (aggregated, anonymized, consent-gated).
+- Self-serve onboarding & KB editor; owner Expo app; salon/coaching vertical packs; outbound invoice chasing for service SMBs; multi-branch support; analytics benchmarking across tenants (aggregated, anonymized, consent-gated); no-show risk scoring with targeted confirm-or-release; recall/re-visit nudges (marketing-category templates — compliance-gated, see Compliance doc §2); intent-classifier fine-tune on the consented vernacular corpus (moat play — TRD §10).
 
 ## 8. Success Metrics & Measurement
 
 **Leading (weekly):**
 - Containment rate = resolved conversations / total conversations. Target >70% by week 8 of pilot.
-- Booking conversion = bookings / booking-intent conversations. Target >60%.
+- Booking conversion = bookings / booking-intent conversations. Target ≥70% with the interactive picker (F-18); if it sits below 60%, treat it as a UX bug (picker rendering, slot relevance) before blaming the model.
 - p95 response latency (WhatsApp ≤10s; voice turn ≤3.5s).
 - Escalation SLA: staff notified ≤30s, first human response ≤10 min during business hours.
 - Hallucination incidents (wrong fee/time/service stated): target 0; any incident = P0 bug.
+- Patient CSAT (F-21): ≥4.3/5; every 👎 reviewed within 24h and auto-queued as an eval candidate.
 
 **Lagging (monthly):**
 - Recovered bookings/customer/month (G1) — measured as bookings created outside business hours + bookings created while line busy + bookings from previously-missed numbers.
 - Logo churn <5%; NPS ≥ 40 at day 60; gross margin >60%.
+- Activation (G7): first organic booking ≤72h from go-live for 100% of onboarded clinics; a clinic that misses this gets a same-week intervention (KB gap? number not publicized? staff intercepting?).
+- PMF check: Sean Ellis survey to owners at day 45 ("how disappointed if Vaani disappeared?") — ≥40% "very disappointed" = green light to scale; <25% = fix value before scaling sales.
 
 **Measurement method:** all metrics computed from the audit log + bookings collection; dashboard "Metrics" page; weekly automated report. No metric may rely on manual counting.
 

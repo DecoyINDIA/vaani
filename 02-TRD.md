@@ -1,6 +1,6 @@
 # TRD — Project Vaani: Technical Requirements & Architecture
 
-**Version:** 1.0 | **Date:** 07 Jul 2026 | **Owner:** Subham Jena (Xolver) | **Status:** Draft
+**Version:** 2.0 | **Date:** 18 Jul 2026 | **Owner:** Subham Jena (Xolver) | **Status:** Draft — v2.0 adds interactive messaging, degradation ladder (§9), quality flywheel (§10)
 
 ---
 
@@ -69,6 +69,7 @@
 ### ADR-05: Voice pipeline (Phase 2) — Exotel SIP + Sarvam-first STT/TTS
 **Decision:** Exotel for Indian numbers/SIP (fallback: Plivo); STT bake-off between Sarvam and Deepgram on Hindi/Odia phone audio (8kHz, noisy); TTS: Sarvam (Indic) primary, ElevenLabs fallback for English.
 **Rationale:** Indic accuracy is the product; decide on data, not brand. **Latency budget (hard):** STT partials ≤300ms; LLM first token ≤700ms; TTS first audio ≤400ms; end-to-end first response ≤2.0s. If budget unachievable with chosen vendors, use streaming + filler acknowledgments ("जी, एक second...") — measured, not assumed.
+**v2 addition:** the bake-off includes one realtime **speech-to-speech** model (GPT-realtime-class / Gemini-Live-class) as a third architecture option alongside the two cascaded pipelines. If a duplex model wins on latency + Hindi/Odia accuracy at ≤₹4/min, the cascade becomes the fallback, not the default. Same scope gates apply regardless of architecture — the s2s model's tool calls route through the identical LangGraph tools, and out-of-scope handling stays templated (the s2s system prompt cannot be the compliance boundary).
 
 ### ADR-06: Hosting — single VPS/container platform first
 **Decision:** Railway/Render or a Hetzner/DO VPS with Docker Compose (API, workers, Redis); Atlas managed separately. Move to k8s NEVER before 100 tenants.
@@ -86,7 +87,9 @@ tenants        { _id, name, vertical, wa_number, voice_number, plan, status,
                  gstin?, landmark_line, location_pin, created_at }
 users          { _id, tenant_id, role: owner|staff, phone, wa_id, name, notif_prefs }
 contacts       { _id, tenant_id, wa_id, phone, name?, lang_pref, consent:
-                 { status, ts, notice_version }, tags[], created_at }
+                 { status, ts, notice_version }, tags[], created_at,
+                 profile: { preferred_practitioner?, last_service?, last_visit?,
+                            visit_cadence_days?, csat_avg? } }   // patient memory (F-20)
 conversations  { _id, tenant_id, contact_id, channel: wa|voice, state:
                  bot|human|closed, assigned_to?, started_at, last_msg_at }
 messages       { _id, tenant_id, conversation_id, direction, type, text,
@@ -107,6 +110,10 @@ audit_log      { _id, tenant_id, actor: agent|user|owner|system, event_type,
                  payload, conversation_id?, ts }        // append-only, TTL 90d default
 usage_meters   { tenant_id, period, wa_conversations, voice_minutes,
                  llm_tokens_in/out, cost_estimate }
+eval_candidates{ _id, tenant_id, conversation_id, source: escalation|thumbs_down|
+                 gate_rejection|random_sample, status: queued|labeled|added|rejected, ts }
+prompt_registry{ _id, node, lang, version, hash, eval_report_ref, active, ts }
+                 // active prompt set is a deployable artifact; rollback = flip pointer
 ```
 
 **Indexes:** every collection compound-indexed on (tenant_id, …). `slots` unique on (tenant_id, practitioner_id, start). Booking creation uses `findOneAndUpdate(status:"open" → "held")` with 120s hold_expiry, then confirm — race-safe by construction.
@@ -158,13 +165,14 @@ GET  /api/metrics/summary?period=           GET  /api/audit/export?from=&to=
 - Free-form replies only inside the 24-hour customer service window.
 - Outside window: pre-approved **utility** templates only (booking confirmation, reminders, payment link). No marketing templates in v1.
 - Template pack (submit Week 2): `booking_confirm`, `booking_reminder_24h`, `booking_reminder_2h`, `payment_link`, `escalation_alert_staff`, `weekly_summary_owner`, `consent_notice`, `missed_call_bridge` (F-16, utility category — opt-in gated).
+- **Interactive messages (v2):** inside the 24h window, reply buttons and list messages are ordinary service messages — they are the **default booking UX** (F-18: list picker for slots, buttons for Confirm/Change/Cancel), not an enhancement. WhatsApp Flows (F-19) for the native booking form; Flow JSON versioned in repo, tested in draft mode before publish. CSAT prompt (F-21) sent in-window immediately on resolution — no template needed. Mark-as-read + typing indicator fired ≤1s after every inbound (perceived-latency budget).
 
 ## 6. Non-Functional Requirements
 
 | Category | Requirement |
 |----------|-------------|
-| Latency | WhatsApp: p50 ≤4s, p95 ≤10s message→reply. Voice: see ADR-05 budget. |
-| Availability | 99.5% pilot target (monthly). Status page not required; owner WhatsApp broadcast on incidents >15 min. |
+| Latency | WhatsApp: p50 ≤3s, p95 ≤10s message→reply; mark-as-read + typing indicator ≤1s after receipt. Voice: see ADR-05 budget. |
+| Availability | 99.5% pilot target (monthly); 99.9% from Phase 3 via the degradation ladder (§9) — the bar is "never silent", not "never degraded". Status page not required; owner WhatsApp broadcast on incidents >15 min. |
 | Throughput | Design for 50 tenants × 100 conv/day; peak 5 msg/s. Queue absorbs bursts; workers horizontal-scalable. |
 | Security | TLS everywhere; secrets in env/secret manager; JWT (15-min access + refresh); webhook signature verification mandatory; per-tenant API isolation tests in CI; OWASP top-10 checklist before pilot. |
 | Data protection | India-region storage; PII fields (phone, name) encrypted at rest (Atlas CSFLE for phone numbers); audit log append-only; retention 90d default, per-tenant configurable; deletion pipeline for DPDP requests (≤7 days SLA). |
@@ -191,5 +199,32 @@ Voice (Pro): STT+TTS+LLM+telephony ≈ ₹2.5–4.0/min → 300 included minutes
 ## 8. Explicit Build/Buy/Defer
 
 - **Buy:** BSP messaging, telephony, STT/TTS, payments (Razorpay), error tracking.
-- **Build:** agent graph, scope gates, booking engine, KB+RAG, dashboard, metering, audit.
+- **Build:** agent graph, scope gates, booking engine, KB+RAG, dashboard, metering, audit, degradation ladder, quality flywheel.
 - **Defer:** vector DB, k8s, data warehouse, SSO, mobile app, EHR integrations.
+
+## 9. Resilience — Degradation Ladder (never go silent)
+
+A top-1% agent's failure mode is graceful, honest, and fast. Every dependency has a scripted fallback; the patient always gets something useful within the latency budget. "Sorry, try later" is a P1 bug; silence is a P0 bug.
+
+| Failure | Degradation step |
+|---------|------------------|
+| Primary LLM slow/down | OpenRouter failover to second provider (ADR-02) → if both down, **menu mode**: static capability menu + button-driven booking. Menu mode needs no LLM at all — the list picker (F-18) + slots/booking tools are fully deterministic, so bookings keep flowing during an LLM outage. |
+| Classifier down | Keyword/regex pre-router covers the top intents (book, cancel, hours, fees, human); everything else → handoff. |
+| Atlas Search degraded | KB falls back to exact-field lookup for structured fields (hours, fees, address); free-text FAQs answer "I'll check with the clinic" + escalate. |
+| Redis down | Webhook still 200-acks; messages persist to a Mongo fallback queue; workers drain on recovery. A message is never dropped. |
+| Meta send API down | Retry with backoff; >5 min sustained → owner alerted out-of-band per runbook. |
+| Voice vendor down (P2) | Calls forward straight to the owner's phone, as if Vaani weren't there — the clinic loses nothing it didn't already lack. |
+
+Circuit breakers per vendor (open after 5 consecutive failures, half-open probe at 30s). Degraded state is visible on the dashboard and in the daily health/cost report. **Chaos drill before pilot:** kill each dependency in staging once, verify the ladder holds; scripted in `ops/`.
+
+## 10. Quality Flywheel (the compounding moat)
+
+The eval suite (§6) is the gate; the flywheel is what makes it compound. This — not features — is the durable answer to copycat risk (R7): anyone can wrap the same APIs; nobody else has the labeled vernacular clinic corpus.
+
+1. **Auto-capture:** every escalation, every 👎 CSAT (F-21), every output-gate rejection, plus a 5% random sample, auto-create `eval_candidates` rows. Zero manual collection.
+2. **Label loop:** weekly 30-min labeling ritual (Subham + native speakers as needed) converts candidates → eval-set entries. Target: eval set grows ≥50 utterances/week during pilot.
+3. **Shadow replay:** every prompt/model/taxonomy change replays the last 7 days of production traffic offline (inputs only, no sends) and diffs intent/gate/response decisions against what production did. Ship only if strictly better or neutral per language — catches per-language regressions the static eval set misses.
+4. **LLM-as-judge:** nightly judge pass scores a transcript sample on groundedness, register (respectful आप/ଆପଣ forms), and language-match; trends on the quality dashboard; >2pt drop = alarm before owners notice.
+5. **Corpus → moat:** consented, anonymized utterances accumulate into the vernacular corpus (DPDP-clean per Compliance §3 — anonymization pipeline, no cross-tenant profiling). At ~10K labeled utterances, fine-tune the intent classifier: cost per classification drops, F1 rises, and each new language pack starts from a better base.
+
+Prompt versions live in `prompt_registry` with eval-report refs; the active prompt set is a deployable artifact — rollback = flip the version pointer, no redeploy.

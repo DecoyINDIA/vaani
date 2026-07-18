@@ -1,6 +1,6 @@
 # Phased Build Plan — Project Vaani
 
-**Version:** 1.0 | **Date:** 07 Jul 2026 | Assumes: Subham + Antigravity/Claude Code execution model, 1 part-time contractor for voice phase if needed. Weeks are calendar weeks from kickoff (Week 1 = 14 Jul 2026).
+**Version:** 2.0 | **Date:** 18 Jul 2026 | Assumes: Subham + Antigravity/Claude Code execution model, 1 part-time contractor for voice phase if needed. Weeks are calendar weeks from kickoff (Week 1 = 14 Jul 2026).
 
 **Rule:** every phase has an entry gate and an exit gate. No phase starts before its entry gate passes. Gates are binary — no "mostly done."
 
@@ -39,21 +39,25 @@
 - Slots model + atomic hold/confirm; practitioner schedules; booking create/move/cancel tools.
 - KB collection + Atlas Search retrieval; KB-grounded responder with citation requirement; output scope gate live.
 - Templated flows: medical refusal, out-of-scope, escalation copy (4 languages).
-- **Milestone M1.2:** end-to-end booking on test number in Hindi + Hinglish; 500-concurrent race test passes with 0 double-bookings.
+- Interactive booking UX (F-18): list-message slot picker (top 8 + "more"), reply-button Confirm/Change/Cancel, free-text fallback; per-step conversion instrumented.
+- **Milestone M1.2:** end-to-end booking on test number in Hindi + Hinglish **in ≤3 taps after intent**; 500-concurrent race test passes with 0 double-bookings.
 
 ### Week 5 — Handoff + dashboard
 - Handoff state machine + staff WhatsApp alerts; escalation inbox.
 - Dashboard v1: conversations, transcripts, bookings calendar, escalations, settings, KB editor (Xolver-facing initially).
 - Audit log + usage metering + daily cost report.
 - Consent/notice message on first contact; contact consent state.
+- CSAT capture (F-21) + quality flywheel v0: 👎/escalations/gate-rejections auto-queued as eval candidates; weekly labeling ritual on the calendar; degradation-ladder chaos drill in staging (TRD §9).
 - **Milestone M1.3:** full P0 acceptance checklist passes in UAT with 2 non-technical testers; eval set grown to 300 utterances, intent F1 ≥90%, factual-claim hallucination = 0.
 
 ### Week 6 — Pilot onboarding
+- KB auto-draft v0 (F-23): Google Business Profile + website scrape → draft KB sheet, reviewed with the owner during onboarding (target: clinic #5 onboarded in ≤1 hour).
 - White-glove onboard 5 LOI clinics: KB filled, schedules loaded, holiday calendar seeded (national + Odisha festivals — Raja, Rath Yatra, Nuakhai — plus clinic-specific closures), location pin + landmark line captured, staff trained (30-min session each), number forwarded/publicized on their profiles.
 - Daily monitoring ritual: review 100% of transcripts for week 1 of each pilot; fix taxonomy/KB gaps same-day.
 - **Milestone M1.4:** 5 clinics live; first organic booking completed without human help.
 
 **Exit gate G1 (measured over pilot weeks 6–8):** containment ≥60%, booking conversion ≥50%, hallucination incidents = 0, at least 3 of 5 owners say they'd pay when trial ends (verbal). **If containment <45% after 2 weeks of tuning: freeze features, fix agent quality only.**
+*Top-1% bar (targets, not kill thresholds — gates stay as written):* containment ≥70%, conversion ≥70% (interactive picker), CSAT ≥4.3, every clinic's first organic booking ≤72h of go-live (G7).
 
 ---
 
@@ -88,7 +92,8 @@
 | Workstream | Contents |
 |------------|----------|
 | Convert | Trial→paid flow (Razorpay subscriptions/UPI Autopay); GST tax invoicing live before first paid invoice (F-17); pilot conversion target ≥60%. |
-| Retention features | Reminders (F-11) if not already shipped, payments (F-12), weekly ROI summary (F-13), no-show recovery (F-15), missed-call-to-WhatsApp bridge (F-16 — doubles as the demo closer for city-2 sales). Ship ROI summary FIRST — it sells the renewal. |
+| Retention features | Reminders (F-11) if not already shipped, payments (F-12), weekly ROI summary (F-13), no-show recovery + cancellation auto-backfill (F-15/F-22 — cancelled slots refill themselves from the waitlist), missed-call-to-WhatsApp bridge (F-16 — doubles as the demo closer for city-2 sales). Ship ROI summary FIRST — it sells the renewal. |
+| Experience pack | WhatsApp Flows booking form (F-19) A/B'd against the list picker per language cohort; patient memory + one-tap rebook (F-20); classifier fine-tune once the labeled corpus passes 10K utterances (TRD §10). |
 | Onboarding efficiency | Reduce white-glove onboarding to ≤3 hours/clinic (templates, KB import sheet); prerequisite for scaling without hiring. |
 | Sales | 3 case studies with hard numbers; referral offer (1 month free per referred clinic); expand to 2nd city via dental association/WhatsApp groups (GTM doc). |
 | Hardening | On-call basics, restore drill, quarterly DPDP audit, Meta scope self-audit (monthly transcript sample vs intent taxonomy). |
@@ -109,6 +114,7 @@
 3. **Compliance self-audit:** monthly — random 50 transcripts checked against intent scope; template usage audit; consent-state audit. Logged in compliance register.
 4. **Cost report:** weekly per-tenant COGS review; any tenant with GM <40% triggers plan-fit conversation or fair-use enforcement.
 5. **Build in public:** one artifact/week from real pilot data (anonymized) → @subhamjena.ai. GTM runs from Week 3, not after launch.
+6. **Quality flywheel ritual (TRD §10):** weekly 30-min eval-candidate labeling (eval set +≥50 utterances/wk during pilot); shadow replay required on every prompt/taxonomy PR; nightly LLM-judge trend reviewed in the weekly ritual.
 
 ## Effort & Budget Summary
 

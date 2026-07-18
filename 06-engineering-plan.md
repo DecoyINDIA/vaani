@@ -1,7 +1,7 @@
 # Engineering Build Plan — Project Vaani (End-to-End)
 
-**Version:** 1.0 | **Date:** 08 Jul 2026 | **Owner:** Subham Jena (Xolver)
-**Scope:** everything from `git init` to 25 tenants in production. Business phasing, gates, and budget live in [03-build-plan.md]; this doc is the engineering execution layer under it. Stack per TRD ADRs 01–07 (LangGraph, OpenRouter, MongoDB Atlas Mumbai + Redis, Meta Cloud API via BSP, Exotel, single VPS).
+**Version:** 2.0 | **Date:** 18 Jul 2026 | **Owner:** Subham Jena (Xolver)
+**Scope:** everything from `git init` to 25 tenants in production. Business phasing, gates, and budget live in [03-build-plan.md]; this doc is the engineering execution layer under it. **Execution discipline: every task here runs as a TDD loop per [07-tdd-loops.md] — tests first, loop closes only on green, next loop blocked until then.** Stack per TRD ADRs 01–07 (LangGraph, OpenRouter, MongoDB Atlas Mumbai + Redis, Meta Cloud API via BSP, Exotel, single VPS).
 
 ---
 
@@ -74,7 +74,7 @@ Ordering principle: **walking skeleton first** — a message travels the full pi
 | 3.4 | Mongo collections + indexes from TRD §3 (incl. `holiday_calendar`, `gstin`, `landmark_line`, `location_pin` on tenants); `seed_tenant.py` v0 | Seed script creates a demo clinic in <1 min |
 | 3.5 | LangGraph skeleton: lang_detect (lingua + script heuristic) → intent_classifier (small model, few-shot per lang, temp 0) → scope_gate → responder **stub** (echoes intent) → output_gate **stub** | Live on test number: reply names detected language + intent |
 | 3.6 | Eval harness v0 + 150-utterance seed set (write 40/lang from interview transcripts + synthetic) | `python evals/run_evals.py` prints per-lang F1; CI gate wired at ≥85% |
-| 3.7 | WhatsApp send wrapper + 24h-window tracker (last inbound ts per contact; free-form only inside window) | Attempted out-of-window free-form send raises, forces template path |
+| 3.7 | WhatsApp send wrapper + 24h-window tracker (last inbound ts per contact; free-form only inside window); mark-as-read + typing indicator fired on every inbound (perceived-latency budget ≤1s) | Attempted out-of-window free-form send raises, forces template path; typing indicator visible ≤1s in manual device test |
 
 **Exit:** M1.1 — echo-with-intent bot on test number, F1 ≥85% on seed set.
 
@@ -88,6 +88,7 @@ Ordering principle: **walking skeleton first** — a message travels the full pi
 | 4.4 | KB: structured fields + FAQ entries, embedding on write, Atlas Search hybrid (BM25 + vector) retrieval tool | Retrieval eval: top-3 hit rate ≥90% on 50 seeded Q→entry pairs |
 | 4.5 | Real responder: KB/tool-grounded generation with **citation requirement** (every factual claim carries `source_ref`); output_gate v1: reject uncited fee/time/service/address claims → regenerate once → fallback template | Hallucination eval (30 trap questions where KB lacks the answer): 0 fabricated facts |
 | 4.6 | Static template flows: medical refusal, out-of-scope + capability menu, de-escalation, location pin + landmark reply — ×4 languages, respectful register | Graph test: `medical_question` and `out_of_scope` paths never touch the LLM responder node |
+| 4.7 | Interactive booking UX (F-18): list-message slot picker (top 8 + "more"), reply-button Confirm/Change/Cancel, free-text fallback path; per-step conversion counters | Booking completable in ≤3 taps after intent on a real device; picker→confirm conversion visible in daily report |
 
 **Exit:** M1.2 — end-to-end booking in Hindi + Hinglish on test number; race test green.
 
@@ -103,6 +104,8 @@ Ordering principle: **walking skeleton first** — a message travels the full pi
 | 5.6 | DPDP: first-contact consent notice (per lang, versioned), consent state on contact, `dpdp_delete.py` erasure pipeline | Erasure run removes contact PII across all collections; audit entry retained pseudonymized |
 | 5.7 | Eval set → 300 utterances; JWT auth (15m access + refresh); tenant-isolation tests in CI (every owner_api route probed cross-tenant) | F1 ≥90%; cross-tenant probe suite = 100% denied |
 | 5.8 | Security pass: OWASP top-10 checklist, rate limits, secrets audit | Checklist filed in repo `ops/` |
+| 5.9 | CSAT (F-21) + quality flywheel v0: post-resolution 👍/👎 buttons; 👎/escalations/output-gate rejections + 5% random sample → `eval_candidates`; shadow-replay harness (replay last-7-days traffic offline, diff decisions) | A 👎 appears in the review digest ≤1 min after tap; a prompt-change PR without a shadow-replay report fails CI |
+| 5.10 | Degradation ladder (TRD §9): OpenRouter failover → LLM-free **menu mode** (list picker + deterministic tools); keyword pre-router; Mongo fallback queue; per-vendor circuit breakers; chaos drill script in `ops/` | Staging chaos drill: each dependency killed once, bookings still completable in menu mode, zero dropped messages |
 
 **Exit:** M1.3 — full P0 acceptance in UAT; F1 ≥90%; hallucination = 0.
 
@@ -114,6 +117,7 @@ Ordering principle: **walking skeleton first** — a message travels the full pi
 | 6.2 | Backup/restore drill: Atlas continuous backup verified, restore to staging executed once, timed | RTO ≤15 min demonstrated, logged in `ops/restore_runbook.md` |
 | 6.3 | Onboard 5 LOI clinics via `seed_tenant.py` + KB YAML sheet: KB, schedules, holiday calendar (Odisha set), location pin + landmark, staff training | Each onboarding ≤1 day wall clock; checklist per clinic |
 | 6.4 | Transcript review tooling: daily digest of 100% pilot conversations, one-tap "add to eval set" flagging | Taxonomy/KB misses fixed same-day during pilot week 1 |
+| 6.5 | KB auto-draft (F-23) v0: Google Business Profile + website scrape (+ OCR of price-list photo) → draft KB YAML → owner approves line-by-line during onboarding | Clinic #5 onboarded in ≤1 hour using the auto-draft |
 
 **Exit:** M1.4 — 5 clinics live; first organic booking with zero human help.
 
@@ -150,9 +154,10 @@ Build order is deliberate: **the thing that sells the renewal ships first.**
 3. **Reminders (F-11)** if not shipped in pilot; reschedule-from-reminder deep flow.
 4. **Payments (F-12):** `payment_link_create` tool + Razorpay webhook reconciliation + max-2 nudge sequence (opt-in gated).
 5. **Missed-call bridge (F-16):** Exotel missed-call number → `missed_call_bridge` utility template → conversation opens. Doubles as the demo closer for city-2 sales.
-6. **No-show recovery + waitlist (F-15).**
+6. **No-show recovery + waitlist + cancellation auto-backfill (F-15/F-22):** cancel event → instant slot offer to waitlisted patients, first tap wins; cancelled slots refill themselves.
 7. **Onboarding efficiency:** KB import sheet + self-serve-ish KB editor for owners (US-9) → white-glove ≤3h/clinic.
 8. **Hardening:** on-call basics (Sentry alert → phone), quarterly restore + DPDP drills, monthly Meta scope self-audit tooling (random 50-transcript sampler with taxonomy diff report — automate the compliance calendar).
+9. **Experience pack (runs alongside 3–6, not after):** WhatsApp Flows booking form (F-19) A/B'd against the list picker per language cohort; patient memory + one-tap rebook (F-20, `contacts.profile`); classifier fine-tune once the labeled corpus passes 10K utterances (TRD §10) — cost per classification drops as quality rises.
 
 **Scale posture check at 25 tenants:** still one VPS (peak <5 req/s). Only permitted infra change: split worker container from API container if reminder bursts delay inbound p95. No k8s, no microservices, no vector DB.
 
@@ -167,6 +172,8 @@ Build order is deliberate: **the thing that sells the renewal ships first.**
 | Observability | Structured JSON logs with `tenant_id`/`conversation_id` on every line; per-node latency + token counters; Sentry; daily per-tenant cost report (launch blocker). |
 | Data | India region only; phone numbers CSFLE-encrypted; audit append-only, 90d TTL default; media purged at 30d; erasure pipeline ≤7d SLA. |
 | Testing pyramid | Unit (tools, resolver, window tracker) → integration (webhook→reply against mocked Meta) → eval suite (the real quality gate) → scripted human UAT per milestone. |
+| Resilience | Degradation ladder per TRD §9: per-vendor circuit breakers; menu mode (LLM-free booking) proven in a staging chaos drill before pilot; a message is never dropped (Mongo fallback queue when Redis is down). |
+| Quality flywheel | Shadow replay of last-7-days traffic required on every prompt/taxonomy PR (CI-enforced); nightly LLM-judge trend (groundedness, register, language-match); weekly labeling ritual grows the eval set ≥50 utterances/wk during pilot (TRD §10). |
 | Definition of done (global) | Code + tests + eval pass + audit coverage + cost metered + doc line in the relevant runbook. Anything user-facing exists in all 4 languages or doesn't ship. |
 
 ## 5. Dependency-Critical Path (what can stall the build)

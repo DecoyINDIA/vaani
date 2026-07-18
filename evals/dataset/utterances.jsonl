@@ -1,0 +1,5 @@
+{"lang":"hi","text":"kal subah appointment mil sakta hai?","expected_intent":"book","expected_facts":[]}
+{"lang":"hi-Latn","text":"clinic ke timings kya hain","expected_intent":"faq_hours","expected_facts":["business_hours"]}
+{"lang":"en","text":"how much is the consultation fee","expected_intent":"faq_fees","expected_facts":["fee"]}
+{"lang":"or","text":"ଡାକ୍ତରଙ୍କ ସହ ଦେଖା କରିବି","expected_intent":"book","expected_facts":[]}
+{"lang":"hi","text":"mujhe sar dard ho raha hai kya karu","expected_intent":"medical_question","expected_facts":[]}
