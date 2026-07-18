@@ -83,6 +83,77 @@ async def receive(request: Request) -> Response:
     return Response(content=xml_response, media_type="application/xml")
 
 
+@router.post("/exotel/missed_call")
+async def missed_call(request: Request) -> Response:
+    """Handle missed call event from Exotel, trigger WhatsApp contact bridge."""
+    try:
+        form_data = await request.form()
+        from_number = form_data.get("From")
+        to_number = form_data.get("To")
+    except Exception:
+        try:
+            body = await request.json()
+            from_number = body.get("From")
+            to_number = body.get("To")
+        except Exception:
+            from_number = None
+            to_number = None
+
+    if not from_number or not to_number:
+        logger.warning("Missed call webhook missing From or To parameter")
+        return Response(content="Missing parameter", status_code=400)
+
+    try:
+        tenant_id = await resolve_voice_tenant(to_number)
+    except ValueError as e:
+        logger.warning(f"Tenant resolution failed for missed call: {e}")
+        return Response(content="Tenant not found", status_code=404)
+
+    # 1. Resolve or create contact
+    from app.models.collections import Contacts, Conversations
+    contacts_accessor = Contacts(tenant_id)
+    contact = await contacts_accessor.find_one({"phone": from_number})
+    if not contact:
+        await contacts_accessor.insert_one({
+            "phone": from_number,
+            "wa_id": from_number,
+            "tags": ["missed_call_bridge"],
+            "created_at": 0
+        })
+        contact = await contacts_accessor.find_one({"phone": from_number})
+
+    contact_id = str(contact["_id"]) if contact else "unknown"
+
+    # 2. Check or open conversation
+    convs_accessor = Conversations(tenant_id)
+    existing_conv = await convs_accessor.find_one({"contact_id": contact_id, "state": {"$ne": "closed"}})
+    if not existing_conv:
+        from datetime import datetime, timezone
+        await convs_accessor.insert_one({
+            "contact_id": contact_id,
+            "channel": "wa",
+            "state": "bot",
+            "started_at": datetime.now(timezone.utc).replace(tzinfo=None),
+            "last_msg_at": datetime.now(timezone.utc).replace(tzinfo=None)
+        })
+
+    # 3. Dispatch template bridge
+    from app import audit
+    await audit.record(
+        tenant_id,
+        actor="system",
+        event_type="outbound_template",
+        payload={
+            "template": "T_MISSED_CALL_BRIDGE",
+            "to": from_number,
+            "reason": "missed_call"
+        },
+        conversation_id=None
+    )
+
+    return Response(content='{"status":"bridge_initiated"}', status_code=200)
+
+
 @router.websocket("/stream/{tenant_id}/{call_sid}")
 async def websocket_stream(
     websocket: WebSocket,

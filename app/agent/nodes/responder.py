@@ -84,6 +84,15 @@ async def responder(state: dict[str, Any]) -> dict[str, Any]:
 
     grounded_facts_str = "\n\n".join(grounded_facts) if grounded_facts else "No grounded facts found."
 
+    # Load contact profile for patient memory lookup
+    contact = None
+    try:
+        conv = await db["conversations"].find_one({"_id": conv_id, "tenant_id": tenant_id})
+        if conv and conv.get("contact_id"):
+            contact = await db["contacts"].find_one({"_id": conv["contact_id"], "tenant_id": tenant_id})
+    except Exception as e:
+        logger.warning(f"Failed to load contact profile for responder: {e}")
+
     # 4. Construct Prompt
     system_prompt = (
         "You are an empathetic, professional AI receptionist at Sharma Dental Clinic.\n"
@@ -95,6 +104,32 @@ async def responder(state: dict[str, Any]) -> dict[str, Any]:
         "Tone and register:\n"
         "Always default to a respectful register (using 'आप' / 'ଆପଣ', never informal 'tum'/'tu'). Keep answers short and direct for chat interfaces."
     )
+
+    if contact:
+        patient_name = contact.get("name")
+        profile = contact.get("profile", {})
+        pref_prac_id = profile.get("preferred_practitioner_id") or profile.get("preferred_practitioner")
+        last_service = profile.get("last_service")
+        
+        pref_prac_name = None
+        if pref_prac_id:
+            try:
+                prac = await db["practitioners"].find_one({"_id": pref_prac_id, "tenant_id": tenant_id})
+                if prac:
+                    pref_prac_name = prac.get("name")
+            except Exception:
+                pass
+                
+        # Check intent to offer one-tap rebook
+        if state.get("intent") == "book" and last_service and pref_prac_name:
+            greeting_name = f" {patient_name} Ji" if patient_name else ""
+            system_prompt += (
+                f"\n\nPatient Memory Event: This is a returning patient{greeting_name}. "
+                f"Their preferred practitioner is {pref_prac_name} and last service was {last_service}. "
+                f"Offer the patient a one-tap rebook: ask if they want to book the same {last_service} with {pref_prac_name}."
+            )
+        elif patient_name:
+            system_prompt += f"\n\nPersonalization: Greet the patient by their name '{patient_name} Ji' politely."
 
     if resolution_summary:
         system_prompt += (

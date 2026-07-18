@@ -7,6 +7,24 @@ not an afterthought (cost visibility per TRD §6).
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+from app.models.collections import UsageMeters
+
 
 async def record_usage(tenant_id: str, **counters: int) -> None:
-    raise NotImplementedError("usage metering — 06-engineering-plan task 5.5")
+    """Increment usage counters for the tenant in the current period (YYYY-MM)."""
+    period = datetime.now(timezone.utc).strftime("%Y-%m")
+
+    update_fields = {}
+    for key, val in counters.items():
+        update_fields[key] = val
+
+    if not update_fields:
+        return
+
+    accessor = UsageMeters(tenant_id)
+    await accessor.find_one_and_update(
+        {"period": period},
+        {"$inc": update_fields},
+        upsert=True
+    )

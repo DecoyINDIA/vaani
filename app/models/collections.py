@@ -17,6 +17,17 @@ class Tenants(TenantScoped):
         super().__init__(tenant_id)
 
     @classmethod
+    async def find_by_id(cls, tenant_id: str) -> dict | None:
+        return await get_db()[cls.collection].find_one({"_id": tenant_id})
+
+    @classmethod
+    async def update_tenant_plan(cls, tenant_id: str, plan: str, status: str) -> None:
+        await get_db()[cls.collection].update_one(
+            {"_id": tenant_id},
+            {"$set": {"plan": plan, "status": status}}
+        )
+
+    @classmethod
     async def find_by_wa_number(cls, wa_number: str) -> dict | None:
         return await get_db()[cls.collection].find_one({"wa_number": wa_number})
 
@@ -61,9 +72,17 @@ class Bookings(TenantScoped):
 class Payments(TenantScoped):
     collection = "payments"
 
+    @classmethod
+    async def find_by_link_id_unscoped(cls, rzp_link_id: str) -> dict | None:
+        return await get_db()[cls.collection].find_one({"rzp_link_id": rzp_link_id})
+
 
 class Escalations(TenantScoped):
     collection = "escalations"
+
+
+class Waitlist(TenantScoped):
+    collection = "waitlist"
 
 
 class AuditLog(TenantScoped):
@@ -127,4 +146,7 @@ async def ensure_indexes() -> None:
 
     # 13. UsageMeters indexes
     await db["usage_meters"].create_index([("tenant_id", 1)])
+
+    # 14. Waitlist indexes
+    await db["waitlist"].create_index([("tenant_id", 1), ("practitioner_id", 1), ("date", 1)])
 

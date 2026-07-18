@@ -155,3 +155,39 @@ async def confirm_booking(tenant_id: str, slot_id: str, contact_id: str, service
     await db["bookings"].insert_one(booking)
     return booking
 
+
+async def claim_waitlist_slot(tenant_id: str, slot_id: str, contact_id: str, service: str) -> bool:
+    """Attempt to atomically hold and confirm a waitlist slot for a patient.
+    First tap wins: returns True if successful, False if slot is already booked or held.
+    """
+    # 1. Try to hold slot
+    held = await hold_slot(tenant_id, slot_id)
+    if not held:
+        return False
+        
+    # 2. Confirm booking
+    booking = await confirm_booking(tenant_id, slot_id, contact_id, service)
+    if not booking:
+        return False
+        
+    # 3. Update waitlist entry to fulfilled
+    db = get_db()
+    slot = await db["slots"].find_one({"_id": slot_id, "tenant_id": tenant_id})
+    if slot:
+        practitioner_id = slot.get("practitioner_id")
+        slot_date = slot.get("start")
+        if practitioner_id and slot_date:
+            date_str = slot_date.strftime("%Y-%m-%d")
+            await db["waitlist"].update_one(
+                {
+                    "tenant_id": tenant_id,
+                    "contact_id": contact_id,
+                    "practitioner_id": practitioner_id,
+                    "date": date_str,
+                    "status": "active"
+                },
+                {"$set": {"status": "fulfilled"}}
+            )
+            
+    return True
+
