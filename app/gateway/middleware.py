@@ -25,7 +25,12 @@ _redis_client: redis.Redis | None = None
 def get_redis() -> redis.Redis:
     global _redis_client
     if _redis_client is None:
-        _redis_client = redis.from_url(settings.redis_url, decode_responses=True)
+        # socket_timeout must exceed the largest BLOCK duration used by any caller
+        # (the inbound worker's xreadgroup block=5000ms) — otherwise the client's
+        # own read timeout races the server's blocking window and fires first.
+        _redis_client = redis.from_url(
+            settings.redis_url, decode_responses=True, socket_timeout=30
+        )
     return _redis_client
 
 
