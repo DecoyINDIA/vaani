@@ -12,21 +12,22 @@ import logging
 from datetime import date
 from typing import Any
 
-from app.models.base import get_db
-from app.booking.relative_date import resolve
+from app.agent.state import AgentState
 from app.agent.tools.kb_search import kb_search
 from app.agent.tools.slots_get import slots_get
+from app.booking.relative_date import resolve
+from app.models.collections import Practitioners
 
 logger = logging.getLogger(__name__)
 
 
-async def tool_router(state: dict[str, Any]) -> dict[str, Any]:
+async def tool_router(state: AgentState) -> dict[str, Any]:
     """Node 4 — tool router (TRD §1).
 
     For in-scope intents, decides which tool(s) to call before generation.
     """
     intent_val = state.get("intent", "out_of_scope")
-    tenant_id = state.get("tenant_id")
+    tenant_id: str = state.get("tenant_id") or ""
     text = state.get("text", "")
     lang = state.get("lang", "en")
     
@@ -44,14 +45,13 @@ async def tool_router(state: dict[str, Any]) -> dict[str, Any]:
     # 2. Slots Lookup for Booking intent
     elif intent_val in ("book", "booking_status"):
         logger.info(f"Routing Booking intent '{intent_val}' to slots_get")
-        db = get_db()
-        
+
         # Resolve target date from text
         target_date = resolve(text, today=date.today(), lang=lang)
         date_str = target_date.isoformat()
 
         # Find practitioner (default to first one found for the tenant)
-        practitioner = await db["practitioners"].find_one({"tenant_id": tenant_id})
+        practitioner = await Practitioners(tenant_id).find_one({})
         
         if practitioner:
             practitioner_id = str(practitioner["_id"])

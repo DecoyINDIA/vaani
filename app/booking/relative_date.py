@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import re
 from datetime import date, timedelta
-from typing import Any
+
 
 def normalize_numerals(text: str) -> str:
     """Map Devanagari and Odia numerals to standard ASCII digits."""
@@ -65,9 +65,7 @@ def resolve(phrase: str, *, today: date, lang: str) -> date:
         if days_ahead == 0:
             days_ahead = 7
         elif is_next:
-            # If they say "next Monday" and today is Tuesday (6 days ahead), they might mean upcoming Monday.
-            # But to be safe and enforce "future interpretation", we keep it or add 7 if they explicitly say "next".
-            # Let's add 7 if they explicitly say next and it's less than 7 days, or keep it. Let's just return upcoming.
+            # "next <weekday>": keep the upcoming occurrence (future interpretation).
             pass
             
         return today + timedelta(days=days_ahead)

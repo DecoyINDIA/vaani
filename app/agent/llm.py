@@ -1,7 +1,10 @@
 from __future__ import annotations
 
-import httpx
 import logging
+import re
+
+import httpx
+
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -13,15 +16,27 @@ def get_mock_response(prompt: str, model: str) -> str:
     parts = prompt.split(" ---SYSTEM_PROMPT--- ")
     user_prompt = parts[0]
     system_prompt = parts[1] if len(parts) > 1 else ""
-    
+
     user_prompt_lower = user_prompt.lower()
     system_prompt_lower = system_prompt.lower()
-    
-    is_classification = "intent" in system_prompt_lower or "classify" in system_prompt_lower or "intent" in user_prompt_lower
-    
+
+    # Scope keyword matching to the actual user message when the calling prompt
+    # wraps it — otherwise boilerplate like "Language detected: hi" pollutes
+    # keyword checks (e.g. "hi" matching the greet branch).
+    msg_match = re.search(
+        r"(?:user message|patient latest message): '(.*)'", user_prompt_lower, re.DOTALL
+    )
+    if msg_match:
+        user_prompt_lower = msg_match.group(1)
+
+    is_classification = "intent" in system_prompt_lower or "classify" in system_prompt_lower
+
     if is_classification:
         # Prioritize safety and special gate intents first
-        if any(w in user_prompt_lower for w in ["medical", "sar dard", "dard", "pain", "treatment", "medic", "tablet"]):
+        if any(w in user_prompt_lower for w in [
+            "medical", "sar dard", "dard", "pain", "hurt", "treatment", "medic", "tablet",
+            "dawai", "दर्द", "दवा", "ଯନ୍ତ୍ରଣା", "ଔଷଧ"
+        ]):
             return '{"intent": "medical_question", "confidence": 0.98}'
         if any(w in user_prompt_lower for w in ["abuse", "stupid", "idiot", "nonsense"]):
             return '{"intent": "abuse", "confidence": 0.95}'
@@ -29,42 +44,78 @@ def get_mock_response(prompt: str, model: str) -> str:
             return '{"intent": "complaint", "confidence": 0.95}'
         if any(w in user_prompt_lower for w in ["human", "staff", "receptionist", "escalate"]):
             return '{"intent": "human_request", "confidence": 0.95}'
-            
-        # Core workflows
-        if any(w in user_prompt_lower for w in ["appointment", "booking", "book", "ଦେଖା କରିବି"]):
-            return '{"intent": "book", "confidence": 0.95}'
+
+        # Appointment-mutation intents must be checked BEFORE "book": phrases like
+        # "cancel my appointment" contain booking keywords too.
         if any(w in user_prompt_lower for w in ["reschedule", "change", "badal"]):
             return '{"intent": "reschedule", "confidence": 0.95}'
         if any(w in user_prompt_lower for w in ["cancel", "radd"]):
             return '{"intent": "cancel", "confidence": 0.95}'
         if "status" in user_prompt_lower:
             return '{"intent": "booking_status", "confidence": 0.95}'
-        if "payment" in user_prompt_lower:
+        if any(w in user_prompt_lower for w in ["payment", "deposit", "razorpay"]):
             return '{"intent": "payment_query", "confidence": 0.95}'
-            
+        if any(w in user_prompt_lower for w in [
+            "appointment", "booking", "book", "milna", "ଦେଖା କରିବି", "अपॉइंटमेंट", "बुक"
+        ]):
+            return '{"intent": "book", "confidence": 0.95}'
+
         # FAQs
-        if any(w in user_prompt_lower for w in ["timing", "timings", "hours", "open"]):
+        if any(w in user_prompt_lower for w in ["timing", "timings", "hours", "open", "समय", "खुल", "ସମୟ"]):
             return '{"intent": "faq_hours", "confidence": 0.95}'
-        if any(w in user_prompt_lower for w in ["fee", "fees", "charge", "consultation"]):
+        if any(w in user_prompt_lower for w in ["fee", "fees", "charge", "consultation", "शुल्क", "फीस", "ଫିସ୍"]):
             return '{"intent": "faq_fees", "confidence": 0.95}'
-        if any(w in user_prompt_lower for w in ["location", "address", "rasta", "kahan", "map"]):
+        if any(w in user_prompt_lower for w in ["location", "address", "rasta", "kahan", "map", "पता", "ଠିକଣା"]):
             return '{"intent": "faq_location", "confidence": 0.95}'
         if any(w in user_prompt_lower for w in ["doctor", "practitioner", "sharma"]):
             return '{"intent": "faq_doctor", "confidence": 0.90}'
-            
+
         # Greetings (use split to avoid matching substrings like "hi" inside "hai")
-        user_words = user_prompt_lower.split()
-        if any(w in user_words for w in ["hello", "hi", "namaste", "hey", "hi!", "hello!"]):
+        user_words = [w.strip("'\"!?.,") for w in user_prompt_lower.split()]
+        if any(w in user_words for w in ["hello", "hi", "namaste", "hey"]):
             return '{"intent": "greet", "confidence": 1.0}'
-            
+
         return '{"intent": "out_of_scope", "confidence": 1.0}'
-    
-    # Grounded response mock values
-    if "consultation fee" in user_prompt_lower or "faq_fees" in user_prompt_lower or "fee" in user_prompt_lower:
-        return "The consultation fee is Rs 500. [source_ref: faq_fees]"
-    if "timings" in user_prompt_lower or "faq_hours" in user_prompt_lower or "timings" in system_prompt_lower:
-        return "Sharma Dental Clinic is open from 9:00 AM to 6:00 PM Monday through Saturday. [source_ref: faq_hours]"
-    
+
+    # --- Grounded responder mock ---
+    # Route on the source_refs present inside the Grounded Facts block ONLY.
+    # The citation-rule boilerplate always mentions "fees, timings, address" and
+    # example refs, so keyword-matching the whole system prompt misroutes every
+    # intent to the hours answer.
+    facts_match = re.search(
+        r"Grounded Facts:\n(.*?)(?:\n\nStrict Citation Rule|\Z)", system_prompt, re.DOTALL
+    )
+    facts = facts_match.group(1) if facts_match else ""
+    facts_lower = facts.lower()
+
+    if "source_ref: slots_list" in facts_lower:
+        slot_match = re.search(r"Available Slots[^\n]*", facts)
+        slots_line = slot_match.group(0) if slot_match else "Available slots found"
+        return f"{slots_line}. Kripya bataiye kaun sa samay aapke liye theek rahega. [source_ref: slots_list]"
+
+    faq_responses = {
+        "faq_fees": "The consultation fee is Rs 500. [source_ref: faq_fees]",
+        "faq_hours": "Sharma Dental Clinic is open from 9:00 AM to 6:00 PM Monday through Saturday. [source_ref: faq_hours]",
+        "faq_location": "Sharma Dental Clinic is located near Main Market, Bhubaneswar, opposite HDFC Bank. [source_ref: faq_location]",
+    }
+    faq_keywords = {
+        "faq_fees": ["fee", "fees", "charge", "consultation", "शुल्क", "फीस", "ଫିସ୍"],
+        "faq_hours": ["timing", "hours", "open", "समय", "खुल", "ସମୟ"],
+        "faq_location": ["location", "address", "rasta", "kahan", "map", "पता", "ଠିକଣା"],
+    }
+    # Prefer the FAQ fact that matches the user's question; kb_search can return
+    # several entries, so refs alone are ambiguous.
+    for ref, keywords in faq_keywords.items():
+        if f"source_ref: {ref}" in facts_lower and any(w in user_prompt_lower for w in keywords):
+            return faq_responses[ref]
+    for ref, response in faq_responses.items():
+        if f"source_ref: {ref}" in facts_lower:
+            return response
+
+    user_words = [w.strip("'\"!?.,") for w in user_prompt_lower.split()]
+    if any(w in user_words for w in ["hello", "hi", "namaste", "hey"]):
+        return "Namaste! Welcome to Sharma Dental Clinic. How can I help you today?"
+
     return "I'm sorry, I couldn't find information about that. I will escalate this to the clinic staff to help you. [source_ref: fallback]"
 
 

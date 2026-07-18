@@ -9,24 +9,20 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
-from app.models.base import get_db
-from app.models.collections import Bookings, Conversations, Tenants
 from app import audit
+from app.models.collections import Bookings, Conversations, Tenants
 
 logger = logging.getLogger(__name__)
 
 
 async def run_weekly_summaries() -> None:
     """Generate and record weekly ROI summary logs for all tenants."""
-    db = get_db()
-    
     # 1. Fetch all tenants
-    tenants_cursor = db["tenants"].find({})
-    tenants = await tenants_cursor.to_list(length=1000)
+    tenants = await Tenants.all()
     
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = datetime.now(UTC).replace(tzinfo=None)
     start_date = now - timedelta(days=7)
     date_range_str = f"{start_date.strftime('%b %d')} - {now.strftime('%b %d')}"
     

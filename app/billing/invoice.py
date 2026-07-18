@@ -6,12 +6,14 @@ before the first paid invoice.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
+
 from app.config import settings
 from app.models.collections import Tenants, UsageMeters
 
 
-async def generate_invoice(tenant_id: str, period: str) -> dict:
+async def generate_invoice(tenant_id: str, period: str) -> dict[str, Any]:
     """Generate GST tax invoice for the tenant for the given period (YYYY-MM)."""
     tenant = await Tenants.find_by_id(tenant_id)
     if not tenant:
@@ -43,7 +45,7 @@ async def generate_invoice(tenant_id: str, period: str) -> dict:
 
     invoice = {
         "invoice_number": f"INV-{tenant_id[:4].upper()}-{clean_period}",
-        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "date": datetime.now(UTC).strftime("%Y-%m-%d"),
         "period": period,
         "tenant_name": tenant.get("name", "Unknown Clinic"),
         "tenant_gstin": tenant.get("gstin", ""),

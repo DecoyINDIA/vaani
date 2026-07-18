@@ -12,42 +12,40 @@ compound-indexed on (tenant_id, ...); `slots` is unique on
 
 from __future__ import annotations
 
+import importlib.util
+import logging
 from typing import Any
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
 from app.config import settings
 
-import logging
-
 logger = logging.getLogger(__name__)
 
 _client: Any = None
 
 
-def get_db() -> AsyncIOMotorDatabase:
+def get_db() -> AsyncIOMotorDatabase[Any]:
     """Process-wide Motor client + `vaani` database handle."""
     global _client
     if _client is None:
         use_mock = False
-        if settings.app_env == "test" or settings.mongodb_uri == "mongodb://localhost:27017/vaani":
-            try:
-                import mongomock_motor
-                use_mock = True
-            except ImportError:
-                pass
-                
+        if settings.mongodb_uri == "mongodb://localhost:27017/vaani":
+            use_mock = importlib.util.find_spec("mongomock_motor") is not None
+
         if use_mock:
             from mongomock_motor import AsyncMongoMockClient
             logger.info("Using mock MongoDB database client (mongomock-motor)")
             _client = AsyncMongoMockClient()
         else:
             _client = AsyncIOMotorClient(settings.mongodb_uri)
-            
+
+    db: AsyncIOMotorDatabase[Any]
     try:
-        return _client.get_default_database()
+        db = _client.get_default_database()
     except Exception:
-        return _client["vaani"]
+        db = _client["vaani"]
+    return db
 
 
 
@@ -67,28 +65,34 @@ class TenantScoped:
         self.tenant_id = tenant_id
         self._col = get_db()[self.collection]
 
-    def _scoped(self, query: dict | None = None) -> dict:
+    def _scoped(self, query: dict[str, Any] | None = None) -> dict[str, Any]:
         return {**(query or {}), "tenant_id": self.tenant_id}
 
-    async def find_one(self, filter: dict, *args: Any, **kwargs: Any) -> dict | None:
+    async def find_one(
+        self, filter: dict[str, Any], *args: Any, **kwargs: Any
+    ) -> dict[str, Any] | None:
         return await self._col.find_one(self._scoped(filter), *args, **kwargs)
 
-    def find(self, filter: dict | None = None, *args: Any, **kwargs: Any) -> Any:
+    def find(self, filter: dict[str, Any] | None = None, *args: Any, **kwargs: Any) -> Any:
         return self._col.find(self._scoped(filter), *args, **kwargs)
 
-    async def insert_one(self, document: dict, *args: Any, **kwargs: Any) -> Any:
+    async def insert_one(self, document: dict[str, Any], *args: Any, **kwargs: Any) -> Any:
         doc_with_tenant = {**document, "tenant_id": self.tenant_id}
         return await self._col.insert_one(doc_with_tenant, *args, **kwargs)
 
-    async def update_one(self, filter: dict, update: dict, *args: Any, **kwargs: Any) -> Any:
+    async def update_one(
+        self, filter: dict[str, Any], update: dict[str, Any], *args: Any, **kwargs: Any
+    ) -> Any:
         return await self._col.update_one(self._scoped(filter), update, *args, **kwargs)
 
-    async def find_one_and_update(self, filter: dict, update: dict, *args: Any, **kwargs: Any) -> Any:
+    async def find_one_and_update(
+        self, filter: dict[str, Any], update: dict[str, Any], *args: Any, **kwargs: Any
+    ) -> Any:
         return await self._col.find_one_and_update(self._scoped(filter), update, *args, **kwargs)
 
-    async def delete_many(self, filter: dict, *args: Any, **kwargs: Any) -> Any:
+    async def delete_many(self, filter: dict[str, Any], *args: Any, **kwargs: Any) -> Any:
         return await self._col.delete_many(self._scoped(filter), *args, **kwargs)
 
-    async def count_documents(self, filter: dict, *args: Any, **kwargs: Any) -> int:
+    async def count_documents(self, filter: dict[str, Any], *args: Any, **kwargs: Any) -> int:
         return await self._col.count_documents(self._scoped(filter), *args, **kwargs)
 

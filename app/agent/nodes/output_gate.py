@@ -11,12 +11,13 @@ import logging
 import re
 from typing import Any
 
+from app.agent.state import AgentState
 from app.agent.templates import get_template
 
 logger = logging.getLogger(__name__)
 
 
-async def output_gate(state: dict[str, Any]) -> dict[str, Any]:
+async def output_gate(state: AgentState) -> dict[str, Any]:
     """Node 6 — output scope check (TRD §4.2, gate 2).
 
     Post-generation: reject any uncited factual claim (fee/time/service/address).
@@ -34,10 +35,10 @@ async def output_gate(state: dict[str, Any]) -> dict[str, Any]:
     # 2. Check if the response contains numbers, prices, timings, or location words
     # but lacks a citation tag "[source_ref:"
     factual_patterns = [
-        r"\b\d+\b",            # numbers (fees, slots)
-        r"rs\.?|inr|rupees",   # currency indicators
-        r"am|pm|baje|time",    # timings
-        r"address|location|landmark|bhubaneswar"  # location details
+        r"\b\d+\b",                    # numbers (fees, slots)
+        r"\b(rs\.?|inr|rupees)\b",     # currency indicators
+        r"\b(am|pm|baje|time)\b",      # timings — word-bounded, else "am" matches inside "Namaste"
+        r"\b(address|location|landmark|bhubaneswar)\b"  # location details
     ]
     
     response_lower = response.lower()
@@ -53,7 +54,9 @@ async def output_gate(state: dict[str, Any]) -> dict[str, Any]:
                 "retry_count": retry_count + 1
             }
         else:
-            logger.warning("Uncited claim persists after retry. Substituting with fallback template.")
+            logger.warning(
+                "Uncited claim persists after retry. Substituting with fallback template."
+            )
             return {
                 "regenerate": False,
                 "response": get_template("out_of_scope", lang)

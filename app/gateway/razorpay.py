@@ -11,12 +11,13 @@ import hashlib
 import hmac
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Request, Response
 
-from app.config import settings
-from app.models.collections import Payments, Tenants, Bookings
 from app import audit
+from app.config import settings
+from app.models.collections import Bookings, Payments, Tenants
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["webhooks"])
@@ -65,7 +66,7 @@ async def receive(request: Request) -> Response:
                     {"rzp_link_id": link_id},
                     {"$set": {
                         "status": "paid",
-                        "paid_at": datetime.now(timezone.utc).replace(tzinfo=None)
+                        "paid_at": datetime.now(UTC).replace(tzinfo=None)
                     }}
                 )
                 
@@ -101,7 +102,11 @@ async def receive(request: Request) -> Response:
                 tenant_id,
                 actor="system",
                 event_type="subscription_updated",
-                payload={"subscription_id": sub_entity.get("id"), "plan": plan_id, "status": status},
+                payload={
+                    "subscription_id": sub_entity.get("id"),
+                    "plan": plan_id,
+                    "status": status,
+                },
                 conversation_id=None
             )
 

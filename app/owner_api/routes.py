@@ -11,11 +11,13 @@ Endpoints (stubs — Week 5 task 5.3):
 
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import APIRouter
 
 router = APIRouter(tags=["owner"])
 
 
 @router.get("/conversations")
-async def list_conversations() -> dict:
+async def list_conversations() -> dict[str, Any]:
     raise NotImplementedError("owner API — 06-engineering-plan task 5.3")

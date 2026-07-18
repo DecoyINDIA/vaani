@@ -12,11 +12,11 @@ from __future__ import annotations
 import hashlib
 import hmac
 import logging
+
 import redis.asyncio as redis
 
 from app.config import settings
-from app.models.base import get_db
-from app.models.collections import Tenants
+from app.models.collections import Messages, Tenants
 
 logger = logging.getLogger(__name__)
 _redis_client: redis.Redis | None = None
@@ -72,23 +72,15 @@ async def claim_message(message_id: str) -> bool:
 
     # 2. Fallback to MongoDB
     try:
-        db = get_db()
-        existing = await db["messages"].find_one({"_id": message_id})
-        if existing:
+        if await Messages.seen_unscoped(message_id):
             return False
-        
-        # We write a placeholder to prevent concurrent processing races in case of multiple retries
-        # Note: tenant_id isn't resolved globally here, but we can store it with a dummy or minimal info
-        # to reserve the ID. Or we can just return True. To be safe, let's insert a minimal placeholder.
-        await db["messages"].insert_one({
-            "_id": message_id,
-            "direction": "inbound",
-            "type": "placeholder",
-            "ts": get_db().client.loop.time() if hasattr(get_db().client, "loop") else 0
-        })
+
+        # Reserve the id with a placeholder to prevent concurrent reprocessing on
+        # retries. tenant_id isn't resolved here, so this doc is intentionally minimal.
+        await Messages.reserve_placeholder_unscoped(message_id)
         return True
     except Exception as e:
         logger.error("MongoDB idempotency fallback failed: %s", e)
-        # If database is also failing, return True so we don't drop the message, but it will fail downstream
+        # DB also failing: return True so we don't drop the message (it fails downstream)
         return True
 

@@ -73,8 +73,6 @@ async def transcribe_audio(
 
     if not has_key:
         # Offline Mock Fallback
-        t0 = time.perf_counter()
-        
         # Default mock transcript
         transcript = "कल सुबह डॉक्टर से मिलना है।"
         if file_key and file_key in _METADATA_CACHE:

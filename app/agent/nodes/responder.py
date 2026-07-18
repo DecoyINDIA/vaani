@@ -11,31 +11,32 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from app.config import settings
-from app.models.base import get_db
 from app.agent.llm import query_llm
+from app.agent.state import AgentState
+from app.config import settings
+from app.models.collections import Contacts, Conversations, Messages, Practitioners
 
 logger = logging.getLogger(__name__)
 
 
-async def responder(state: dict[str, Any]) -> dict[str, Any]:
+async def responder(state: AgentState) -> dict[str, Any]:
     """Node 5 — responder (TRD §4.2).
 
     Frontier model, KB/tool-grounded generation. Every factual claim (fee/time/
     service/address) MUST carry a source_ref.
     """
-    tenant_id = state.get("tenant_id")
+    tenant_id: str = state.get("tenant_id") or ""
     conv_id = state.get("conversation_id")
     text = state.get("text", "")
     lang = state.get("lang", "en")
     tool_results = state.get("tool_results", [])
     
     # 1. Load context history (last 10 messages)
-    db = get_db()
+    messages_acc = Messages(tenant_id)
     history_str = ""
     try:
-        cursor = db["messages"].find(
-            {"conversation_id": conv_id, "tenant_id": tenant_id}
+        cursor = messages_acc.find(
+            {"conversation_id": conv_id}
         ).sort("ts", -1).limit(10)
         messages = [doc async for doc in cursor]
         messages.reverse()
@@ -52,8 +53,8 @@ async def responder(state: dict[str, Any]) -> dict[str, Any]:
     # 2. Check for staff resolution summary
     resolution_summary = None
     try:
-        res_msg = await db["messages"].find_one(
-            {"conversation_id": conv_id, "tenant_id": tenant_id, "type": "resolution_summary"},
+        res_msg = await messages_acc.find_one(
+            {"conversation_id": conv_id, "type": "resolution_summary"},
             sort=[("ts", -1)]
         )
         if res_msg:
@@ -87,9 +88,9 @@ async def responder(state: dict[str, Any]) -> dict[str, Any]:
     # Load contact profile for patient memory lookup
     contact = None
     try:
-        conv = await db["conversations"].find_one({"_id": conv_id, "tenant_id": tenant_id})
+        conv = await Conversations(tenant_id).find_one({"_id": conv_id})
         if conv and conv.get("contact_id"):
-            contact = await db["contacts"].find_one({"_id": conv["contact_id"], "tenant_id": tenant_id})
+            contact = await Contacts(tenant_id).find_one({"_id": conv["contact_id"]})
     except Exception as e:
         logger.warning(f"Failed to load contact profile for responder: {e}")
 
@@ -114,7 +115,7 @@ async def responder(state: dict[str, Any]) -> dict[str, Any]:
         pref_prac_name = None
         if pref_prac_id:
             try:
-                prac = await db["practitioners"].find_one({"_id": pref_prac_id, "tenant_id": tenant_id})
+                prac = await Practitioners(tenant_id).find_one({"_id": pref_prac_id})
                 if prac:
                     pref_prac_name = prac.get("name")
             except Exception:

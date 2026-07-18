@@ -7,10 +7,11 @@ Reads open slots for a practitioner/date, respecting the holiday calendar
 from __future__ import annotations
 
 import logging
-from datetime import datetime as dt, date, time, timezone
+from datetime import UTC, date, time
+from datetime import datetime as dt
 from typing import Any
 
-from app.models.base import get_db
+from app.models.collections import Slots
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,6 @@ async def slots_get(tenant_id: str, practitioner_id: str, date_str: str) -> list
 
     Reads open slots for a practitioner/date. respects held slots expiry.
     """
-    db = get_db()
     try:
         parsed_date = date.fromisoformat(date_str)
     except ValueError:
@@ -29,10 +29,9 @@ async def slots_get(tenant_id: str, practitioner_id: str, date_str: str) -> list
 
     start_of_day = dt.combine(parsed_date, time(0, 0, 0))
     end_of_day = dt.combine(parsed_date, time(23, 59, 59))
-    now = dt.now(timezone.utc).replace(tzinfo=None)
+    now = dt.now(UTC).replace(tzinfo=None)
 
     query = {
-        "tenant_id": tenant_id,
         "practitioner_id": practitioner_id,
         "start": {"$gte": start_of_day, "$lte": end_of_day},
         "$or": [
@@ -42,14 +41,15 @@ async def slots_get(tenant_id: str, practitioner_id: str, date_str: str) -> list
     }
 
     try:
-        cursor = db["slots"].find(query).sort("start", 1)
+        cursor = Slots(tenant_id).find(query).sort("start", 1)
         results = []
         async for doc in cursor:
             results.append({
                 "slot_id": str(doc["_id"]),
                 "start": doc["start"].isoformat(),
                 "end": doc["end"].isoformat(),
-                "status": "open" if doc["status"] == "open" else "open"  # treat expired-hold slots as open
+                # treat expired-hold slots as open
+                "status": "open" if doc["status"] == "open" else "open"
             })
         return results
     except Exception as e:

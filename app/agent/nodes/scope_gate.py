@@ -10,13 +10,14 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from app.models.base import get_db
+from app.agent.state import AgentState
 from app.agent.templates import get_template
+from app.models.collections import Messages
 
 logger = logging.getLogger(__name__)
 
 
-async def scope_gate(state: dict[str, Any]) -> dict[str, Any]:
+async def scope_gate(state: AgentState) -> dict[str, Any]:
     """Node 3 — input scope gate (TRD §4.2, gate 1).
 
     Routes by intent. medical_question / out_of_scope / abuse / complaint never reach
@@ -25,6 +26,7 @@ async def scope_gate(state: dict[str, Any]) -> dict[str, Any]:
     intent_val = state.get("intent", "out_of_scope")
     confidence = state.get("confidence", 1.0)
     lang = state.get("lang", "en")
+    tenant_id = state.get("tenant_id", "")
     conv_id = state.get("conversation_id")
     
     # 1. Check for consecutive low confidence (< 0.70)
@@ -32,9 +34,8 @@ async def scope_gate(state: dict[str, Any]) -> dict[str, Any]:
         logger.info(f"Low confidence detected: {confidence}")
         consecutive_low = False
         try:
-            db = get_db()
             # Find the last inbound message in this conversation
-            last_msg = await db["messages"].find_one(
+            last_msg = await Messages(tenant_id).find_one(
                 {"conversation_id": conv_id, "direction": "inbound"},
                 sort=[("ts", -1)]
             )
@@ -54,8 +55,7 @@ async def scope_gate(state: dict[str, Any]) -> dict[str, Any]:
     if intent_val in ("abuse", "complaint"):
         has_previous_incident = False
         try:
-            db = get_db()
-            previous = await db["messages"].find_one(
+            previous = await Messages(tenant_id).find_one(
                 {
                     "conversation_id": conv_id,
                     "direction": "inbound",

@@ -15,35 +15,20 @@ labels; below-threshold twice -> handoff.
 
 from __future__ import annotations
 
-from typing import Any, TypedDict
+from typing import Any
 
+from langgraph.graph import END, StateGraph
 
-from langgraph.graph import StateGraph, END
-
-from app.agent.nodes.lang_detect import lang_detect
+from app.agent.nodes.handoff import handoff
 from app.agent.nodes.intent import intent
+from app.agent.nodes.lang_detect import lang_detect
+from app.agent.nodes.output_gate import output_gate
+from app.agent.nodes.responder import responder
 from app.agent.nodes.scope_gate import scope_gate
 from app.agent.nodes.tool_router import tool_router
-from app.agent.nodes.responder import responder
-from app.agent.nodes.output_gate import output_gate
-from app.agent.nodes.handoff import handoff
+from app.agent.state import AgentState
 
-
-class AgentState(TypedDict, total=False):
-    """State threaded through the graph. tenant_id is always present."""
-
-    tenant_id: str
-    conversation_id: str
-    channel: str          # "wa" | "voice" — voice trims responses, no rich menus
-    text: str
-    lang: str             # hi | en | hi-Latn | or
-    intent: str
-    confidence: float
-    tool_results: list[dict[str, Any]]
-    response: str
-    escalate: bool
-    retry_count: int
-    regenerate: bool
+__all__ = ["AgentState", "build_graph"]
 
 
 def build_graph() -> Any:

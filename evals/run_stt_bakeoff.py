@@ -11,7 +11,7 @@ import csv
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 # Ensure Indic scripts print correctly
 if hasattr(sys.stdout, "reconfigure"):
@@ -59,7 +59,7 @@ async def run_bakeoff() -> None:
         sys.exit(1)
 
     # Load corpus records
-    records: List[Dict[str, str]] = []
+    records: list[dict[str, str]] = []
     with csv_path.open(encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -69,7 +69,7 @@ async def run_bakeoff() -> None:
     print("=" * 90)
 
     providers = ["sarvam", "deepgram", "google"]
-    stats: Dict[str, Dict[str, Any]] = {
+    stats: dict[str, dict[str, Any]] = {
         p: {
             "total_wer": 0.0,
             "total_latency_ms": 0.0,
@@ -82,7 +82,7 @@ async def run_bakeoff() -> None:
     }
 
     # Run evaluations sequentially
-    for idx, row in enumerate(records):
+    for row in records:
         file_path = row["file_path"]
         ref_text = row["transcript"]
         lang = row["language"]
