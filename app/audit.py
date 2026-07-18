@@ -10,6 +10,9 @@ Writes to the `audit_log` collection (TRD §3): append-only, TTL 90d default.
 from __future__ import annotations
 
 from typing import Any, Literal
+from datetime import datetime, timezone
+
+from app.models.collections import AuditLog
 
 Actor = Literal["agent", "user", "owner", "system"]
 
@@ -23,4 +26,14 @@ async def record(
     conversation_id: str | None = None,
 ) -> None:
     """Append one immutable audit entry. tenant_id is required and positional."""
-    raise NotImplementedError("audit writer — 06-engineering-plan task 5.4")
+    audit_entry = {
+        "actor": actor,
+        "event_type": event_type,
+        "payload": payload,
+        "ts": datetime.now(timezone.utc).replace(tzinfo=None)
+    }
+    if conversation_id:
+        audit_entry["conversation_id"] = conversation_id
+
+    accessor = AuditLog(tenant_id)
+    await accessor.insert_one(audit_entry)

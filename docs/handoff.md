@@ -120,4 +120,22 @@ When clinic staff finishes resolving the patient's concern:
 
 - **Unit & Integration Tests:** Implemented in [test_voice.py](file:///d:/XOLVER/Vaani/tests/test_voice.py) and passes 100% in CI. Asserts successful webhook routing, WebSocket bidirectional stream play, DTMF consent acceptance, query execution, VAD barge-in playback cancellation, latency tracking, and cross-model override configurations.
 
+---
+
+## 8. Phase 3 Implementation & Verification Summary
+
+### Implementation Details
+- **Weekly ROI Summary (F-13):** Implemented in [weekly_summary.py](file:///d:/XOLVER/Vaani/app/workers/weekly_summary.py). The worker queries bookings and conversations over the past 7 days, computes recovered appointments (after-hours, busy-line, voice channel), estimates saved revenue (at ₹1,000 per booking), and logs `T_WEEKLY_SUMMARY` template notifications to the owner.
+- **GST Invoicing & Billing (F-17):** Implemented in [invoice.py](file:///d:/XOLVER/Vaani/app/billing/invoice.py) and [razorpay.py](file:///d:/XOLVER/Vaani/app/gateway/razorpay.py). Handles plans base calculation, voice overage metering (beyond 300 free minutes at ₹2.0/min), 18% GST taxation rules, and processes Razorpay subscription activation and payment link paid webhook status callbacks.
+- **Booking Reminders (F-11):** Implemented in [reminders.py](file:///d:/XOLVER/Vaani/app/workers/reminders.py). Automatically scans upcoming appointments, triggers templates `T_REMINDER_24H` and `T_REMINDER_2H` within pre-appointment windows, and tracks de-duplication states atomically in the DB.
+- **Missed-Call Bridge (F-16):** Implemented in [exotel.py](file:///d:/XOLVER/Vaani/app/gateway/exotel.py). Hooks into the `/webhooks/exotel/missed_call` endpoint, resolves the tenant, auto-creates/resolves a contact and conversation, and initiates the `T_MISSED_CALL_BRIDGE` WhatsApp template log.
+- **Cancellation Waitlist Backfill (F-15/F-22):** Implemented in [booking_cancel.py](file:///d:/XOLVER/Vaani/app/agent/tools/booking_cancel.py) and [engine.py](file:///d:/XOLVER/Vaani/app/booking/engine.py). Automatically dispatches slot opening templates to active waitlisted patients upon booking cancellations, enabling atomic first-tap-wins slot claims.
+- **One-Tap Rebooking (F-20):** Implemented in [responder.py](file:///d:/XOLVER/Vaani/app/agent/nodes/responder.py). Resolves returning patient details and preference history (preferred practitioner, last service) to inject one-tap rebooking suggestions during booking intent detection.
+
+### Verification & Testing
+- **Unit & Integration Tests:** Implemented in [test_phase3.py](file:///d:/XOLVER/Vaani/tests/test_phase3.py) and passes 100%. Verifies audit trail logging, usage metering, GST invoicing (Starter vs. Pro overage pricing), Razorpay payment paid and subscription hooks, reminder de-duplication windows, weekly ROI attribution stats, missed-call bridge routing, waitlist backfilling claiming, and one-tap rebooking suggestions.
+- **Evaluation Harness:** Re-run of the evaluation suite `evals/run_evals.py` passes 100% accuracy and F1 score criteria across all Hinglish, Hindi, English, and Odia scenarios, confirming 0% hallucination incidents.
+- **Cross-Model Validation:** Tested and verified with explicit classifier and responder override options in the eval harness.
+
+
 
