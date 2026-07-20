@@ -42,7 +42,9 @@ async def run_weekly_summaries() -> None:
             "status": {"$in": ["confirmed", "completed"]},
             "ts": {"$gte": start_date, "$lte": now}
         })
-        bookings_list = await bookings_cursor.to_list(length=1000)
+        bookings_list = []
+        async for booking in bookings_cursor:
+            bookings_list.append(booking)
         confirmed_count = len(bookings_list)
         
         # Calculate Recovered Bookings (after-hours + busy-line / voice)
@@ -72,6 +74,18 @@ async def run_weekly_summaries() -> None:
             f"recovered={recovered_count}, revenue={revenue_str}"
         )
         
+        # Fetch the clinic owner phone number
+        from app.models.collections import Users
+        users_accessor = Users(tenant_id)
+        owner = await users_accessor.find_one({"role": "owner"})
+        owner_wa_id = None
+        if owner:
+            owner_wa_id = owner.get("wa_id") or owner.get("phone")
+        else:
+            logger.warning(
+                "No owner user found for tenant %s. Weekly summary template not sent.", tenant_id
+            )
+        
         # Log outbound template in audit
         await audit.record(
             tenant_id,
@@ -89,6 +103,26 @@ async def run_weekly_summaries() -> None:
                 ]
             }
         )
+        
+        # Send actual template
+        if owner_wa_id:
+            from app.channels.whatsapp import send_template
+            try:
+                await send_template(
+                    tenant_id=tenant_id,
+                    wa_id=owner_wa_id,
+                    template="weekly_summary_owner",
+                    variables={
+                        "owner_name": owner_name,
+                        "date_range_str": date_range_str,
+                        "convs_count": str(convs_count),
+                        "confirmed_count": str(confirmed_count),
+                        "recovered_count": str(recovered_count),
+                        "revenue_str": revenue_str
+                    }
+                )
+            except Exception as e:
+                logger.error(f"Failed to send weekly summary to owner {owner_wa_id}: {e}")
 
 
 def main() -> None:

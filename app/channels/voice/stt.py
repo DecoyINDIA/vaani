@@ -108,13 +108,85 @@ async def transcribe_audio(
         }
 
     # 2. Real Provider Implementations (Stubs that would make actual HTTP calls)
+    import httpx
+    # If audio_data is a file path, load the bytes first
+    if isinstance(audio_data, str):
+        with open(audio_data, "rb") as f:
+            audio_bytes = f.read()
+    else:
+        audio_bytes = audio_data
+
     if prov == "sarvam":
         # Sarvam Speech-to-Text API
         # POST https://api.sarvam.ai/speech-to-text
-        raise NotImplementedError("Sarvam STT API connection failed: Key verified but endpoints unreachable offline.")
+        files = {"file": ("audio.wav", audio_bytes, "audio/wav")}
+        data = {
+            "model": "saaras:v1",
+            "mode": "transcribe"
+        }
+        headers = {
+            "api-subscription-key": settings.sarvam_api_key
+        }
+        
+        t0 = time.perf_counter()
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                "https://api.sarvam.ai/speech-to-text",
+                headers=headers,
+                files=files,
+                data=data,
+                timeout=30.0
+            )
+        t_duration = time.perf_counter() - t0
+        
+        if resp.status_code != 200:
+            logger.error("Sarvam STT failed: %s", resp.text)
+            raise RuntimeError(f"Sarvam STT API error {resp.status_code}: {resp.text}")
+            
+        res_json = resp.json()
+        transcript = res_json.get("transcript", "")
+        return {
+            "text": transcript,
+            "latency_ms": int(t_duration * 1000),
+            "cost_inr": (t_duration / 60.0) * 0.08,
+            "provider": "sarvam",
+            "confidence": 0.95
+        }
+        
     elif prov == "deepgram":
         # Deepgram API
-        raise NotImplementedError("Deepgram STT API connection failed: Key verified but endpoints unreachable offline.")
+        headers = {
+            "Authorization": f"Token {settings.deepgram_api_key}",
+            "Content-Type": "audio/wav"
+        }
+        dg_lang = "hi" if lang.startswith("hi") else ("or" if lang == "or" else "en")
+        
+        t0 = time.perf_counter()
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"https://api.deepgram.com/v1/listen?model=nova-2&language={dg_lang}&smart_format=true",
+                headers=headers,
+                content=audio_bytes,
+                timeout=30.0
+            )
+        t_duration = time.perf_counter() - t0
+        
+        if resp.status_code != 200:
+            logger.error("Deepgram STT failed: %s", resp.text)
+            raise RuntimeError(f"Deepgram STT API error {resp.status_code}: {resp.text}")
+            
+        res_json = resp.json()
+        transcript = res_json.get("results", {}).get("channels", [{}])[0].get("alternatives", [{}])[0].get("transcript", "")
+        confidence = res_json.get("results", {}).get("channels", [{}])[0].get("alternatives", [{}])[0].get("confidence", 0.90)
+        
+        return {
+            "text": transcript,
+            "latency_ms": int(t_duration * 1000),
+            "cost_inr": (t_duration / 60.0) * 0.15,
+            "provider": "deepgram",
+            "confidence": confidence
+        }
+        
     else:
         # Google Speech-to-Text
         raise NotImplementedError("Google STT API connection failed: Credentials verified but endpoints unreachable offline.")

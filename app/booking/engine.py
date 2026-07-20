@@ -9,11 +9,14 @@ the booking tools; this module owns generation + closure logic.
 from __future__ import annotations
 
 import datetime
+import logging
 from datetime import date, timedelta
 from datetime import datetime as dt
 from typing import Any
 
 from app.models.collections import Bookings, Practitioners, Slots, Tenants, Waitlist
+
+logger = logging.getLogger(__name__)
 
 
 async def expand_schedule(tenant_id: str, practitioner_id: str, horizon_days: int = 30) -> int:
@@ -148,7 +151,16 @@ async def confirm_booking(
         "ts": now
     }
 
-    await Bookings(tenant_id).insert_one(booking)
+    try:
+        await Bookings(tenant_id).insert_one(booking)
+    except Exception as e:
+        logger.error(f"Failed to insert booking record for slot {slot_id}: {e}")
+        # Compensation: rollback the slot status back to "held"
+        await Slots(tenant_id).update_one(
+            {"_id": slot_id},
+            {"$set": {"status": "held"}}
+        )
+        raise
     return {"tenant_id": tenant_id, **booking}
 
 

@@ -320,11 +320,13 @@ async def test_weekly_summaries():
     })
     
     # Create bookings (one after-hours, one voice, one standard)
-    # 1. After hours booking: Sunday (e.g. now + offset so it represents a Sunday)
-    sunday_dt = now - timedelta(days=3)
-    while sunday_dt.weekday() != 6: # Go back to Sunday
-        sunday_dt -= timedelta(days=1)
-    
+    # 1. After hours booking: most recent Sunday, guaranteed within the 7-day
+    # summary window (days_since_sunday is always 0-6; an open-ended backward
+    # walk from a fixed offset can land outside the window depending on the
+    # day the test runs).
+    days_since_sunday = (now.weekday() + 1) % 7
+    sunday_dt = now - timedelta(days=days_since_sunday)
+
     await db["bookings"].insert_one({
         "tenant_id": tenant_id,
         "status": "completed",

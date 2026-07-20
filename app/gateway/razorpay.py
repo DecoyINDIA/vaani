@@ -28,6 +28,8 @@ def verify_razorpay_signature(body: bytes, signature: str | None) -> bool:
     if not signature:
         return False
     if not settings.razorpay_webhook_secret:
+        if settings.app_env in ("staging", "prod"):
+            return False
         return True  # If no secret is configured, allow in dev/testing
     computed = hmac.new(
         key=settings.razorpay_webhook_secret.encode("utf-8"),

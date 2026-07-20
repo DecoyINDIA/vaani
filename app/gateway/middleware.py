@@ -37,6 +37,8 @@ def get_redis() -> redis.Redis:
 def verify_meta_signature(body: bytes, signature_header: str | None) -> bool:
     """HMAC-SHA256 body check against the app secret."""
     if not settings.meta_app_secret:
+        if settings.app_env in ("staging", "prod"):
+            return False
         # If no secret is configured, allow in dev/testing environments
         return True
     if not signature_header:
@@ -63,29 +65,32 @@ async def resolve_tenant(wa_number: str) -> str:
 
 
 async def claim_message(message_id: str) -> bool:
-    """Redis SETNX with 24h TTL. Returns True if this is the first sighting."""
-    # 1. Try Redis
+    """Check MongoDB then Redis SETNX (24h TTL). Returns True on first sighting."""
+    # 1. First, check MongoDB to see if we've ever processed/seen this message ID before.
+    # This prevents reprocessing even if Redis keys have expired (solving 24h expiry).
+    try:
+        if await Messages.seen_unscoped(message_id):
+            return False
+    except Exception as e:
+        logger.warning("MongoDB read failed during idempotency check: %s", e)
+
+    # 2. Try Redis SETNX for lock/concurrency control
     try:
         r = get_redis()
         key = f"msg_id:{message_id}"
         # set with nx=True and ex=24h returns True if key was set, None otherwise
         is_new = await r.set(key, "1", ex=24 * 3600, nx=True)
-        if is_new is not None:
-            return bool(is_new)
-    except Exception as e:
-        logger.warning("Redis is down, falling back to MongoDB for idempotency: %s", e)
-
-    # 2. Fallback to MongoDB
-    try:
-        if await Messages.seen_unscoped(message_id):
+        if is_new is None:
             return False
+    except Exception as e:
+        logger.warning("Redis is down, falling back to MongoDB for reservation: %s", e)
 
-        # Reserve the id with a placeholder to prevent concurrent reprocessing on
-        # retries. tenant_id isn't resolved here, so this doc is intentionally minimal.
+    # 3. Reserve the ID with a placeholder to prevent concurrent reprocessing on retries
+    try:
         await Messages.reserve_placeholder_unscoped(message_id)
         return True
     except Exception as e:
-        logger.error("MongoDB idempotency fallback failed: %s", e)
-        # DB also failing: return True so we don't drop the message (it fails downstream)
+        logger.error("MongoDB reservation failed: %s", e)
+        # DB also failing: return True so we don't drop the message
         return True
 

@@ -70,7 +70,16 @@ async def receive(request: Request) -> Response:
     # Connect to the media stream WebSocket
     host = request.url.netloc
     scheme = "wss" if request.url.scheme == "https" else "ws"
-    websocket_url = f"{scheme}://{host}/webhooks/stream/{tenant_id}/{call_sid}"
+    
+    import hashlib
+    import hmac
+
+    from app.config import settings
+    key = settings.jwt_secret.encode("utf-8")
+    msg = f"{tenant_id}:{call_sid}".encode()
+    token = hmac.new(key, msg, hashlib.sha256).hexdigest()
+    
+    websocket_url = f"{scheme}://{host}/webhooks/stream/{tenant_id}/{call_sid}?token={token}"
     
     xml_response = (
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
@@ -154,6 +163,18 @@ async def missed_call(request: Request) -> Response:
         conversation_id=None
     )
 
+    # Wire up actual WhatsApp template send
+    from app.channels.whatsapp import send_template
+    try:
+        await send_template(
+            tenant_id=tenant_id,
+            wa_id=str(from_number),
+            template="missed_call_bridge",
+            variables={"phone": from_number}
+        )
+    except Exception as e:
+        logger.error(f"Failed to send missed call bridge template to {from_number}: {e}")
+
     return Response(content='{"status":"bridge_initiated"}', status_code=200)
 
 
@@ -162,9 +183,30 @@ async def websocket_stream(
     websocket: WebSocket,
     tenant_id: str,
     call_sid: str,
+    token: str | None = None,
     caller_phone: str | None = None
 ) -> None:
     """FastAPI WebSocket stream for bidirectional voice communication."""
+    token_val = token or websocket.query_params.get("token")
+    
+    import hashlib
+    import hmac
+
+    from app.config import settings
+    
+    key = settings.jwt_secret.encode("utf-8")
+    msg = f"{tenant_id}:{call_sid}".encode()
+    expected_token = hmac.new(key, msg, hashlib.sha256).hexdigest()
+    
+    if not token_val or not hmac.compare_digest(token_val, expected_token):
+        logger.warning(
+            "Unauthenticated WebSocket stream connection attempt: tenant_id=%s, call_sid=%s",
+            tenant_id, call_sid,
+        )
+        await websocket.accept()
+        await websocket.close(code=4003)
+        return
+
     await websocket.accept()
     
     # Initialize voice session
