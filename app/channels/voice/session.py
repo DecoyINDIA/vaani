@@ -60,6 +60,11 @@ class VoiceSession:
         else:
             contact_id = contact["_id"]
 
+        self.contact_id = contact_id
+        if contact and contact.get("consent", {}).get("status") == "granted":
+            self.consent_accepted = True
+            self.consent_played = True
+
         # 2. Resolve or create active conversation
         conv = await conversations.find_one({
             "contact_id": contact_id,
@@ -100,6 +105,23 @@ class VoiceSession:
             return "ଟିକେ ଅପେକ୍ଷା କରନ୍ତୁ..."
         return "Just a moment..."
 
+    async def save_consent(self) -> None:
+        """Atomically set consent_accepted to True and save to contact database profile."""
+        self.consent_accepted = True
+        now = dt.now(UTC).replace(tzinfo=None)
+        await Contacts(self.tenant_id).update_one(
+            {"_id": self.contact_id},
+            {
+                "$set": {
+                    "consent": {
+                        "status": "granted",
+                        "ts": now,
+                        "notice_version": "1.0"
+                    }
+                }
+            }
+        )
+
     def clear_output_buffer(self) -> None:
         """Clear session output state in case of barge-in interruption."""
         self.interrupted = True
@@ -126,7 +148,7 @@ class VoiceSession:
 
         # Handle DTMF input for consent confirmation if user pressed 1
         if audio_data == b"DTMF_1":
-            self.consent_accepted = True
+            await self.save_consent()
             welcome_text = "Thank you. How can I help you today?" if lang == "en" else "धन्यवाद। मैं आपकी क्या मदद कर सकती हूँ?"
             welcome_audio = await synthesize(welcome_text, lang)
             return {
@@ -135,6 +157,10 @@ class VoiceSession:
                 "audio": welcome_audio,
                 "consent_accepted": True
             }
+
+        if not self.consent_accepted:
+            # User stayed on the line to proceed, which constitutes consent.
+            await self.save_consent()
 
         # 2. Reset interruption state on new turn
         self.interrupted = False

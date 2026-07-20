@@ -16,6 +16,10 @@ from ops.seed_tenant import seed_async
 @pytest.fixture(autouse=True)
 async def setup_test_db():
     """Seed the database with test_tenant configuration before each test."""
+    from app.models.base import get_db
+    db = get_db()
+    for col in ["contacts", "conversations", "bookings", "slots", "messages", "audit_log"]:
+        await db[col].delete_many({})
     await seed_async("default.yaml")
 
 
@@ -48,9 +52,15 @@ def test_exotel_webhook_tenant_resolution() -> None:
 def test_exotel_websocket_stream_e2e() -> None:
     client = TestClient(app)
     
+    import hashlib
+    import hmac
+    key = settings.jwt_secret.encode("utf-8")
+    msg = b"test_tenant:call_websocket"
+    token = hmac.new(key, msg, hashlib.sha256).hexdigest()
+    
     # Connect to websocket stream
     # Pass caller_phone in stream connection as parameter (simulating Exotel headers/channel context)
-    with client.websocket_connect("/webhooks/stream/test_tenant/call_websocket?caller_phone=919876543210") as ws:
+    with client.websocket_connect(f"/webhooks/stream/test_tenant/call_websocket?caller_phone=919876543210&token={token}") as ws:
         # 1. First event must play the voice consent audio bytes
         consent_audio = ws.receive_bytes()
         assert len(consent_audio) > 100
@@ -90,7 +100,13 @@ def test_exotel_websocket_stream_e2e() -> None:
 def test_voice_barge_in() -> None:
     client = TestClient(app)
     
-    with client.websocket_connect("/webhooks/stream/test_tenant/call_bargein") as ws:
+    import hashlib
+    import hmac
+    key = settings.jwt_secret.encode("utf-8")
+    msg = b"test_tenant:call_bargein"
+    token = hmac.new(key, msg, hashlib.sha256).hexdigest()
+    
+    with client.websocket_connect(f"/webhooks/stream/test_tenant/call_bargein?token={token}") as ws:
         # Consume consent audio
         ws.receive_bytes()
         

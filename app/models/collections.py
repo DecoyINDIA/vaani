@@ -38,9 +38,13 @@ class Tenants(TenantScoped):
         return await get_db()[cls.collection].find_one({"voice_number": voice_number})
 
     @classmethod
-    async def all(cls, limit: int = 1000) -> list[dict[str, Any]]:
+    async def all(cls) -> list[dict[str, Any]]:
         """Cross-tenant scan for platform workers (reminders, weekly summaries)."""
-        return await get_db()[cls.collection].find({}).to_list(length=limit)
+        cursor = get_db()[cls.collection].find({})
+        res = []
+        async for doc in cursor:
+            res.append(doc)
+        return res
 
 
 
@@ -69,6 +73,59 @@ class Messages(TenantScoped):
         """Reserve a message id pre-tenant-resolution to block concurrent reprocessing."""
         await get_db()[cls.collection].insert_one(
             {"_id": message_id, "direction": "inbound", "type": "placeholder"}
+        )
+
+    @classmethod
+    async def upsert_fallback_message_unscoped(
+        cls, tenant_id: str, message_id: str, document: dict[str, Any]
+    ) -> None:
+        """Upsert a message when Redis is down and we are falling back to MongoDB."""
+        doc_with_tenant = {**document, "_id": message_id, "tenant_id": tenant_id}
+        await get_db()[cls.collection].replace_one(
+            {"_id": message_id},
+            doc_with_tenant,
+            upsert=True
+        )
+
+    @classmethod
+    async def upsert_message_unscoped(
+        cls, message_id: str, tenant_id: str, document: dict[str, Any], unset_status: bool = False
+    ) -> None:
+        """Upsert a message document by its unique message_id, setting tenant_id."""
+        update_op: dict[str, Any] = {
+            "$set": {**document, "tenant_id": tenant_id}
+        }
+        if unset_status:
+            update_op["$unset"] = {"status": ""}
+        await get_db()[cls.collection].update_one(
+            {"_id": message_id},
+            update_op,
+            upsert=True
+        )
+
+    @classmethod
+    async def find_queued_unscoped(cls) -> list[dict[str, Any]]:
+        """Find all messages with status 'queued' across all tenants."""
+        cursor = get_db()[cls.collection].find({"status": "queued"})
+        results = []
+        async for doc in cursor:
+            results.append(doc)
+        return results
+
+    @classmethod
+    async def mark_failed_unscoped(cls, message_id: str, reason: str) -> None:
+        """Mark a message as failed (dead-letter equivalent)."""
+        await get_db()[cls.collection].update_one(
+            {"_id": message_id},
+            {"$set": {"status": "failed", "fail_reason": reason}}
+        )
+
+    @classmethod
+    async def increment_retries_unscoped(cls, message_id: str) -> None:
+        """Increment retry count on a queued message."""
+        await get_db()[cls.collection].update_one(
+            {"_id": message_id},
+            {"$inc": {"retries": 1}}
         )
 
 

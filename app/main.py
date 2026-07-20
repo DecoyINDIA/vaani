@@ -7,9 +7,12 @@ this file only assembles the app. See TRD §1 (architecture) and §5 (interfaces
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
@@ -17,13 +20,73 @@ from app.config import settings
 _DASHBOARD_DIST = Path(__file__).parent.parent / "dashboard" / "dist"
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    # Startup:
+    # 1. Guard production environment secrets
+    if settings.app_env == "prod":
+        missing = []
+        if not settings.meta_app_secret:
+            missing.append("meta_app_secret")
+        if not settings.meta_webhook_verify_token:
+            missing.append("meta_webhook_verify_token")
+        if not settings.bsp_access_token:
+            missing.append("bsp_access_token")
+        if not settings.razorpay_webhook_secret:
+            missing.append("razorpay_webhook_secret")
+        if not settings.openrouter_api_key:
+            missing.append("openrouter_api_key")
+        if missing:
+            raise ValueError(
+                f"Critical configuration secrets are missing in production: {', '.join(missing)}"
+            )
+
+    # 2. Initialize indexes
+    from app.models.collections import ensure_indexes
+    await ensure_indexes()
+    
+    yield
+
+
 def create_app() -> FastAPI:
-    app = FastAPI(title="Vaani", version="0.1.0")
+    app = FastAPI(title="Vaani", version="0.1.0", lifespan=lifespan)
 
     @app.get("/health", tags=["ops"])
-    async def health() -> dict[str, str]:
+    async def health(response: Response) -> dict[str, Any]:
         # UptimeRobot target (06-engineering-plan 6.1).
-        return {"status": "ok", "env": settings.app_env}
+        redis_status = "ok"
+        mongo_status = "ok"
+        
+        # Test Redis
+        try:
+            from app.gateway.middleware import get_redis
+            r = get_redis()
+            await r.ping()
+        except Exception as e:
+            redis_status = f"error: {str(e)}"
+            
+        # Test MongoDB
+        try:
+            from app.models.base import get_db
+            db = get_db()
+            # client.admin.command('ping') is the standard way to check mongo connectivity
+            await db.client.admin.command("ping")
+        except Exception as e:
+            mongo_status = f"error: {str(e)}"
+            
+        redis_ok = redis_status == "ok" or settings.app_env == "dev"
+        status = "ok" if redis_ok and mongo_status == "ok" else "error"
+        if status == "error":
+            response.status_code = 503
+            
+        return {
+            "status": status,
+            "env": settings.app_env,
+            "checks": {
+                "redis": redis_status,
+                "mongodb": mongo_status
+            }
+        }
 
     # Inbound webhooks — Meta (P0), Razorpay (P3), Exotel (P2). TRD §5.1.
     from app.gateway import exotel, meta, razorpay

@@ -29,9 +29,8 @@ async def run_reminders() -> None:
         
         # Query bookings that are confirmed/rescheduled
         bookings_cursor = bookings_accessor.find({"status": {"$in": ["confirmed", "rescheduled"]}})
-        bookings_list = await bookings_cursor.to_list(length=1000)
         
-        for booking in bookings_list:
+        async for booking in bookings_cursor:
             slot_id = booking.get("slot_id")
             slot = await slots_accessor.find_one({"_id": slot_id})
             if not slot:
@@ -67,6 +66,24 @@ async def run_reminders() -> None:
                         }
                     )
                     
+                    if contact:
+                        wa_id = contact.get("wa_id") or contact.get("phone")
+                        if wa_id:
+                            from app.channels.whatsapp import send_template
+                            try:
+                                await send_template(
+                                    tenant_id=tenant_id,
+                                    wa_id=wa_id,
+                                    template="reminder_24h",
+                                    variables={
+                                        "patient_name": patient_name,
+                                        "booking_id": str(booking["_id"]),
+                                        "start": start_time.isoformat()
+                                    }
+                                )
+                            except Exception as e:
+                                logger.error(f"Failed to send 24h reminder to {wa_id}: {e}")
+                    
                     await bookings_accessor.update_one(
                         {"_id": booking["_id"]},
                         {"$addToSet": {"reminders_sent": "24h"}}
@@ -94,6 +111,24 @@ async def run_reminders() -> None:
                             "start": start_time.isoformat()
                         }
                     )
+                    
+                    if contact:
+                        wa_id = contact.get("wa_id") or contact.get("phone")
+                        if wa_id:
+                            from app.channels.whatsapp import send_template
+                            try:
+                                await send_template(
+                                    tenant_id=tenant_id,
+                                    wa_id=wa_id,
+                                    template="reminder_2h",
+                                    variables={
+                                        "patient_name": patient_name,
+                                        "booking_id": str(booking["_id"]),
+                                        "start": start_time.isoformat()
+                                    }
+                                )
+                            except Exception as e:
+                                logger.error(f"Failed to send 2h reminder to {wa_id}: {e}")
                     
                     await bookings_accessor.update_one(
                         {"_id": booking["_id"]},

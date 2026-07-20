@@ -120,16 +120,20 @@ async def receive(request: Request) -> Response:
         logger.warning(f"Redis enqueuing failed, falling back to MongoDB: {e}")
         try:
             # MongoDB Fallback Queue
-            await Messages(tenant_id).insert_one({
-                "_id": message_id,
-                "conversation_id": "fallback_queue",
-                "direction": "inbound",
-                "type": "text",
-                "text": msg.get("text", {}).get("body", ""),
-                "status": "queued",
-                "payload": payload,
-                "ts": datetime.now(UTC).replace(tzinfo=None),
-            })
+            await Messages.upsert_fallback_message_unscoped(
+                tenant_id=tenant_id,
+                message_id=message_id,
+                document={
+                    "conversation_id": "fallback_queue",
+                    "direction": "inbound",
+                    "type": "text",
+                    "text": msg.get("text", {}).get("body", ""),
+                    "status": "queued",
+                    "payload": payload,
+                    "ts": datetime.now(UTC).replace(tzinfo=None),
+                    "retries": 0,
+                }
+            )
             logger.info(f"Enqueued message {message_id} to MongoDB fallback queue")
         except Exception as db_err:
             logger.critical(f"MongoDB fallback queue also failed! Message lost: {db_err}")

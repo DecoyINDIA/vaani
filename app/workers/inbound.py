@@ -114,17 +114,34 @@ async def process_event(fields: dict[str, Any]) -> None:
     response = result.get("response", "")
 
     messages = Messages(tenant_id)
-    await messages.insert_one(
-        {
-            "conversation_id": conversation_id,
-            "direction": "inbound",
-            "type": "text",
-            "text": text,
-            "intent": result.get("intent"),
-            "confidence": result.get("confidence"),
-            "ts": _now(),
-        }
-    )
+    message_id = fields.get("message_id")
+    if message_id:
+        await Messages.upsert_message_unscoped(
+            message_id=message_id,
+            tenant_id=tenant_id,
+            document={
+                "conversation_id": conversation_id,
+                "direction": "inbound",
+                "type": "text",
+                "text": text,
+                "intent": result.get("intent"),
+                "confidence": result.get("confidence"),
+                "ts": _now(),
+            },
+            unset_status=True
+        )
+    else:
+        await messages.insert_one(
+            {
+                "conversation_id": conversation_id,
+                "direction": "inbound",
+                "type": "text",
+                "text": text,
+                "intent": result.get("intent"),
+                "confidence": result.get("confidence"),
+                "ts": _now(),
+            }
+        )
 
     if not response:
         logger.warning("Agent produced an empty response for %s; nothing to send", wa_id)
@@ -182,43 +199,113 @@ async def _handle(r: Any, msg_id: str, fields: dict[str, Any], deliveries: int) 
             logger.warning("Processing %s failed (attempt %d): %s", msg_id, deliveries, e)
 
 
+async def _process_fallback_queue() -> None:
+    """Scan MongoDB for status='queued' messages and process them."""
+    try:
+        queued_messages = await Messages.find_queued_unscoped()
+        for doc in queued_messages:
+            message_id = doc["_id"]
+            tenant_id = doc["tenant_id"]
+            retries = doc.get("retries", 0)
+
+            if retries >= MAX_DELIVERIES:
+                logger.error(
+                    "Fallback message %s exceeded max retries, marking as failed", message_id
+                )
+                await Messages.mark_failed_unscoped(message_id, reason="Max retries reached")
+                continue
+
+            logger.info(
+                "Processing fallback queue message %s (attempt %d) for tenant %s",
+                message_id, retries + 1, tenant_id,
+            )
+            fields = {
+                "tenant_id": tenant_id,
+                "message_id": message_id,
+                "payload": json.dumps(doc["payload"])
+            }
+            try:
+                await process_event(fields)
+            except Exception as e:
+                logger.warning("Processing fallback message %s failed: %s", message_id, e)
+                await Messages.increment_retries_unscoped(message_id)
+    except Exception as e:
+        logger.error("Failed to process fallback queue: %s", e, exc_info=True)
+
+
+async def run_scheduler_background() -> None:
+    """Background task to run reminders and weekly summaries on schedule."""
+    logger.info("Starting background scheduler...")
+    from app.workers.reminders import run_reminders
+    from app.workers.weekly_summary import run_weekly_summaries
+
+    while True:
+        # Run reminders every 15 minutes
+        try:
+            logger.info("Background scheduler: running reminders scan...")
+            await run_reminders()
+        except Exception as e:
+            logger.error("Background scheduler error in reminders: %s", e, exc_info=True)
+
+        # Run weekly summaries on Sunday at 23:00
+        try:
+            from datetime import datetime
+            now = datetime.now()
+            # Run weekly summary on Sunday (weekday 6) at 23:00 (approx. 23:00 - 23:15)
+            if now.weekday() == 6 and now.hour == 23 and now.minute < 15:
+                logger.info("Background scheduler: running weekly summaries...")
+                await run_weekly_summaries()
+        except Exception as e:
+            logger.error("Background scheduler error in weekly summaries: %s", e, exc_info=True)
+
+        await asyncio.sleep(15 * 60)  # Check every 15 minutes
+
+
 async def run(iterations: int | None = None) -> None:
     """Consume the inbound stream. `iterations=None` runs forever (worker mode)."""
     r: Any = get_redis()  # redis-py stream ops are dynamically typed
     await _ensure_group(r)
     logger.info("Inbound worker consuming %s as %s/%s", STREAM, GROUP, CONSUMER)
 
-    count = 0
-    while iterations is None or count < iterations:
-        count += 1
+    scheduler_task = asyncio.create_task(run_scheduler_background())
 
-        # Reclaim stalled/failed pending messages, dead-lettering the exhausted ones.
-        try:
-            _, claimed, _ = await r.xautoclaim(
-                STREAM, GROUP, CONSUMER, min_idle_time=_IDLE_RECLAIM_MS, start_id="0"
-            )
-            for msg_id, fields in claimed:
-                pending = await r.xpending_range(STREAM, GROUP, msg_id, msg_id, 1)
-                deliveries = int(pending[0]["times_delivered"]) if pending else MAX_DELIVERIES
-                await _handle(r, msg_id, fields, deliveries)
-        except Exception as e:
-            logger.debug("xautoclaim skipped: %s", e)
+    try:
+        count = 0
+        while iterations is None or count < iterations:
+            count += 1
 
-        try:
-            resp = await r.xreadgroup(
-                GROUP, CONSUMER, {STREAM: ">"}, count=10, block=5000
-            )
-        except Exception as e:
-            # Transient network/timeout on the blocking read must not kill the
-            # consumer loop — log and retry rather than crash-looping the process.
-            logger.warning("xreadgroup failed, retrying: %s", e)
-            continue
+            # Process any fallback queue messages from MongoDB
+            await _process_fallback_queue()
 
-        if not resp:
-            continue
-        for _stream, entries in resp:
-            for msg_id, fields in entries:
-                await _handle(r, msg_id, fields, deliveries=1)
+            # Reclaim stalled/failed pending messages, dead-lettering the exhausted ones.
+            try:
+                _, claimed, _ = await r.xautoclaim(
+                    STREAM, GROUP, CONSUMER, min_idle_time=_IDLE_RECLAIM_MS, start_id="0"
+                )
+                for msg_id, fields in claimed:
+                    pending = await r.xpending_range(STREAM, GROUP, msg_id, msg_id, 1)
+                    deliveries = int(pending[0]["times_delivered"]) if pending else MAX_DELIVERIES
+                    await _handle(r, msg_id, fields, deliveries)
+            except Exception as e:
+                logger.debug("xautoclaim skipped: %s", e)
+
+            try:
+                resp = await r.xreadgroup(
+                    GROUP, CONSUMER, {STREAM: ">"}, count=10, block=5000
+                )
+            except Exception as e:
+                # Transient network/timeout on the blocking read must not kill the
+                # consumer loop — log and retry rather than crash-looping the process.
+                logger.warning("xreadgroup failed, retrying: %s", e)
+                continue
+
+            if not resp:
+                continue
+            for _stream, entries in resp:
+                for msg_id, fields in entries:
+                    await _handle(r, msg_id, fields, deliveries=1)
+    finally:
+        scheduler_task.cancel()
 
 
 def main() -> None:
