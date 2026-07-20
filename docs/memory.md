@@ -76,6 +76,7 @@ Long-term memory persists patient history across conversations to enable rapid, 
 1.  **CSAT Score:** Calculated dynamically as a running average upon feedback receipt (`T_CSAT_REQUEST`).
 2.  **Service History:** Automatically updated by the booking engine worker when a slot moves to `status: completed`.
 3.  **Language Preference:** Captured during `lang_detect` and saved.
+4.  **DPDP Consent (voice):** Written by `VoiceSession.save_consent()` in [session.py](file:///d:/XOLVER/Vaani/app/channels/voice/session.py) — on explicit DTMF-1 accept, or on the caller continuing the call past the consent notice — persisting `consent.status`, `consent.ts`, and `consent.notice_version` to the contact document per the schema above. A returning caller with `consent.status == "granted"` skips the consent replay on the next call. Prior to this, voice calls could reach transcription/storage without ever recording consent; see [handoff.md](file:///d:/XOLVER/Vaani/docs/handoff.md) §9.
 
 ---
 
