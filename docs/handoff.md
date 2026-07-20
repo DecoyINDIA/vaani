@@ -137,5 +137,30 @@ When clinic staff finishes resolving the patient's concern:
 - **Evaluation Harness:** Re-run of the evaluation suite `evals/run_evals.py` passes 100% accuracy and F1 score criteria across all Hinglish, Hindi, English, and Odia scenarios, confirming 0% hallucination incidents.
 - **Cross-Model Validation:** Tested and verified with explicit classifier and responder override options in the eval harness.
 
+---
 
+## 9. Post-Launch Hardening — Full-Project Review Remediation
+
+A full-project review (architecture, correctness, security, data, tests, ops)
+found several ship-blocking gaps in the Phase 1-3 implementation. This section
+records what was fixed, commit [d273b8e](file:///d:/XOLVER/Vaani).
+
+### Implementation Details
+- **Redis-Outage Message Loss (Critical):** [middleware.py](file:///d:/XOLVER/Vaani/app/gateway/middleware.py) `claim_message()` now checks MongoDB for a prior sighting before touching Redis, so idempotency survives the 24h Redis TTL expiry. [meta.py](file:///d:/XOLVER/Vaani/app/gateway/meta.py)'s Mongo fallback enqueue now upserts (`Messages.upsert_fallback_message_unscoped`) instead of inserting, eliminating the duplicate-key collision against the idempotency placeholder that previously caused a silent `critical_failure` ack and permanent message loss during a Redis outage.
+- **Fail-Open Webhook Auth (Critical):** `verify_meta_signature()` and `verify_razorpay_signature()` now reject (return `False`) when the corresponding secret is unset and `app_env` is `staging`/`prod`; the app refuses to start in `prod` ([main.py](file:///d:/XOLVER/Vaani/app/main.py) lifespan) if any critical secret (`meta_app_secret`, `meta_webhook_verify_token`, `bsp_access_token`, `razorpay_webhook_secret`, `openrouter_api_key`) is missing.
+- **Unauthenticated Voice Stream & Consent Bypass (Critical):** [exotel.py](file:///d:/XOLVER/Vaani/app/gateway/exotel.py) now signs the `/webhooks/stream/{tenant_id}/{call_sid}` URL with an HMAC token over `tenant_id:call_sid`, verified before the WebSocket accepts. [session.py](file:///d:/XOLVER/Vaani/app/channels/voice/session.py) persists consent to the contact's profile (`save_consent()`, matching the schema in [memory.md](file:///d:/XOLVER/Vaani/docs/memory.md) §3) on explicit DTMF-1 accept or on continuing the call past the notice, instead of leaving `consent_accepted` false while processing continued.
+- **Non-Atomic Booking Confirmation (High):** [engine.py](file:///d:/XOLVER/Vaani/app/booking/engine.py) `confirm_booking()` now rolls the slot back to `held` and re-raises if the `Bookings.insert_one` write fails, instead of stranding the slot as `booked` with no booking record.
+- **Reminders/Weekly Summary Never Sent (High):** [reminders.py](file:///d:/XOLVER/Vaani/app/workers/reminders.py) and [weekly_summary.py](file:///d:/XOLVER/Vaani/app/workers/weekly_summary.py) now call `send_template()` in addition to the audit record. [inbound.py](file:///d:/XOLVER/Vaani/app/workers/inbound.py) gained a background scheduler task (reminders every 15 min, weekly summary Sundays 23:00) and a MongoDB fallback-queue consumer (`_process_fallback_queue`) that drains `status="queued"` documents left by a Redis outage.
+- **Voice Provider Stubs (High):** [stt.py](file:///d:/XOLVER/Vaani/app/channels/voice/stt.py) and [tts.py](file:///d:/XOLVER/Vaani/app/channels/voice/tts.py) now make real HTTP calls for Sarvam/Deepgram STT and Sarvam/ElevenLabs TTS when credentials are configured (Google STT remains a stub; not the default provider).
+- **Owner API/Dashboard Backend Not Implemented (High):** [owner_api/auth.py](file:///d:/XOLVER/Vaani/app/owner_api/auth.py) now issues and verifies HS256 JWTs; [owner_api/routes.py](file:///d:/XOLVER/Vaani/app/owner_api/routes.py) implements all documented endpoints (conversations, bookings, escalations, kb, settings, metrics, audit export), all tenant-scoped via `require_tenant`.
+- **Operational Gaps (Medium):** [collections.py](file:///d:/XOLVER/Vaani/app/models/collections.py) `ensure_indexes()` now runs on app startup. `/health` checks live Mongo + Redis connectivity and returns 503 on failure instead of an unconditional `ok`. The silent 1000-row caps on `Tenants.all()` and the reminder/weekly-summary worker scans were removed in favor of unbounded cursor iteration.
+
+### Verification & Testing
+- Ruff: 0 errors (was 32 — the branch had drifted from its own quality gate).
+- Mypy strict: 0 errors across 56 files (was 11).
+- Pytest: 28 passed, 1 skipped (fixed a pre-existing flaky test, `test_weekly_summaries`, whose "pick a Sunday" logic used an unbounded backward walk that could land outside the 7-day summary window depending on the day the suite ran — replaced with deterministic `days_since_sunday` arithmetic).
+- Eval gate: 25/25 unchanged (still exercises the rule-based offline mock, not a production LLM — real-model regression coverage remains a gap).
+
+### Known Gap (Not Yet Fixed)
+- **Dockerfile does not build/bundle the dashboard.** It gained a non-root user and a `HEALTHCHECK` directive, but there is still no Node build stage, so `dashboard/dist` will not exist in the production image and the SPA mount in [main.py](file:///d:/XOLVER/Vaani/app/main.py) will silently no-op.
 
