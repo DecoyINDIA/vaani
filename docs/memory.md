@@ -1,5 +1,7 @@
 # PATIENT MEMORY SYSTEM SPECIFICATION — PROJECT VAANI
 
+> **Production status as of 6 November 2026:** This specification describes intended behavior. The [production review](production-review.md) found ID/reference failures, shared voice caller identity/consent, and an unimplemented erasure workflow. Follow R03, R07, and R15 in the [remediation plan](production-remediation-plan.md) before relying on this behavior with real patient data.
+
 This document defines the architecture, data models, and product flows for **Short-Term Session Memory** and **Long-Term Patient Memory** in Vaani.
 
 ---

@@ -87,6 +87,12 @@ async def scope_gate(state: AgentState) -> dict[str, Any]:
             "response": get_template("medical_refusal", lang)
         }
 
+    if intent_val == "human_request":
+        return {
+            "escalate": True,
+            "response": get_template("handoff_ack", lang),
+        }
+
     # 4. Out of scope -> static template (no escalation unless confidence is low)
     if intent_val == "out_of_scope":
         logger.info("Out of scope message detected. Returning capabilities menu.")

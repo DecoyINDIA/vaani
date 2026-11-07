@@ -49,16 +49,6 @@ async def transcribe_audio(
     prov = provider or settings.stt_provider
     _load_metadata_cache()
     
-    # 1. Determine if we are using the mock fallback
-    has_key = False
-    if prov == "sarvam" and settings.sarvam_api_key:
-        has_key = True
-    elif prov == "deepgram" and settings.deepgram_api_key:
-        has_key = True
-    elif prov == "google":
-        import os
-        has_key = "GOOGLE_APPLICATION_CREDENTIALS" in os.environ
-
     # Normalize file path key if audio_data is a path string or bytes containing path
     file_key = ""
     if isinstance(audio_data, str):
@@ -71,7 +61,7 @@ async def transcribe_audio(
         except Exception:
             pass
 
-    if not has_key:
+    if settings.use_mock_adapters:
         # Offline Mock Fallback
         # Default mock transcript
         transcript = "कल सुबह डॉक्टर से मिलना है।"
@@ -85,15 +75,12 @@ async def transcribe_audio(
         # Simulate provider-specific latency and cost characteristics
         if prov == "sarvam":
             latency = 0.18 + (len(transcript) * 0.001)  # ~180-250ms
-            cost_per_min = 0.08  # ~₹0.08 per min
             # Add small random noise to simulate real-world WER differences
             # Sarvam performs well in Hindi, slightly worse in Hinglish, moderate in Odia
         elif prov == "deepgram":
             latency = 0.12 + (len(transcript) * 0.0008)  # ~120-180ms
-            cost_per_min = 0.15  # ~₹0.15 per min
         else:  # google
             latency = 0.25 + (len(transcript) * 0.0015)  # ~250-350ms
-            cost_per_min = 0.20  # ~₹0.20 per min
 
         # Sleep to simulate the actual network/processing latency
         sleep_duration = min(latency, 0.05)  # Cap sleep to keep tests fast
@@ -102,10 +89,14 @@ async def transcribe_audio(
         return {
             "text": transcript,
             "latency_ms": int(latency * 1000),
-            "cost_inr": (latency / 60.0) * cost_per_min,
             "provider": prov,
             "confidence": 0.92
         }
+
+    if prov == "sarvam" and not settings.sarvam_api_key:
+        raise RuntimeError("SARVAM_API_KEY is required for Sarvam STT")
+    if prov == "deepgram" and not settings.deepgram_api_key:
+        raise RuntimeError("DEEPGRAM_API_KEY is required for Deepgram STT")
 
     # 2. Real Provider Implementations (Stubs that would make actual HTTP calls)
     import httpx
@@ -120,9 +111,16 @@ async def transcribe_audio(
         # Sarvam Speech-to-Text API
         # POST https://api.sarvam.ai/speech-to-text
         files = {"file": ("audio.wav", audio_bytes, "audio/wav")}
+        language_code = {
+            "hi": "hi-IN",
+            "hi-Latn": "hi-IN",
+            "or": "od-IN",
+            "en": "en-IN",
+        }.get(lang, "unknown")
         data = {
-            "model": "saaras:v1",
-            "mode": "transcribe"
+            "model": "saaras:v4",
+            "mode": "transcribe",
+            "language_code": language_code,
         }
         headers = {
             "api-subscription-key": settings.sarvam_api_key
@@ -145,12 +143,13 @@ async def transcribe_audio(
             
         res_json = resp.json()
         transcript = res_json.get("transcript", "")
+        if not isinstance(transcript, str) or not transcript.strip():
+            raise RuntimeError("Sarvam STT returned an empty transcript")
         return {
             "text": transcript,
             "latency_ms": int(t_duration * 1000),
-            "cost_inr": (t_duration / 60.0) * 0.08,
             "provider": "sarvam",
-            "confidence": 0.95
+            "confidence": res_json.get("language_probability"),
         }
         
     elif prov == "deepgram":
@@ -182,7 +181,6 @@ async def transcribe_audio(
         return {
             "text": transcript,
             "latency_ms": int(t_duration * 1000),
-            "cost_inr": (t_duration / 60.0) * 0.15,
             "provider": "deepgram",
             "confidence": confidence
         }

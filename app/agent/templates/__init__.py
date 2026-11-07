@@ -1,6 +1,18 @@
 from __future__ import annotations
 
 TEMPLATES = {
+    "handoff_ack": {
+        "en": "I have handed this conversation to the clinic staff. They will reply here.",
+        "hi": "मैंने यह बातचीत क्लिनिक स्टाफ को सौंप दी है। वे यहीं जवाब देंगे।",
+        "hi-Latn": "Maine yeh conversation clinic staff ko hand off kar di hai. Woh yahin reply karenge.",
+        "or": "ମୁଁ ଏହି କଥୋପକଥନଟି କ୍ଲିନିକ୍ କର୍ମଚାରୀଙ୍କୁ ଦେଇଛି। ସେମାନେ ଏଠାରେ ଉତ୍ତର ଦେବେ।",
+    },
+    "handoff_after_hours": {
+        "en": "Our team is available from the next clinic opening. Your message is queued for staff, and I can still help you book an appointment meanwhile.",
+        "hi": "हमारी टीम क्लिनिक के अगले खुलने के समय उपलब्ध होगी। आपका संदेश स्टाफ के लिए कतार में है; इस बीच मैं अपॉइंटमेंट बुक करने में मदद कर सकता हूँ।",
+        "hi-Latn": "Hamari team clinic ke agle opening time par available hogi. Aapka message staff ke liye queue mein hai; tab tak main appointment book karne mein madad kar sakta hoon.",
+        "or": "କ୍ଲିନିକ୍ ପରବର୍ତ୍ତୀ ଥର ଖୋଲିବାବେଳେ ଆମ ଟିମ୍ ଉପଲବ୍ଧ ହେବ। ଆପଣଙ୍କ ସନ୍ଦେଶ ଷ୍ଟାଫ୍ ପାଇଁ ଧାଡ଼ିରେ ଅଛି; ସେପର୍ଯ୍ୟନ୍ତ ମୁଁ ଅପଏଣ୍ଟମେଣ୍ଟ ବୁକ୍ କରିବାରେ ସାହାଯ୍ୟ କରିପାରିବି।",
+    },
     "medical_refusal": {
         "en": "I apologize, but as an AI assistant, I cannot provide medical advice or diagnose symptoms. Please book an appointment to consult our dentist directly.",
         "hi": "मैं क्षमा चाहता हूँ, लेकिन एक एआई सहायक के रूप में, मैं चिकित्सा सलाह या निदान प्रदान नहीं कर सकता। कृपया हमारे दंत चिकित्सक से सीधे परामर्श करने के लिए एक अपॉइंटमेंट बुक करें।",

@@ -1,0 +1,31 @@
+{
+  "tenant_id": "clinic_slug",
+  "name": "Example Dental Clinic",
+  "timezone": "Asia/Kolkata",
+  "plan": "starter",
+  "locale_default": "hi",
+  "wa_number": "919999999999",
+  "voice_number": "919999999998",
+  "landmark_line": "Near Main Market",
+  "location_pin": "https://maps.google.com/?q=20.296,85.824",
+  "dashboard_url": "https://dashboard.example.com",
+  "gstin": "21ABCDE1234F1Z5",
+  "whatsapp": {
+    "phone_number_id": "meta-phone-number-id",
+    "access_token_env": "VAANI_WA_TOKEN_CLINIC_SLUG"
+  },
+  "business_hours": [
+    { "day": "monday", "start": "09:00", "end": "18:00" }
+  ],
+  "holiday_calendar": ["2026-12-25"],
+  "practitioners": [
+    {
+      "practitioner_id": "doctor_one",
+      "name": "Dr Example",
+      "services": ["Consultation"],
+      "schedule_template": {
+        "monday": [{ "start": "09:00", "end": "09:30" }]
+      }
+    }
+  ]
+}

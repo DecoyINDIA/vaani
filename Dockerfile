@@ -1,9 +1,19 @@
 # Single image for both api and worker services (ADR-06).
+FROM node:22-alpine AS dashboard
+
+WORKDIR /src
+COPY dashboard/package.json dashboard/package-lock.json ./
+RUN npm ci
+COPY dashboard/ ./
+RUN npm run build
+
 FROM python:3.12-slim
+
+COPY --from=ghcr.io/astral-sh/uv:0.9.8 /uv /uvx /bin/
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1
+    PATH="/srv/.venv/bin:$PATH"
 
 # Create a secure non-root user and group
 RUN groupadd -g 10001 appgroup && \
@@ -11,19 +21,14 @@ RUN groupadd -g 10001 appgroup && \
 
 WORKDIR /srv
 
-# Install runtime dependencies (e.g., curl/wget for healthcheck)
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl wget && \
-    rm -rf /var/lib/apt/lists/*
-
 # Install deps first for layer caching.
-COPY pyproject.toml README.md ./
-RUN pip install --upgrade pip && pip install .
+COPY pyproject.toml uv.lock README.md ./
+RUN uv sync --frozen --no-dev --no-install-project
 
 # App source + built dashboard static
 COPY app ./app
-COPY ops/healthcheck.sh /usr/local/bin/healthcheck.sh
-RUN chmod +x /usr/local/bin/healthcheck.sh
+RUN uv sync --frozen --no-dev --no-editable
+COPY --from=dashboard /src/dist ./dashboard/dist
 
 # Change ownership to the non-root user
 RUN chown -R appuser:appgroup /srv
@@ -35,6 +40,6 @@ EXPOSE 8000
 
 # Configure Docker healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD /usr/local/bin/healthcheck.sh
+  CMD python -c "import os,urllib.request; urllib.request.urlopen('http://localhost:'+os.getenv('PORT','8000')+'/health',timeout=5)"
 
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

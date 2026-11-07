@@ -10,8 +10,9 @@ import logging
 from datetime import UTC, date, time
 from datetime import datetime as dt
 from typing import Any
+from zoneinfo import ZoneInfo
 
-from app.models.collections import Slots
+from app.models.collections import Slots, Tenants
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +28,14 @@ async def slots_get(tenant_id: str, practitioner_id: str, date_str: str) -> list
         logger.error(f"Invalid date format: {date_str}")
         return []
 
-    start_of_day = dt.combine(parsed_date, time(0, 0, 0))
-    end_of_day = dt.combine(parsed_date, time(23, 59, 59))
+    tenant = await Tenants.find_by_id(tenant_id)
+    timezone = ZoneInfo(str(tenant.get("timezone", "Asia/Kolkata")) if tenant else "Asia/Kolkata")
+    start_of_day = (
+        dt.combine(parsed_date, time.min, tzinfo=timezone).astimezone(UTC).replace(tzinfo=None)
+    )
+    end_of_day = (
+        dt.combine(parsed_date, time.max, tzinfo=timezone).astimezone(UTC).replace(tzinfo=None)
+    )
     now = dt.now(UTC).replace(tzinfo=None)
 
     query = {
@@ -46,8 +53,8 @@ async def slots_get(tenant_id: str, practitioner_id: str, date_str: str) -> list
         async for doc in cursor:
             results.append({
                 "slot_id": str(doc["_id"]),
-                "start": doc["start"].isoformat(),
-                "end": doc["end"].isoformat(),
+                "start": doc["start"].replace(tzinfo=UTC).astimezone(timezone).isoformat(),
+                "end": doc["end"].replace(tzinfo=UTC).astimezone(timezone).isoformat(),
                 # treat expired-hold slots as open
                 "status": "open" if doc["status"] == "open" else "open"
             })

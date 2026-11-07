@@ -16,8 +16,10 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Request, Response
 
 from app import audit
+from app.billing.plans import plan_from_provider_id
 from app.config import settings
-from app.models.collections import Bookings, Payments, Tenants
+from app.models.base import get_db
+from app.models.collections import BillingSubscriptions, Bookings, Payments, Tenants
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["webhooks"])
@@ -30,7 +32,7 @@ def verify_razorpay_signature(body: bytes, signature: str | None) -> bool:
     if not settings.razorpay_webhook_secret:
         if settings.app_env in ("staging", "prod"):
             return False
-        return True  # If no secret is configured, allow in dev/testing
+        return settings.use_mock_adapters
     computed = hmac.new(
         key=settings.razorpay_webhook_secret.encode("utf-8"),
         msg=body,
@@ -56,60 +58,167 @@ async def receive(request: Request) -> Response:
     event = payload.get("event")
     logger.info(f"Received Razorpay webhook event: {event}")
 
-    if event == "payment.link.paid":
+    if event == "payment_link.paid":
         link_entity = payload.get("payload", {}).get("payment_link", {}).get("entity", {})
+        payment_entity = payload.get("payload", {}).get("payment", {}).get("entity", {})
         link_id = link_entity.get("id")
         if link_id:
             payment_record = await Payments.find_by_link_id_unscoped(link_id)
-            if payment_record:
-                tenant_id = payment_record["tenant_id"]
-                # Update payment status
+            if not payment_record:
+                await get_db()["payment_reconciliation"].insert_one(
+                    {
+                        "tenant_id": "SYSTEM",
+                        "event": event,
+                        "rzp_link_id": link_id,
+                        "provider_payment_id": payment_entity.get("id"),
+                        "status": "unknown_link",
+                        "created_at": datetime.now(UTC).replace(tzinfo=None),
+                    }
+                )
+                return Response(content='{"status":"reconciliation_required"}', status_code=202)
+
+            tenant_id = payment_record["tenant_id"]
+            expected = {
+                "amount": payment_record.get("amount"),
+                "currency": payment_record.get("currency"),
+                "reference_id": payment_record.get("reference_id"),
+                "account_id": payment_record.get("provider_account_id"),
+            }
+            actual = {
+                "amount": link_entity.get("amount"),
+                "currency": link_entity.get("currency"),
+                "reference_id": link_entity.get("reference_id"),
+                "account_id": payload.get("account_id"),
+            }
+            errors = [
+                key
+                for key, value in expected.items()
+                if value is not None and actual.get(key) != value
+            ]
+            if payment_entity.get("status") not in {"captured", None}:
+                errors.append("payment_status")
+            booking_id = payment_record.get("booking_id")
+            booking = (
+                await Bookings(tenant_id).find_one({"_id": booking_id}) if booking_id else None
+            )
+            if booking and booking.get("status") == "cancelled":
+                errors.append("cancelled_booking")
+
+            if errors:
                 await Payments(tenant_id).update_one(
                     {"rzp_link_id": link_id},
-                    {"$set": {
-                        "status": "paid",
-                        "paid_at": datetime.now(UTC).replace(tzinfo=None)
-                    }}
+                    {
+                        "$set": {
+                            "status": "reconciliation_required",
+                            "reconciliation_errors": sorted(set(errors)),
+                        }
+                    },
                 )
-                
-                # Update booking status if linked
-                booking_id = payment_record.get("booking_id")
-                if booking_id:
-                    await Bookings(tenant_id).update_one(
-                        {"_id": booking_id},
-                        {"$set": {"status": "confirmed"}}
-                    )
+                await audit.record(
+                    tenant_id,
+                    actor="system",
+                    event_type="payment_reconciliation_required",
+                    payload={"rzp_link_id": link_id, "errors": sorted(set(errors))},
+                )
+                return Response(content='{"status":"reconciliation_required"}', status_code=202)
 
-                # Record in audit log
+            provider_payment_id = payment_entity.get("id")
+            if payment_record.get("status") == "paid":
+                if payment_record.get("provider_payment_id") == provider_payment_id:
+                    return Response(content='{"status":"duplicate"}', status_code=200)
+                return Response(content='{"status":"reconciliation_required"}', status_code=202)
+
+            result = await Payments(tenant_id).update_one(
+                {"rzp_link_id": link_id, "status": "issued"},
+                {
+                    "$set": {
+                        "status": "paid",
+                        "provider_payment_id": provider_payment_id,
+                        "paid_at": datetime.now(UTC).replace(tzinfo=None),
+                    }
+                },
+            )
+            if result.modified_count == 1:
                 await audit.record(
                     tenant_id,
                     actor="system",
                     event_type="payment_completed",
-                    payload={"rzp_link_id": link_id, "amount": payment_record.get("amount")},
-                    conversation_id=None
+                    payload={
+                        "rzp_link_id": link_id,
+                        "provider_payment_id": provider_payment_id,
+                        "amount": payment_record.get("amount"),
+                    },
                 )
 
-    elif event in ("subscription.activated", "subscription.charged"):
+    elif event in {
+        "subscription.activated",
+        "subscription.charged",
+        "subscription.resumed",
+        "subscription.pending",
+        "subscription.halted",
+        "subscription.paused",
+        "subscription.cancelled",
+        "subscription.completed",
+    }:
         sub_entity = payload.get("payload", {}).get("subscription", {}).get("entity", {})
         notes = sub_entity.get("notes", {})
         tenant_id = notes.get("tenant_id")
-        plan_id = sub_entity.get("plan_id", "pro")
-        
-        if tenant_id:
-            status = "active" if sub_entity.get("status") in ("active", "charged") else "active"
-            await Tenants.update_tenant_plan(tenant_id, plan=plan_id, status=status)
-            
-            # Record in audit log
-            await audit.record(
-                tenant_id,
-                actor="system",
-                event_type="subscription_updated",
-                payload={
-                    "subscription_id": sub_entity.get("id"),
-                    "plan": plan_id,
-                    "status": status,
-                },
-                conversation_id=None
-            )
+        provider_plan_id = sub_entity.get("plan_id")
+        provider_subscription_id = sub_entity.get("id")
+        if not tenant_id or not provider_subscription_id or not provider_plan_id:
+            return Response(content='{"status":"reconciliation_required"}', status_code=202)
+        try:
+            plan = plan_from_provider_id(str(provider_plan_id))
+        except ValueError:
+            logger.error("Unknown Razorpay plan ID: %s", provider_plan_id)
+            return Response(content='{"status":"reconciliation_required"}', status_code=202)
+
+        billing_status = {
+            "subscription.activated": "active",
+            "subscription.charged": "active",
+            "subscription.resumed": "active",
+            "subscription.pending": "past_due",
+            "subscription.halted": "past_due",
+            "subscription.paused": "paused",
+            "subscription.cancelled": "cancelled",
+            "subscription.completed": "cancelled",
+        }[event]
+        subscriptions = BillingSubscriptions(str(tenant_id))
+        existing = await subscriptions.find_one(
+            {"provider_subscription_id": provider_subscription_id}
+        )
+        if (
+            existing
+            and existing.get("last_event") == event
+            and existing.get("provider_status") == sub_entity.get("status")
+        ):
+            return Response(content='{"status":"duplicate"}', status_code=200)
+
+        await subscriptions.find_one_and_update(
+            {"provider_subscription_id": provider_subscription_id},
+            {
+                "$set": {
+                    "provider_plan_id": provider_plan_id,
+                    "plan": plan.code,
+                    "billing_status": billing_status,
+                    "provider_status": sub_entity.get("status"),
+                    "last_event": event,
+                    "updated_at": datetime.now(UTC).replace(tzinfo=None),
+                }
+            },
+            upsert=True,
+        )
+        await Tenants.update_tenant_plan(str(tenant_id), plan.code, billing_status)
+        await audit.record(
+            str(tenant_id),
+            actor="system",
+            event_type="subscription_updated",
+            payload={
+                "subscription_id": provider_subscription_id,
+                "provider_plan_id": provider_plan_id,
+                "plan": plan.code,
+                "billing_status": billing_status,
+            },
+        )
 
     return Response(content='{"status":"accepted"}', status_code=200)

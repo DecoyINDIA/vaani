@@ -1,23 +1,26 @@
-"""Onboard a tenant from a YAML sheet (06-engineering-plan Week 3 task 3.4 / Week 6 6.3).
+"""Seed the fixed synthetic demo tenant in an explicit dev/test environment.
 
 Creates the tenant + KB entries + practitioner schedules + holiday calendar
 (Odisha festival set) + location pin + landmark line. Target: each onboarding
 <=1 day wall clock, seed a demo clinic in <1 min.
 
-Usage:
-    python -m ops.seed_tenant path/to/clinic.yaml
+This is not a production onboarding command and accepts no tenant configuration.
+Usage: python -m ops.seed_tenant --demo
 """
 
 from __future__ import annotations
 
+import argparse
 import asyncio
-import sys
 
 from app.booking.engine import expand_schedule
+from app.config import settings
 from app.models.base import get_db
 
 
-async def seed_async(yaml_path: str) -> None:
+async def seed_demo_async() -> None:
+    if settings.app_env != "dev" or not settings.use_mock_adapters:
+        raise RuntimeError("demo seeding requires dev with USE_MOCK_ADAPTERS=true")
     db = get_db()
     tenant_id = "test_tenant"
 
@@ -32,6 +35,7 @@ async def seed_async(yaml_path: str) -> None:
         "plan": "starter",
         "status": "active",
         "locale_default": "hi",
+        "timezone": "Asia/Kolkata",
         "business_hours": [
             {"day": "monday", "start": "09:00", "end": "18:00"},
             {"day": "tuesday", "start": "09:00", "end": "18:00"},
@@ -104,12 +108,15 @@ async def seed_async(yaml_path: str) -> None:
     print(f"Seeded demo clinic successfully for tenant: {tenant_id} in < 1s")
 
 
-def seed(yaml_path: str) -> None:
-    asyncio.run(seed_async(yaml_path))
+def seed_demo() -> None:
+    asyncio.run(seed_demo_async())
 
 
 if __name__ == "__main__":
-    # If no argument is provided, seed with dummy string
-    path = sys.argv[1] if len(sys.argv) > 1 else "default.yaml"
-    seed(path)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--demo", action="store_true")
+    args = parser.parse_args()
+    if not args.demo:
+        parser.error("only explicit --demo seeding is supported")
+    seed_demo()
 

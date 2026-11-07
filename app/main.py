@@ -22,26 +22,10 @@ _DASHBOARD_DIST = Path(__file__).parent.parent / "dashboard" / "dist"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    # Startup:
-    # 1. Guard production environment secrets
-    if settings.app_env == "prod":
-        missing = []
-        if not settings.meta_app_secret:
-            missing.append("meta_app_secret")
-        if not settings.meta_webhook_verify_token:
-            missing.append("meta_webhook_verify_token")
-        if not settings.bsp_access_token:
-            missing.append("bsp_access_token")
-        if not settings.razorpay_webhook_secret:
-            missing.append("razorpay_webhook_secret")
-        if not settings.openrouter_api_key:
-            missing.append("openrouter_api_key")
-        if missing:
-            raise ValueError(
-                f"Critical configuration secrets are missing in production: {', '.join(missing)}"
-            )
+    # API and worker call the same fail-closed runtime guard.
+    settings.validate_runtime()
 
-    # 2. Initialize indexes
+    # Initialize indexes
     from app.models.collections import ensure_indexes
     await ensure_indexes()
     
@@ -96,6 +80,8 @@ def create_app() -> FastAPI:
 
     # Owner dashboard REST — JWT auth, all tenant-scoped. TRD §5.2.
     from app.owner_api import routes as owner_routes
+    from app.owner_api import sessions as owner_sessions
+    app.include_router(owner_sessions.router, prefix="/api/auth")
     app.include_router(owner_routes.router, prefix="/api")
 
     # Built dashboard SPA (Vite output) served behind the same app (ADR-07).

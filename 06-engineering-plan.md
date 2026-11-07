@@ -1,6 +1,9 @@
 # Engineering Build Plan — Project Vaani (End-to-End)
 
 **Version:** 2.0 | **Date:** 18 Jul 2026 | **Owner:** Subham Jena (Xolver)
+
+> **Current remediation order:** The [6 November 2026 production review](docs/production-review.md) found unresolved production blockers in the implementation. Use the [production remediation plan](docs/production-remediation-plan.md) for the immediate fix sequence, acceptance criteria, and release gates. The phases below remain the original product build plan; their implementation summaries do not establish production readiness.
+
 **Scope:** everything from `git init` to 25 tenants in production. Business phasing, gates, and budget live in [03-build-plan.md]; this doc is the engineering execution layer under it. **Execution discipline: every task here runs as a TDD loop per [07-tdd-loops.md] — tests first, loop closes only on green, next loop blocked until then.** Stack per TRD ADRs 01–07 (LangGraph, OpenRouter, MongoDB Atlas Mumbai + Redis, Meta Cloud API via BSP, Exotel, single VPS).
 
 ---
@@ -46,7 +49,7 @@ vaani/
 │   ├── run_evals.py          # intent F1, scope-gate accuracy, hallucination check
 │   └── voice_corpus/         # Phase-0 recordings + transcripts (STT bake-off)
 ├── ops/
-│   ├── seed_tenant.py        # tenant + KB + schedule + holiday calendar from a YAML sheet
+│   ├── seed_tenant.py        # explicit dev/test-only synthetic demo seeder
 │   ├── restore_runbook.md    # tested before pilot (RTO 15m / RPO 1h)
 │   └── dpdp_delete.py        # data-principal erasure pipeline (≤7d SLA)
 └── tests/                    # unit + integration; race test lives here
@@ -115,7 +118,7 @@ Ordering principle: **walking skeleton first** — a message travels the full pi
 |---|------|--------------------|
 | 6.1 | Prod deploy: VPS + Docker Compose, Caddy TLS, Atlas M10 ap-south-1, Upstash Redis; Sentry; UptimeRobot on health endpoint | Deploy runbook = `git pull && docker compose up -d --build`; documented |
 | 6.2 | Backup/restore drill: Atlas continuous backup verified, restore to staging executed once, timed | RTO ≤15 min demonstrated, logged in `ops/restore_runbook.md` |
-| 6.3 | Onboard 5 LOI clinics via `seed_tenant.py` + KB YAML sheet: KB, schedules, holiday calendar (Odisha set), location pin + landmark, staff training | Each onboarding ≤1 day wall clock; checklist per clinic |
+| 6.3 | Onboard 5 LOI clinics through a validated production configuration workflow (the demo seeder is prohibited): KB, schedules, holiday calendar, timezone, location pin + landmark, staff training | Each onboarding ≤1 day wall clock; checklist per clinic |
 | 6.4 | Transcript review tooling: daily digest of 100% pilot conversations, one-tap "add to eval set" flagging | Taxonomy/KB misses fixed same-day during pilot week 1 |
 | 6.5 | KB auto-draft (F-23) v0: Google Business Profile + website scrape (+ OCR of price-list photo) → draft KB YAML → owner approves line-by-line during onboarding | Clinic #5 onboarded in ≤1 hour using the auto-draft |
 

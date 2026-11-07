@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock
 
 import pytest
 from app import audit
@@ -7,6 +8,7 @@ from app.agent.tools.booking_cancel import booking_cancel
 from app.billing.invoice import generate_invoice
 from app.billing.meters import record_usage
 from app.booking.engine import claim_waitlist_slot
+from app.config import settings
 from app.gateway.razorpay import verify_razorpay_signature
 from app.models.base import get_db
 from app.workers.reminders import run_reminders
@@ -33,7 +35,7 @@ async def test_audit_logging():
         payload={"key": "value"},
         conversation_id="conv_123"
     )
-    
+
     db = get_db()
     log = await db["audit_log"].find_one({"tenant_id": tenant_id})
     assert log is not None
@@ -47,19 +49,27 @@ async def test_audit_logging():
 async def test_usage_metering():
     tenant_id = "tenant_meter_test"
     period = datetime.now(UTC).strftime("%Y-%m")
-    
-    await record_usage(tenant_id, voice_minutes=10, llm_tokens_in=500)
-    await record_usage(tenant_id, voice_minutes=5, llm_tokens_out=250)
-    
     db = get_db()
+    await db["tenants"].insert_one({"_id": tenant_id, "timezone": "UTC"})
+
+    assert await record_usage(
+        tenant_id, event_id="call-1", metric="voice_audio_seconds", quantity=600
+    )
+    assert not await record_usage(
+        tenant_id, event_id="call-1", metric="voice_audio_seconds", quantity=600
+    )
+    assert await record_usage(
+        tenant_id, event_id="llm-1", metric="llm_input_tokens", quantity=500
+    )
+
     usage = await db["usage_meters"].find_one({"tenant_id": tenant_id, "period": period})
     assert usage is not None
-    assert usage["voice_minutes"] == 15
-    assert usage["llm_tokens_in"] == 500
-    assert usage["llm_tokens_out"] == 250
+    assert usage["voice_audio_seconds"] == 600
+    assert usage["llm_input_tokens"] == 500
 
 
-async def test_gst_invoice_starter():
+async def test_gst_invoice_starter(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(settings, "xolver_gstin", "27XOLVER1111A1Z1")
     tenant_id = "tenant_starter_test"
     db = get_db()
     await db["tenants"].insert_one({
@@ -73,14 +83,18 @@ async def test_gst_invoice_starter():
     period = datetime.now(UTC).strftime("%Y-%m")
     invoice = await generate_invoice(tenant_id, period)
     
-    assert invoice["invoice_number"] == f"INV-{tenant_id[:4].upper()}-{period.replace('-', '')}"
-    assert invoice["base_amount"] == 2999.0
-    assert invoice["gst_amount"] == 539.82
-    assert invoice["total_amount"] == 3538.82
+    assert invoice["invoice_number"].startswith(f"INV-{period.replace('-', '')}-")
+    assert invoice["base_amount_paise"] == 299_900
+    assert invoice["gst_paise"] == 53_982
+    assert invoice["total_paise"] == 353_882
     assert invoice["tenant_gstin"] == "27CLINIC1111A1Z"
+    assert await db["invoices"].count_documents({"tenant_id": tenant_id}) == 1
+    assert (await generate_invoice(tenant_id, period))["invoice_number"] == invoice["invoice_number"]
+    assert await db["invoices"].count_documents({"tenant_id": tenant_id}) == 1
 
 
-async def test_gst_invoice_pro_with_overage():
+async def test_gst_invoice_pro_with_overage(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(settings, "xolver_gstin", "27XOLVER1111A1Z1")
     tenant_id = "tenant_pro_test"
     db = get_db()
     await db["tenants"].insert_one({
@@ -93,17 +107,19 @@ async def test_gst_invoice_pro_with_overage():
     
     period = datetime.now(UTC).strftime("%Y-%m")
     
-    # Pro includes 300 mins; we simulate 350 mins (50 mins overage at Rs 2.0/min = Rs 100 overage)
-    await record_usage(tenant_id, voice_minutes=350)
+    await record_usage(
+        tenant_id,
+        event_id="call-overage",
+        metric="voice_audio_seconds",
+        quantity=350 * 60,
+    )
     
     invoice = await generate_invoice(tenant_id, period)
     
-    # Base: 4999.0 + Overage: 100.0 = 5099.0
-    # GST: 5099.0 * 0.18 = 917.82
-    # Total: 6016.82
-    assert invoice["base_amount"] == 5099.0
-    assert invoice["gst_amount"] == 917.82
-    assert invoice["total_amount"] == 6016.82
+    assert invoice["base_amount_paise"] == 699_900
+    assert invoice["overage_amount_paise"] == 20_000
+    assert invoice["gst_paise"] == 129_582
+    assert invoice["total_paise"] == 849_482
     assert invoice["tenant_gstin"] == "27CLINIC2222B2Z"
 
 
@@ -144,19 +160,27 @@ async def test_razorpay_payment_paid_webhook():
         "booking_id": booking_id,
         "rzp_link_id": link_id,
         "amount": 500,
+        "currency": "INR",
+        "reference_id": "ref_test",
         "status": "issued"
     })
     
     # 2. Call Razorpay Webhook endpoint
     client = TestClient(app)
     payload = {
-        "event": "payment.link.paid",
+        "event": "payment_link.paid",
         "payload": {
             "payment_link": {
                 "entity": {
                     "id": link_id,
-                    "status": "paid"
+                    "status": "paid",
+                    "amount": 500,
+                    "currency": "INR",
+                    "reference_id": "ref_test"
                 }
+            },
+            "payment": {
+                "entity": {"id": "pay_test", "status": "captured"}
             }
         }
     }
@@ -164,24 +188,35 @@ async def test_razorpay_payment_paid_webhook():
     response = client.post("/webhooks/razorpay", json=payload, headers={"X-Razorpay-Signature": "dummy_sig"})
     assert response.status_code == 200
     
-    # 3. Assert payment updated to paid, booking updated to confirmed, and audit log populated
+    # 3. Payment is separate from booking state and replay-safe.
     payment = await db["payments"].find_one({"rzp_link_id": link_id})
     assert payment["status"] == "paid"
     assert payment["paid_at"] is not None
     
     booking = await db["bookings"].find_one({"_id": booking_id})
-    assert booking["status"] == "confirmed"
+    assert booking["status"] == "rescheduled"
     
     audit_entry = await db["audit_log"].find_one({"tenant_id": tenant_id, "event_type": "payment_completed"})
     assert audit_entry is not None
     assert audit_entry["payload"]["rzp_link_id"] == link_id
 
+    duplicate = client.post(
+        "/webhooks/razorpay",
+        json=payload,
+        headers={"X-Razorpay-Signature": "dummy_sig"},
+    )
+    assert duplicate.json()["status"] == "duplicate"
+    assert await db["audit_log"].count_documents(
+        {"tenant_id": tenant_id, "event_type": "payment_completed"}
+    ) == 1
 
-async def test_razorpay_subscription_activated_webhook():
+
+async def test_razorpay_subscription_activated_webhook(monkeypatch: pytest.MonkeyPatch):
     from app.main import app
     from fastapi.testclient import TestClient
     
     tenant_id = "tenant_sub_test"
+    monkeypatch.setattr(settings, "razorpay_plan_pro_id", "plan_pro")
     db = get_db()
     await db["tenants"].insert_one({
         "_id": tenant_id,
@@ -211,8 +246,9 @@ async def test_razorpay_subscription_activated_webhook():
     assert response.status_code == 200
     
     tenant = await db["tenants"].find_one({"_id": tenant_id})
-    assert tenant["plan"] == "plan_pro"
-    assert tenant["status"] == "active"
+    assert tenant["plan"] == "pro"
+    assert tenant["billing_status"] == "active"
+    assert tenant["status"] == "pending"
 
 
 async def test_reminders_worker():
@@ -229,13 +265,14 @@ async def test_reminders_worker():
     
     # 1. 24h reminder booking (starts in 24 hours)
     slot_id_24h = "slot_24h"
+    booking_id_24h = "bk_24h"
     await db["slots"].insert_one({
         "_id": slot_id_24h,
         "tenant_id": tenant_id,
         "start": now + timedelta(hours=24),
-        "status": "booked"
+        "status": "booked",
+        "booking_id": booking_id_24h
     })
-    booking_id_24h = "bk_24h"
     await db["bookings"].insert_one({
         "_id": booking_id_24h,
         "tenant_id": tenant_id,
@@ -247,13 +284,14 @@ async def test_reminders_worker():
     
     # 2. 2h reminder booking (starts in 2 hours)
     slot_id_2h = "slot_2h"
+    booking_id_2h = "bk_2h"
     await db["slots"].insert_one({
         "_id": slot_id_2h,
         "tenant_id": tenant_id,
         "start": now + timedelta(hours=2),
-        "status": "booked"
+        "status": "booked",
+        "booking_id": booking_id_2h
     })
-    booking_id_2h = "bk_2h"
     await db["bookings"].insert_one({
         "_id": booking_id_2h,
         "tenant_id": tenant_id,
@@ -276,10 +314,10 @@ async def test_reminders_worker():
     
     # Verify reminders sent
     booking_24h = await db["bookings"].find_one({"_id": booking_id_24h})
-    assert "24h" in booking_24h["reminders_sent"]
+    assert booking_24h["reminder_status"]["24h"]["state"] == "sent"
     
     booking_2h = await db["bookings"].find_one({"_id": booking_id_2h})
-    assert "2h" in booking_2h["reminders_sent"]
+    assert booking_2h["reminder_status"]["2h"]["state"] == "sent"
     
     # Check audit log for template sends
     audit_24h = await db["audit_log"].find_one({"tenant_id": tenant_id, "payload.template": "T_REMINDER_24H"})
@@ -371,7 +409,7 @@ async def test_weekly_summaries():
     assert variables[5] == "Rs. 2000"
 
 
-async def test_exotel_missed_call_bridge():
+async def test_exotel_missed_call_bridge(monkeypatch: pytest.MonkeyPatch):
     from app.main import app
     from fastapi.testclient import TestClient
     
@@ -386,9 +424,14 @@ async def test_exotel_missed_call_bridge():
     })
     
     client = TestClient(app)
+    monkeypatch.setattr(
+        "app.gateway.exotel.verify_exotel_call",
+        AsyncMock(return_value={"Sid": "verified"}),
+    )
     payload = {
         "From": "919876543210",
-        "To": "919999999990"
+        "To": "919999999990",
+        "CallSid": "missed-call-1",
     }
     
     response = client.post("/webhooks/exotel/missed_call", data=payload)
@@ -410,6 +453,10 @@ async def test_exotel_missed_call_bridge():
     audit_entry = await db["audit_log"].find_one({"tenant_id": tenant_id, "payload.template": "T_MISSED_CALL_BRIDGE"})
     assert audit_entry is not None
     assert audit_entry["payload"]["to"] == "919876543210"
+    intent = await db["outbound_intents"].find_one(
+        {"tenant_id": tenant_id, "operation_key": "missed-call:tenant_missed_call_test:919876543210:missed-call-1"}
+    )
+    assert intent is not None and intent["state"] == "sent"
 
 
 async def test_waitlist_cancellation_and_backfill():
@@ -425,7 +472,8 @@ async def test_waitlist_cancellation_and_backfill():
         "tenant_id": tenant_id,
         "practitioner_id": "prac_1",
         "start": start_dt,
-        "status": "booked"
+        "status": "booked",
+        "booking_id": "booking_to_cancel"
     })
     
     booking_id = "booking_to_cancel"

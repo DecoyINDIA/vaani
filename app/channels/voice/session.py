@@ -33,7 +33,7 @@ class VoiceSession:
             raise ValueError("tenant_id is required for VoiceSession")
         self.tenant_id = tenant_id
         self.call_sid = call_sid
-        self.caller_phone = caller_phone or "unknown_phone"
+        self.caller_phone = caller_phone or f"ephemeral:{call_sid}"
         
         self.conversation_id: str | None = None
         self.consent_played = False
@@ -159,8 +159,14 @@ class VoiceSession:
             }
 
         if not self.consent_accepted:
-            # User stayed on the line to proceed, which constitutes consent.
-            await self.save_consent()
+            reminder = "Please press 1 to consent before continuing."
+            return {
+                "transcript": "[Consent pending]",
+                "response": reminder,
+                "audio": await synthesize(reminder, lang),
+                "consent_pending": True,
+                "latencies": {},
+            }
 
         # 2. Reset interruption state on new turn
         self.interrupted = False

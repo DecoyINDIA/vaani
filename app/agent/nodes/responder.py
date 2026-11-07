@@ -14,6 +14,7 @@ from typing import Any
 from app.agent.llm import query_llm
 from app.agent.state import AgentState
 from app.config import settings
+from app.models.base import mongo_id_candidates
 from app.models.collections import Contacts, Conversations, Messages, Practitioners
 
 logger = logging.getLogger(__name__)
@@ -88,7 +89,9 @@ async def responder(state: AgentState) -> dict[str, Any]:
     # Load contact profile for patient memory lookup
     contact = None
     try:
-        conv = await Conversations(tenant_id).find_one({"_id": conv_id})
+        conv = await Conversations(tenant_id).find_one(
+            {"_id": {"$in": mongo_id_candidates(str(conv_id))}}
+        )
         if conv and conv.get("contact_id"):
             contact = await Contacts(tenant_id).find_one({"_id": conv["contact_id"]})
     except Exception as e:

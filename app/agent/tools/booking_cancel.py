@@ -6,27 +6,26 @@ import logging
 from typing import Any
 
 from app import audit
-from app.models.collections import Bookings, Slots, Waitlist
+from app.booking.engine import cancel_booking
+from app.models.collections import Slots, Waitlist
 
 logger = logging.getLogger(__name__)
 
 
-async def booking_cancel(tenant_id: str, booking_id: str) -> dict[str, Any]:
+async def booking_cancel(
+    tenant_id: str, booking_id: str, *, contact_id: str | None = None
+) -> dict[str, Any]:
     """Tool — cancel booking (TRD §3). Frees the slot (status -> open)."""
-    bookings = Bookings(tenant_id)
     slots = Slots(tenant_id)
 
     logger.info(f"Attempting to cancel booking {booking_id} for tenant {tenant_id}")
-    booking = await bookings.find_one({"_id": booking_id})
+    booking = await cancel_booking(tenant_id, booking_id, contact_id=contact_id)
     if not booking:
         logger.warning(f"Booking {booking_id} not found")
         return {"status": "failed", "reason": "booking_not_found"}
 
-    slot_id = booking.get("slot_id")
+    slot_id = booking["slot_id"]
     slot = await slots.find_one({"_id": slot_id})
-
-    await slots.update_one({"_id": slot_id}, {"$set": {"status": "open"}})
-    await bookings.update_one({"_id": booking_id}, {"$set": {"status": "cancelled"}})
     
     # Audit cancellation
     await audit.record(
