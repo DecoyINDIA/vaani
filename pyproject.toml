@@ -18,8 +18,9 @@ dependencies = [
     "langgraph>=0.2",              # agent state machine (ADR-01)
     "langchain-core>=0.3",
     "lingua-language-detector>=2.0",  # language detection (TRD §4.3)
-    "python-jose[cryptography]>=3.3", # JWT for owner_api (TRD §6)
+    "PyJWT>=2.10",                  # JWT for owner_api (TRD §6)
     "python-multipart>=0.0.9",
+    "tzdata>=2025.2",               # IANA zones for Windows/minimal containers
 ]
 
 [project.optional-dependencies]
@@ -69,9 +70,6 @@ python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
 
-[[tool.mypy.overrides]]
-module = "jose.*"
-ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

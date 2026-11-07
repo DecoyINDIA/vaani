@@ -11,15 +11,18 @@ from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+_DEV_JWT_SECRET = "dev-only-insecure-secret-do-not-deploy"
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     # --- App ---
     app_env: Literal["dev", "staging", "prod"] = "dev"
-    jwt_secret: str = "changeme"
+    jwt_secret: str = _DEV_JWT_SECRET
     jwt_access_ttl_min: int = 15
     jwt_refresh_ttl_days: int = 30
+    use_mock_adapters: bool = False
 
     # --- Datastore (ADR-03: MongoDB Atlas ap-south-1 + Redis) ---
     mongodb_uri: str = "mongodb://localhost:27017/vaani"
@@ -53,6 +56,8 @@ class Settings(BaseSettings):
     razorpay_key_id: str = ""
     razorpay_key_secret: str = ""
     razorpay_webhook_secret: str = ""
+    razorpay_plan_starter_id: str = ""
+    razorpay_plan_pro_id: str = ""
 
     # --- Billing / GST (F-17) ---
     xolver_gstin: str = ""
@@ -64,6 +69,51 @@ class Settings(BaseSettings):
     # --- Ops ---
     audit_log_retention_days: int = 90
     media_purge_days: int = 30
+
+    def validate_runtime(self) -> None:
+        """Reject unsafe staging/production configuration before serving work."""
+        if self.app_env == "dev":
+            return
+
+        errors: list[str] = []
+        if len(self.jwt_secret) < 32 or self.jwt_secret in {"changeme", _DEV_JWT_SECRET}:
+            errors.append("jwt_secret must be at least 32 characters and not a default")
+        if self.use_mock_adapters:
+            errors.append("use_mock_adapters must be false")
+
+        required = (
+            "meta_app_secret",
+            "meta_webhook_verify_token",
+            "bsp_access_token",
+            "bsp_waba_id",
+            "bsp_phone_number_id",
+            "openrouter_api_key",
+            "llm_model_classifier",
+            "llm_model_responder",
+            "exotel_sid",
+            "exotel_api_key",
+            "exotel_api_token",
+            "exotel_subdomain",
+            "razorpay_key_id",
+            "razorpay_key_secret",
+            "razorpay_webhook_secret",
+            "razorpay_plan_starter_id",
+            "razorpay_plan_pro_id",
+            "xolver_gstin",
+        )
+        missing = [name for name in required if not getattr(self, name)]
+        if missing:
+            errors.append(f"missing required settings: {', '.join(missing)}")
+
+        if self.stt_provider == "sarvam" and not self.sarvam_api_key:
+            errors.append("sarvam_api_key is required by stt_provider")
+        if self.stt_provider == "deepgram" and not self.deepgram_api_key:
+            errors.append("deepgram_api_key is required by stt_provider")
+        if self.tts_provider == "elevenlabs" and not self.elevenlabs_api_key:
+            errors.append("elevenlabs_api_key is required by tts_provider")
+
+        if errors:
+            raise ValueError("Unsafe runtime configuration: " + "; ".join(errors))
 
 
 @lru_cache

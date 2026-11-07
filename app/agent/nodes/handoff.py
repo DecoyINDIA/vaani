@@ -29,7 +29,13 @@ async def handoff(state: AgentState) -> dict[str, Any]:
     logger.info(f"Handoff node triggered for conversation {conv_id}")
     
     # Run the escalation tool to silence the bot, alert staff and create escalation row
-    await escalate(tenant_id, conv_id, reason=f"Handoff triggered by intent: {intent_val}")
+    result = await escalate(
+        tenant_id,
+        conv_id,
+        reason=f"Handoff triggered by intent: {intent_val}",
+        lang=str(state.get("lang", "en")),
+    )
 
-    return {"escalate": True}
+    response = result.get("patient_message")
+    return {"escalate": True, **({"response": response} if response else {})}
 

@@ -1,0 +1,27 @@
+{
+  "account_id": "acc_synthetic",
+  "event": "payment_link.paid",
+  "contains": ["payment", "payment_link"],
+  "payload": {
+    "payment": {
+      "entity": {
+        "id": "pay_synthetic",
+        "entity": "payment",
+        "amount": 50000,
+        "currency": "INR",
+        "status": "captured"
+      }
+    },
+    "payment_link": {
+      "entity": {
+        "id": "plink_synthetic",
+        "entity": "payment_link",
+        "amount": 50000,
+        "currency": "INR",
+        "reference_id": "vaani_synthetic_reference",
+        "status": "paid",
+        "short_url": "https://rzp.io/i/synthetic"
+      }
+    }
+  }
+}

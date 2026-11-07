@@ -6,11 +6,18 @@ barge-in interruption, latency budgets, and cross-model overrides.
 
 from __future__ import annotations
 
+import base64
+import html
+import re
+import struct
+from unittest.mock import AsyncMock
+from urllib.parse import urlsplit
+
 import pytest
 from app.config import settings
 from app.main import app
 from fastapi.testclient import TestClient
-from ops.seed_tenant import seed_async
+from ops.seed_tenant import seed_demo_async
 
 
 @pytest.fixture(autouse=True)
@@ -20,11 +27,70 @@ async def setup_test_db():
     db = get_db()
     for col in ["contacts", "conversations", "bookings", "slots", "messages", "audit_log"]:
         await db[col].delete_many({})
-    await seed_async("default.yaml")
+    await seed_demo_async()
 
 
-def test_exotel_webhook_tenant_resolution() -> None:
+def _verify_provider(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "app.gateway.exotel.verify_exotel_call",
+        AsyncMock(return_value={"Sid": "verified"}),
+    )
+
+
+def _stream_path(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    call_sid: str,
+    caller: str = "919876543210",
+) -> str:
+    _verify_provider(monkeypatch)
+    response = client.post(
+        "/webhooks/exotel",
+        data={"To": "919999999998", "From": caller, "CallSid": call_sid},
+    )
+    assert response.status_code == 200
+    match = re.search(r'<Stream url="([^"]+)"', response.text)
+    assert match
+    url = urlsplit(html.unescape(match.group(1)))
+    return f"{url.path}?{url.query}"
+
+
+def _start_event(call_sid: str, sequence: int = 1) -> dict[str, object]:
+    return {
+        "event": "start",
+        "sequence_number": str(sequence),
+        "stream_sid": f"stream-{call_sid}",
+        "start": {
+            "stream_sid": f"stream-{call_sid}",
+            "call_sid": call_sid,
+            "account_sid": settings.exotel_sid,
+            "from": "919876543210",
+            "to": "919999999998",
+            "custom_parameters": {},
+            "media_format": {
+                "encoding": "audio/x-raw",
+                "sample_rate": "8000",
+                "bit_rate": "16",
+            },
+        },
+    }
+
+
+def _receive_playback(ws: object) -> str:
+    saw_audio = False
+    while True:
+        message = ws.receive_json()  # type: ignore[attr-defined]
+        if message["event"] == "media":
+            assert base64.b64decode(message["media"]["payload"], validate=True)
+            saw_audio = True
+        elif message["event"] == "mark":
+            assert saw_audio
+            return str(message["mark"]["name"])
+
+
+def test_exotel_webhook_tenant_resolution(monkeypatch: pytest.MonkeyPatch) -> None:
     client = TestClient(app)
+    _verify_provider(monkeypatch)
     
     # 1. Resolve successfully registered tenant voice number
     payload = {"To": "919999999998", "From": "919876543210", "CallSid": "call_12345"}
@@ -49,73 +115,92 @@ def test_exotel_webhook_tenant_resolution() -> None:
     assert resp_missing.status_code == 400
 
 
-def test_exotel_websocket_stream_e2e() -> None:
+def test_exotel_websocket_stream_e2e(monkeypatch: pytest.MonkeyPatch) -> None:
     client = TestClient(app)
-    
-    import hashlib
-    import hmac
-    key = settings.jwt_secret.encode("utf-8")
-    msg = b"test_tenant:call_websocket"
-    token = hmac.new(key, msg, hashlib.sha256).hexdigest()
+    stream_path = _stream_path(client, monkeypatch, "call_websocket")
     
     # Connect to websocket stream
     # Pass caller_phone in stream connection as parameter (simulating Exotel headers/channel context)
-    with client.websocket_connect(f"/webhooks/stream/test_tenant/call_websocket?caller_phone=919876543210&token={token}") as ws:
-        # 1. First event must play the voice consent audio bytes
-        consent_audio = ws.receive_bytes()
-        assert len(consent_audio) > 100
-        assert consent_audio.startswith(b"RIFF")  # WAV header signature
+    with client.websocket_connect(stream_path) as ws:
+        ws.send_json({"event": "connected"})
+        ws.send_json(_start_event("call_websocket"))
+        consent_mark = _receive_playback(ws)
+        ws.send_json(
+            {
+                "event": "mark",
+                "sequence_number": "2",
+                "stream_sid": "stream-call_websocket",
+                "mark": {"name": consent_mark},
+            }
+        )
 
-        # 2. Send DTMF_1 to accept consent
-        ws.send_bytes(b"DTMF_1")
-        welcome_audio = ws.receive_bytes()
-        assert welcome_audio.startswith(b"RIFF")
+        ws.send_json(
+            {
+                "event": "dtmf",
+                "sequence_number": "3",
+                "stream_sid": "stream-call_websocket",
+                "dtmf": {"digit": "1", "duration": "100"},
+            }
+        )
+        dtmf_mark = _receive_playback(ws)
+        ws.send_json(
+            {
+                "event": "mark",
+                "sequence_number": "4",
+                "stream_sid": "stream-call_websocket",
+                "mark": {"name": dtmf_mark},
+            }
+        )
 
-        response_json = ws.receive_json()
-        assert response_json["event"] == "response"
-        assert response_json["consent_accepted"] is True
+        voiced = struct.pack("<800h", *([1000] * 800))
+        silence = b"\x00\x00" * 800
+        for sequence, audio in enumerate([voiced, *([silence] * 6)], start=5):
+            ws.send_json(
+                {
+                    "event": "media",
+                    "sequence_number": str(sequence),
+                    "stream_sid": "stream-call_websocket",
+                    "media": {
+                        "chunk": str(sequence),
+                        "timestamp": str(sequence * 100),
+                        "payload": base64.b64encode(audio).decode(),
+                    },
+                }
+            )
+        _receive_playback(ws)
+        ws.send_json(
+            {
+                "event": "stop",
+                "sequence_number": "12",
+                "stream_sid": "stream-call_websocket",
+                "stop": {
+                    "call_sid": "call_websocket",
+                    "account_sid": settings.exotel_sid,
+                    "reason": "callended",
+                },
+            }
+        )
 
-        # 3. Send User query via simulated speech trigger
-        # We target a specific line in our metadata.csv lookup:
-        # VC_HI_032: "क्लीनिक कब से कब तक खुला रहता है?" -> faq_hours
-        query_payload = b"QUERY:hi:evals/voice_corpus/audio/vc_hi_032.wav"
-        ws.send_bytes(query_payload)
-        
-        response_audio = ws.receive_bytes()
-        assert response_audio.startswith(b"RIFF")
-        
-        meta_json = ws.receive_json()
-        assert meta_json["event"] == "response"
-        assert meta_json["transcript"] == "क्लीनिक कब से कब तक खुला रहता है?"
-        assert "open" in meta_json["response"].lower() or "timings" in meta_json["response"].lower() or "sharma" in meta_json["response"].lower()
-        
-        # Verify latency tracking was captured
-        latencies = meta_json["latencies"]
-        assert "stt_ms" in latencies
-        assert "llm_ms" in latencies
-        assert "tts_ms" in latencies
-        assert "total_ms" in latencies
 
-
-def test_voice_barge_in() -> None:
+def test_voice_barge_in(monkeypatch: pytest.MonkeyPatch) -> None:
     client = TestClient(app)
-    
-    import hashlib
-    import hmac
-    key = settings.jwt_secret.encode("utf-8")
-    msg = b"test_tenant:call_bargein"
-    token = hmac.new(key, msg, hashlib.sha256).hexdigest()
-    
-    with client.websocket_connect(f"/webhooks/stream/test_tenant/call_bargein?token={token}") as ws:
-        # Consume consent audio
-        ws.receive_bytes()
-        
-        # Send user talking trigger (test b"TALK" prefix)
-        ws.send_bytes(b"TALK_sound_energy_bytes_inbound")
-        
+    stream_path = _stream_path(client, monkeypatch, "call_bargein")
+
+    with client.websocket_connect(stream_path) as ws:
+        ws.send_json({"event": "connected"})
+        ws.send_json(_start_event("call_bargein"))
+        _receive_playback(ws)
+        voiced = struct.pack("<800h", *([1000] * 800))
+        ws.send_json(
+            {
+                "event": "media",
+                "sequence_number": "2",
+                "stream_sid": "stream-call_bargein",
+                "media": {"chunk": "1", "timestamp": "100", "payload": base64.b64encode(voiced).decode()},
+            }
+        )
         event_json = ws.receive_json()
-        assert event_json["event"] == "barge_in"
-        assert event_json["status"] == "playback_interrupted"
+        assert event_json == {"event": "clear", "stream_sid": "stream-call_bargein"}
 
 
 @pytest.mark.asyncio

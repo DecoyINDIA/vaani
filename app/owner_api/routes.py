@@ -14,10 +14,11 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
-from app.models.base import get_db
+from app.channels.whatsapp import send_freeform
+from app.models.base import get_db, mongo_id_candidates, serialize_mongo
 from app.models.collections import (
     AuditLog,
     Bookings,
@@ -28,30 +29,55 @@ from app.models.collections import (
     Messages,
     Tenants,
 )
-from app.owner_api.auth import require_tenant
+from app.owner_api.auth import require_owner_tenant, require_tenant
 
 router = APIRouter(tags=["owner"])
 
 
 @router.get("/conversations")
-async def list_conversations(tenant_id: str = Depends(require_tenant)) -> list[dict[str, Any]]:
-    cursor = Conversations(tenant_id).find({})
-    results: list[dict[str, Any]] = await cursor.to_list(length=100)
-    return results
+async def list_conversations(
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    tenant_id: str = Depends(require_tenant),
+) -> list[dict[str, Any]]:
+    cursor = (
+        Conversations(tenant_id)
+        .find({})
+        .sort([("last_msg_at", -1), ("_id", -1)])
+        .skip(offset)
+        .limit(limit)
+    )
+    results: list[dict[str, Any]] = await cursor.to_list(length=limit)
+    return serialize_mongo(results)
 
 
 @router.get("/conversations/{id}/messages")
-async def list_messages(id: str, tenant_id: str = Depends(require_tenant)) -> list[dict[str, Any]]:
-    cursor = Messages(tenant_id).find({"conversation_id": id})
-    results: list[dict[str, Any]] = await cursor.to_list(length=200)
-    return results
+async def list_messages(
+    id: str,
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    tenant_id: str = Depends(require_tenant),
+) -> list[dict[str, Any]]:
+    cursor = (
+        Messages(tenant_id)
+        .find({"conversation_id": id})
+        .sort([("ts", 1), ("_id", 1)])
+        .skip(offset)
+        .limit(limit)
+    )
+    results: list[dict[str, Any]] = await cursor.to_list(length=limit)
+    return serialize_mongo(results)
 
 
 @router.post("/conversations/{id}/takeover")
 async def takeover_conversation(
     id: str, tenant_id: str = Depends(require_tenant)
 ) -> dict[str, Any]:
-    await Conversations(tenant_id).update_one({"_id": id}, {"$set": {"state": "human"}})
+    result = await Conversations(tenant_id).update_one(
+        {"_id": {"$in": mongo_id_candidates(id)}}, {"$set": {"state": "human"}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Conversation not found")
     return {"status": "success", "state": "human"}
 
 
@@ -59,43 +85,124 @@ class ReturnPayload(BaseModel):
     summary: str
 
 
+class StaffReplyPayload(BaseModel):
+    text: str
+    request_id: str
+
+
+@router.post("/conversations/{id}/reply")
+async def reply_to_conversation(
+    id: str,
+    payload: StaffReplyPayload,
+    tenant_id: str = Depends(require_tenant),
+) -> dict[str, Any]:
+    text = payload.text.strip()
+    if not text or not payload.request_id.strip():
+        raise HTTPException(status_code=422, detail="Reply text and request ID are required")
+    conversation = await Conversations(tenant_id).find_one(
+        {"_id": {"$in": mongo_id_candidates(id)}}
+    )
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    if conversation.get("state") != "human":
+        raise HTTPException(status_code=409, detail="Take over the conversation before replying")
+    contact_id = str(conversation.get("contact_id", ""))
+    contact = await Contacts(tenant_id).find_one(
+        {"_id": {"$in": mongo_id_candidates(contact_id)}}
+    )
+    if not contact or not (contact.get("wa_id") or contact.get("phone")):
+        raise HTTPException(status_code=409, detail="Conversation has no reachable contact")
+    wa_id = str(contact.get("wa_id") or contact.get("phone"))
+    result = await send_freeform(
+        tenant_id,
+        wa_id,
+        text,
+        operation_key=f"staff-reply:{payload.request_id.strip()}",
+    )
+    request_id = payload.request_id.strip()
+    await Messages(tenant_id).update_one(
+        {"staff_request_id": request_id},
+        {
+            "$setOnInsert": {
+                "conversation_id": id,
+                "direction": "outbound",
+                "type": "text",
+                "text": text,
+                "actor": "staff",
+                "staff_request_id": request_id,
+                "provider_message_id": result.get("messages", [{}])[0].get("id"),
+                "ts": datetime.now(UTC).replace(tzinfo=None),
+            }
+        },
+        upsert=True,
+    )
+    return {"status": "sent", "deduplicated": bool(result.get("deduplicated"))}
+
+
 @router.post("/conversations/{id}/return")
 async def return_conversation(
     id: str, payload: ReturnPayload, tenant_id: str = Depends(require_tenant)
 ) -> dict[str, Any]:
-    await Conversations(tenant_id).update_one({"_id": id}, {"$set": {"state": "bot"}})
+    summary = payload.summary.strip()
+    if not summary:
+        raise HTTPException(status_code=422, detail="Resolution summary is required")
+    result = await Conversations(tenant_id).update_one(
+        {"_id": {"$in": mongo_id_candidates(id)}}, {"$set": {"state": "bot"}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Conversation not found")
     await Messages(tenant_id).insert_one({
         "conversation_id": id,
         "direction": "system",
         "type": "resolution_summary",
-        "text": payload.summary,
+        "text": summary,
         "ts": datetime.now(UTC).replace(tzinfo=None)
     })
+    await Escalations(tenant_id).update_one(
+        {"conversation_id": id, "status": "open"},
+        {
+            "$set": {
+                "status": "resolved",
+                "resolution_summary": summary,
+                "resolved_at": datetime.now(UTC).replace(tzinfo=None),
+            }
+        },
+    )
     return {"status": "success", "state": "bot"}
 
 
 @router.get("/bookings")
-async def list_bookings(tenant_id: str = Depends(require_tenant)) -> list[dict[str, Any]]:
-    cursor = Bookings(tenant_id).find({})
-    results: list[dict[str, Any]] = await cursor.to_list(length=100)
-    return results
+async def list_bookings(
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    tenant_id: str = Depends(require_tenant),
+) -> list[dict[str, Any]]:
+    cursor = (
+        Bookings(tenant_id)
+        .find({})
+        .sort([("ts", -1), ("_id", -1)])
+        .skip(offset)
+        .limit(limit)
+    )
+    results: list[dict[str, Any]] = await cursor.to_list(length=limit)
+    return serialize_mongo(results)
 
 
 class BookingCreate(BaseModel):
     slot_id: str
     contact_id: str
     service: str
+    request_id: str
 
 
 @router.post("/bookings")
 async def create_booking_api(
     payload: BookingCreate, tenant_id: str = Depends(require_tenant)
 ) -> dict[str, Any]:
-    from app.booking.engine import confirm_booking, hold_slot
-    held = await hold_slot(tenant_id, payload.slot_id)
-    if not held:
-        raise HTTPException(status_code=400, detail="Slot is not available")
-    booking = await confirm_booking(tenant_id, payload.slot_id, payload.contact_id, payload.service)
+    from app.booking.engine import create_booking
+    booking = await create_booking(
+        tenant_id, payload.slot_id, payload.contact_id, payload.service, payload.request_id
+    )
     if not booking:
         raise HTTPException(status_code=400, detail="Booking confirmation failed")
     return booking
@@ -103,28 +210,65 @@ async def create_booking_api(
 
 class BookingUpdate(BaseModel):
     status: str
+    new_slot_id: str | None = None
+    request_id: str | None = None
 
 
 @router.patch("/bookings/{id}")
 async def update_booking_api(
     id: str, payload: BookingUpdate, tenant_id: str = Depends(require_tenant)
 ) -> dict[str, Any]:
-    await Bookings(tenant_id).update_one({"_id": id}, {"$set": {"status": payload.status}})
-    return {"status": "success", "booking_id": id}
+    from app.booking.engine import cancel_booking, move_booking
+
+    if payload.status == "cancelled":
+        booking = await cancel_booking(tenant_id, id)
+        if not booking:
+            raise HTTPException(status_code=404, detail="Booking not found")
+        return {"status": "success", "booking_id": id}
+    if payload.status == "rescheduled":
+        if not payload.new_slot_id or not payload.request_id:
+            raise HTTPException(status_code=422, detail="new_slot_id and request_id are required")
+        result = await move_booking(
+            tenant_id, id, payload.new_slot_id, payload.request_id
+        )
+        if not result:
+            raise HTTPException(status_code=409, detail="Booking or slot is unavailable")
+        return result
+    raise HTTPException(status_code=422, detail="Unsupported booking transition")
 
 
 @router.get("/escalations")
-async def list_escalations(tenant_id: str = Depends(require_tenant)) -> list[dict[str, Any]]:
-    cursor = Escalations(tenant_id).find({})
-    results: list[dict[str, Any]] = await cursor.to_list(length=100)
-    return results
+async def list_escalations(
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    tenant_id: str = Depends(require_tenant),
+) -> list[dict[str, Any]]:
+    cursor = (
+        Escalations(tenant_id)
+        .find({})
+        .sort([("ts", -1), ("_id", -1)])
+        .skip(offset)
+        .limit(limit)
+    )
+    results: list[dict[str, Any]] = await cursor.to_list(length=limit)
+    return serialize_mongo(results)
 
 
 @router.get("/kb")
-async def list_kb(tenant_id: str = Depends(require_tenant)) -> list[dict[str, Any]]:
-    cursor = KbEntries(tenant_id).find({})
-    results: list[dict[str, Any]] = await cursor.to_list(length=100)
-    return results
+async def list_kb(
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    tenant_id: str = Depends(require_tenant),
+) -> list[dict[str, Any]]:
+    cursor = (
+        KbEntries(tenant_id)
+        .find({})
+        .sort([("question", 1), ("_id", 1)])
+        .skip(offset)
+        .limit(limit)
+    )
+    results: list[dict[str, Any]] = await cursor.to_list(length=limit)
+    return serialize_mongo(results)
 
 
 class KbUpsert(BaseModel):
@@ -154,7 +298,7 @@ async def get_settings_api(tenant_id: str = Depends(require_tenant)) -> dict[str
     tenant = await Tenants.find_by_id(tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
-    return tenant
+    return serialize_mongo(tenant)
 
 
 class SettingsUpdate(BaseModel):
@@ -165,17 +309,11 @@ class SettingsUpdate(BaseModel):
 
 @router.put("/settings")
 async def update_settings_api(
-    payload: SettingsUpdate, tenant_id: str = Depends(require_tenant)
+    payload: SettingsUpdate, tenant_id: str = Depends(require_owner_tenant)
 ) -> dict[str, Any]:
     await get_db()["tenants"].update_one(
         {"_id": tenant_id},
-        {
-            "$set": {
-                "name": payload.name,
-                "landmark_line": payload.landmark_line,
-                "location_pin": payload.location_pin
-            }
-        }
+        {"$set": payload.model_dump()}
     )
     return {"status": "success"}
 
@@ -194,7 +332,17 @@ async def metrics_summary(tenant_id: str = Depends(require_tenant)) -> dict[str,
 
 
 @router.get("/audit/export")
-async def export_audit(tenant_id: str = Depends(require_tenant)) -> list[dict[str, Any]]:
-    cursor = AuditLog(tenant_id).find({})
-    results: list[dict[str, Any]] = await cursor.to_list(length=1000)
-    return results
+async def export_audit(
+    limit: int = Query(200, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    tenant_id: str = Depends(require_owner_tenant),
+) -> list[dict[str, Any]]:
+    cursor = (
+        AuditLog(tenant_id)
+        .find({})
+        .sort([("ts", -1), ("_id", -1)])
+        .skip(offset)
+        .limit(limit)
+    )
+    results: list[dict[str, Any]] = await cursor.to_list(length=limit)
+    return serialize_mongo(results)

@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import logging
 import time
+from io import BytesIO
+from wave import open as wave_open
 
 from app.config import settings
 
@@ -22,26 +24,26 @@ async def synthesize(text: str, lang: str, provider: str | None = None) -> bytes
     """
     prov = provider or settings.tts_provider
     
-    # 1. Determine if we have the API key
-    has_key = False
-    if prov == "sarvam" and settings.sarvam_api_key:
-        has_key = True
-    elif prov == "elevenlabs" and settings.elevenlabs_api_key:
-        has_key = True
-
-    if not has_key:
+    if settings.use_mock_adapters:
         # Offline simulation
         # Simulate processing latency: ~150ms + 2ms per character
         latency_sec = 0.15 + (len(text) * 0.002)
         sleep_duration = min(latency_sec, 0.05)  # Keep tests fast
         time.sleep(sleep_duration)
 
-        # Return dummy binary audio payload (RIFF WAV format header followed by dummy bytes)
-        # Size proportional to the text length to simulate voice duration
-        audio_len = max(500, len(text) * 100)
-        dummy_wav = bytearray(b"RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x40\x1f\x00\x00\x01\x00\x08\x00data")
-        dummy_wav.extend(b"\x00" * audio_len)
-        return bytes(dummy_wav)
+        audio_len = max(800, len(text) * 160)
+        output = BytesIO()
+        with wave_open(output, "wb") as wav:
+            wav.setnchannels(1)
+            wav.setsampwidth(2)
+            wav.setframerate(8000)
+            wav.writeframes(b"\x00\x00" * audio_len)
+        return output.getvalue()
+
+    if prov == "sarvam" and not settings.sarvam_api_key:
+        raise RuntimeError("SARVAM_API_KEY is required for Sarvam TTS")
+    if prov == "elevenlabs" and not settings.elevenlabs_api_key:
+        raise RuntimeError("ELEVENLABS_API_KEY is required for ElevenLabs TTS")
 
     # 2. Real TTS APIs
     import base64
@@ -58,11 +60,13 @@ async def synthesize(text: str, lang: str, provider: str | None = None) -> bytes
         }
         target_lang = lang_code_map.get(lang, "en-IN")
         
-        payload = {
+        payload: dict[str, object] = {
             "text": text,
-            "target_language_code": target_lang,
-            "speaker": "arvind" if target_lang == "hi-IN" else "anushka",
-            "model": "bulbul:v1"
+            "language_code": target_lang,
+            "speaker": "priya",
+            "model": "bulbul:v3",
+            "output_audio_codec": "wav",
+            "speech_sample_rate": 8000,
         }
         headers = {
             "api-subscription-key": settings.sarvam_api_key,
@@ -82,8 +86,16 @@ async def synthesize(text: str, lang: str, provider: str | None = None) -> bytes
             raise RuntimeError(f"Sarvam TTS API error {resp.status_code}: {resp.text}")
             
         res_json = resp.json()
-        audio_encoded = res_json.get("audio_encoded", "")
-        return base64.b64decode(audio_encoded)
+        audios = res_json.get("audios")
+        if not isinstance(audios, list) or not audios or not isinstance(audios[0], str):
+            raise RuntimeError("Sarvam TTS returned no audio")
+        try:
+            audio = base64.b64decode(audios[0], validate=True)
+        except ValueError as e:
+            raise RuntimeError("Sarvam TTS returned invalid base64 audio") from e
+        if not audio.startswith(b"RIFF") or len(audio) <= 44:
+            raise RuntimeError("Sarvam TTS returned invalid or empty WAV audio")
+        return audio
         
     else:
         # ElevenLabs API call: POST https://api.elevenlabs.io/v1/text-to-speech/{voice_id}

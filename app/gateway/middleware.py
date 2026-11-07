@@ -16,7 +16,7 @@ import logging
 import redis.asyncio as redis
 
 from app.config import settings
-from app.models.collections import Messages, Tenants
+from app.models.collections import Tenants
 
 logger = logging.getLogger(__name__)
 _redis_client: redis.Redis | None = None
@@ -62,35 +62,3 @@ async def resolve_tenant(wa_number: str) -> str:
     if not tenant:
         raise ValueError(f"Unknown wa_number: {wa_number}")
     return str(tenant["_id"])
-
-
-async def claim_message(message_id: str) -> bool:
-    """Check MongoDB then Redis SETNX (24h TTL). Returns True on first sighting."""
-    # 1. First, check MongoDB to see if we've ever processed/seen this message ID before.
-    # This prevents reprocessing even if Redis keys have expired (solving 24h expiry).
-    try:
-        if await Messages.seen_unscoped(message_id):
-            return False
-    except Exception as e:
-        logger.warning("MongoDB read failed during idempotency check: %s", e)
-
-    # 2. Try Redis SETNX for lock/concurrency control
-    try:
-        r = get_redis()
-        key = f"msg_id:{message_id}"
-        # set with nx=True and ex=24h returns True if key was set, None otherwise
-        is_new = await r.set(key, "1", ex=24 * 3600, nx=True)
-        if is_new is None:
-            return False
-    except Exception as e:
-        logger.warning("Redis is down, falling back to MongoDB for reservation: %s", e)
-
-    # 3. Reserve the ID with a placeholder to prevent concurrent reprocessing on retries
-    try:
-        await Messages.reserve_placeholder_unscoped(message_id)
-        return True
-    except Exception as e:
-        logger.error("MongoDB reservation failed: %s", e)
-        # DB also failing: return True so we don't drop the message
-        return True
-

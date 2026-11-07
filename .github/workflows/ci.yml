@@ -16,11 +16,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - uses: astral-sh/setup-uv@v6
       - name: Install
-        run: pip install -e ".[dev]"
+        run: uv sync --frozen --extra dev
 
       - name: Lint (ruff)
-        run: ruff check .
+        run: uv run ruff check .
 
       # Rule 1 (06-engineering-plan §0): no raw DB access outside app/models/.
       - name: Tenant-isolation lint — no raw db access outside models/
@@ -32,18 +33,37 @@ jobs:
           fi
 
       - name: Typecheck (mypy)
-        run: mypy app
+        run: uv run mypy app
 
       - name: Unit + integration tests
-        run: pytest -q
+        run: uv run pytest -q
 
       # Eval gate: prompt/template/taxonomy changes must pass (intent F1 >= threshold,
       # hallucination incidents = 0). Wired at >=85% for the seed set (06-engineering-plan 3.6).
       - name: Eval gate
-        run: python evals/run_evals.py --ci
+        run: uv run python evals/run_evals.py --ci
+
+      - name: Build wheel from lock
+        run: uv build --wheel
+
+  dashboard:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dashboard
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
 
   build:
-    needs: quality
+    needs: [quality, dashboard]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

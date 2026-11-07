@@ -1,5 +1,7 @@
 # HUMAN HANDOFF SPECIFICATION — PROJECT VAANI
 
+> **Production status as of 6 November 2026:** Not ready to ship. The implementation summaries below are historical records, not release approval. The [production review](production-review.md) confirms remaining handoff, identity, queue, voice, payment, and dashboard defects, including gaps in the earlier remediation. Use the [remediation plan and completion ledger](production-remediation-plan.md) for current acceptance criteria and status. No findings were fixed by that documentation update.
+
 This document defines the architectural state machine, detection triggers, notification templates, and return flows for the **Human Handoff Protocol** in Vaani.
 
 ---

@@ -12,10 +12,10 @@ compound-indexed on (tenant_id, ...); `slots` is unique on
 
 from __future__ import annotations
 
-import importlib.util
 import logging
-from typing import Any
+from typing import Any, cast
 
+from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
 from app.config import settings
@@ -25,15 +25,32 @@ logger = logging.getLogger(__name__)
 _client: Any = None
 
 
+def serialize_mongo[T](value: T) -> T:
+    """Convert generated MongoDB IDs recursively at an HTTP/tool boundary."""
+    if isinstance(value, ObjectId):
+        return cast(T, str(value))
+    if isinstance(value, dict):
+        return cast(T, {key: serialize_mongo(item) for key, item in value.items()})
+    if isinstance(value, list):
+        return cast(T, [serialize_mongo(item) for item in value])
+    return value
+
+
+def mongo_id_candidates(value: str) -> list[str | ObjectId]:
+    """Match an external string against either legacy string or generated ObjectId IDs."""
+    candidates: list[str | ObjectId] = [value]
+    if ObjectId.is_valid(value):
+        candidates.append(ObjectId(value))
+    return candidates
+
+
 def get_db() -> AsyncIOMotorDatabase[Any]:
     """Process-wide Motor client + `vaani` database handle."""
     global _client
     if _client is None:
-        use_mock = False
-        if settings.mongodb_uri == "mongodb://localhost:27017/vaani":
-            use_mock = importlib.util.find_spec("mongomock_motor") is not None
-
-        if use_mock:
+        if settings.use_mock_adapters:
+            if settings.app_env != "dev":
+                raise RuntimeError("Mock MongoDB is allowed only in dev/test")
             from mongomock_motor import AsyncMongoMockClient
             logger.info("Using mock MongoDB database client (mongomock-motor)")
             _client = AsyncMongoMockClient()

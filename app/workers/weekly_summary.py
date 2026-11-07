@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from app import audit
 from app.models.collections import Bookings, Conversations, Tenants
@@ -22,29 +23,31 @@ async def run_weekly_summaries() -> None:
     # 1. Fetch all tenants
     tenants = await Tenants.all()
     
-    now = datetime.now(UTC).replace(tzinfo=None)
-    start_date = now - timedelta(days=7)
-    date_range_str = f"{start_date.strftime('%b %d')} - {now.strftime('%b %d')}"
+    now = datetime.now(UTC)
     
     for tenant in tenants:
         tenant_id = str(tenant["_id"])
         owner_name = tenant.get("name", "Doctor")
+        timezone = ZoneInfo(str(tenant.get("timezone", "Asia/Kolkata")))
+        local_now = now.astimezone(timezone)
+        local_start = local_now - timedelta(days=7)
+        start_date = local_start.astimezone(UTC).replace(tzinfo=None)
+        end_date = now.replace(tzinfo=None)
+        date_range_str = f"{local_start.strftime('%b %d')} - {local_now.strftime('%b %d')}"
         
         # Calculate Total Conversations
         convs_accessor = Conversations(tenant_id)
         convs_count = await convs_accessor.count_documents({
-            "started_at": {"$gte": start_date, "$lte": now}
+            "started_at": {"$gte": start_date, "$lte": end_date}
         })
         
         # Calculate Confirmed Bookings
         bookings_accessor = Bookings(tenant_id)
         bookings_cursor = bookings_accessor.find({
             "status": {"$in": ["confirmed", "completed"]},
-            "ts": {"$gte": start_date, "$lte": now}
+            "ts": {"$gte": start_date, "$lte": end_date}
         })
-        bookings_list = []
-        async for booking in bookings_cursor:
-            bookings_list.append(booking)
+        bookings_list = [booking async for booking in bookings_cursor]
         confirmed_count = len(bookings_list)
         
         # Calculate Recovered Bookings (after-hours + busy-line / voice)
@@ -54,8 +57,13 @@ async def run_weekly_summaries() -> None:
             booking_ts = booking.get("ts")
             
             if booking_ts:
+                booking_local = booking_ts.replace(tzinfo=UTC).astimezone(timezone)
                 # Check if outside 09:00 - 18:00 business hours or Sunday (weekday 6)
-                if booking_ts.weekday() == 6 or booking_ts.hour < 9 or booking_ts.hour >= 18:
+                if (
+                    booking_local.weekday() == 6
+                    or booking_local.hour < 9
+                    or booking_local.hour >= 18
+                ):
                     is_recovered = True
                     
             if booking.get("source") == "voice":
@@ -119,7 +127,8 @@ async def run_weekly_summaries() -> None:
                         "confirmed_count": str(confirmed_count),
                         "recovered_count": str(recovered_count),
                         "revenue_str": revenue_str
-                    }
+                    },
+                    operation_key=f"weekly-summary:{tenant_id}:{local_now.strftime('%G-%V')}",
                 )
             except Exception as e:
                 logger.error(f"Failed to send weekly summary to owner {owner_wa_id}: {e}")

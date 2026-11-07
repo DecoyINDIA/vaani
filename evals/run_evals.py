@@ -49,9 +49,10 @@ def calculate_f1(tp: int, fp: int, fn: int) -> float:
 
 
 async def run_evaluation(classifier_model: str | None, responder_model: str | None) -> dict:
-    # Seed the mock database first so that in-memory query tests have clinic data
-    from ops.seed_tenant import seed_async
-    await seed_async("default.yaml")
+    # This suite is intentionally synthetic; credentialed release evals are separate.
+    settings.use_mock_adapters = True
+    from ops.seed_tenant import seed_demo_async
+    await seed_demo_async()
 
     # Apply model overrides
     if classifier_model:

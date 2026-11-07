@@ -7,6 +7,7 @@ template. Hallucination incidents must be 0 (pilot gate G1).
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 from typing import Any
@@ -45,8 +46,36 @@ async def output_gate(state: AgentState) -> dict[str, Any]:
     has_factual_claims = any(re.search(pat, response_lower) for pat in factual_patterns)
     has_citation = "[source_ref:" in response_lower
 
-    if has_factual_claims and not has_citation:
-        logger.warning(f"Uncited factual claim detected in response. Has citation: {has_citation}")
+    allowed_sources: dict[str, str] = {}
+    for tool_result in state.get("tool_results", []):
+        if tool_result.get("tool") == "kb_search":
+            for fact in tool_result.get("result", []):
+                source_ref = fact.get("source_ref")
+                if source_ref:
+                    allowed_sources[str(source_ref).lower()] = json.dumps(fact, default=str).lower()
+        elif tool_result.get("tool") == "slots_get":
+            allowed_sources["slots_list"] = json.dumps(tool_result, default=str).lower()
+
+    cited_refs = {ref.strip() for ref in re.findall(r"\[source_ref:\s*([^\]]+)\]", response_lower)}
+    invalid_citation = bool(cited_refs - allowed_sources.keys())
+    cited_source_text = " ".join(
+        allowed_sources[ref] for ref in cited_refs if ref in allowed_sources
+    )
+    unsupported_numbers = bool(
+        cited_refs
+        and any(
+            number not in cited_source_text
+            for number in re.findall(r"\d+(?:[.,]\d+)?", response)
+        )
+    )
+
+    if (has_factual_claims and not has_citation) or invalid_citation or unsupported_numbers:
+        logger.warning(
+            "Grounding violation: citation=%s invalid_ref=%s unsupported_number=%s",
+            has_citation,
+            invalid_citation,
+            unsupported_numbers,
+        )
         if retry_count < 1:
             logger.info("Attempting self-regeneration (Retry 1)")
             return {

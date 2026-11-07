@@ -13,7 +13,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from app.channels import whatsapp
 from app.models.base import get_db
-from app.models.collections import Contacts
+from app.models.collections import Contacts, Conversations
 from app.workers import inbound
 
 
@@ -94,7 +94,7 @@ async def test_freeform_blocked_outside_window():
         }
     )
     with pytest.raises(whatsapp.WindowClosedError):
-        await whatsapp.send_freeform(tenant_id, wa_id, "hi")
+        await whatsapp.send_freeform(tenant_id, wa_id, "hi", operation_key="window-test")
 
 
 async def test_template_send_and_registry_guard():
@@ -102,9 +102,36 @@ async def test_template_send_and_registry_guard():
     wa_id = "912222222222"
 
     result = await whatsapp.send_template(
-        tenant_id, wa_id, "booking_confirm", {"name": "Asha", "time": "5pm"}
+        tenant_id,
+        wa_id,
+        "booking_confirm",
+        {"name": "Asha", "time": "5pm"},
+        operation_key="template-test",
     )
     assert result.get("mock") is True
 
     with pytest.raises(ValueError):
-        await whatsapp.send_template(tenant_id, wa_id, "not_a_real_template", {})
+        await whatsapp.send_template(
+            tenant_id, wa_id, "not_a_real_template", {}, operation_key="unknown-template"
+        )
+
+
+async def test_human_owned_conversation_records_without_bot_reply():
+    tenant_id = "t_human"
+    wa_id = "913333333333"
+    await Contacts(tenant_id).insert_one({"_id": "contact-human", "wa_id": wa_id})
+    await Conversations(tenant_id).insert_one(
+        {"_id": "conversation-human", "contact_id": "contact-human", "state": "human"}
+    )
+    fields = {
+        "tenant_id": tenant_id,
+        "message_id": "wamid.human",
+        "payload": json.dumps(_wa_payload(wa_id, "I still need help")),
+    }
+
+    await inbound.process_event(fields)
+
+    messages = await get_db()["messages"].find({"tenant_id": tenant_id}).to_list(length=10)
+    assert [(message["direction"], message["text"]) for message in messages] == [
+        ("inbound", "I still need help")
+    ]

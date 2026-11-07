@@ -9,15 +9,16 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import UTC, datetime
 from typing import Any, cast
 
 from fastapi import APIRouter, Request, Response
+from pymongo.errors import DuplicateKeyError
 
 from app import audit
 from app.config import settings
-from app.gateway.middleware import claim_message, get_redis, resolve_tenant, verify_meta_signature
-from app.models.collections import Messages
+from app.gateway.middleware import get_redis, resolve_tenant, verify_meta_signature
+from app.models.collections import Messages, OutboundIntents
+from app.privacy import is_suppressed
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["webhooks"])
@@ -58,86 +59,97 @@ async def receive(request: Request) -> Response:
         # Ack malformed payloads to avoid Meta retries
         return Response(content="Malformed JSON", status_code=200)
 
-    # Extract messages and metadata
-    entry = payload.get("entry", [])
-    if not entry or not entry[0].get("changes", []):
-        return Response(content='{"status":"no_changes"}', status_code=200)
+    accepted = duplicates = 0
+    for entry in payload.get("entry", []):
+        for change in entry.get("changes", []):
+            value = change.get("value", {})
+            wa_number = value.get("metadata", {}).get("display_phone_number")
+            if wa_number:
+                try:
+                    status_tenant_id = await resolve_tenant(str(wa_number))
+                except ValueError:
+                    status_tenant_id = None
+                if status_tenant_id:
+                    for status in value.get("statuses", []):
+                        provider_id = status.get("id")
+                        provider_state = status.get("status")
+                        if provider_id and provider_state in {
+                            "sent",
+                            "delivered",
+                            "read",
+                            "failed",
+                        }:
+                            state = (
+                                "delivered"
+                                if provider_state in {"delivered", "read"}
+                                else provider_state
+                            )
+                            await OutboundIntents(status_tenant_id).update_one(
+                                {"provider_message_id": provider_id},
+                                {
+                                    "$set": {
+                                        "state": state,
+                                        "provider_status": provider_state,
+                                    }
+                                },
+                            )
+                            pricing = status.get("pricing", {})
+                            if state == "delivered" and pricing.get("billable") is True:
+                                from app.billing.meters import record_usage
 
-    change = entry[0]["changes"][0]
-    value = change.get("value", {})
-    messages = value.get("messages", [])
+                                await record_usage(
+                                    status_tenant_id,
+                                    event_id=f"meta:{provider_id}:billable",
+                                    metric="meta_billable_messages",
+                                    quantity=1,
+                                )
+            for msg in value.get("messages", []):
+                message_id = msg.get("id")
+                if not message_id or not wa_number:
+                    logger.warning("Webhook message missing message_id or wa_number")
+                    continue
 
-    if not messages:
-        # Ping or read/delivered status updates — ack and ignore for the MVP worker
-        return Response(content='{"status":"ignored"}', status_code=200)
+                try:
+                    tenant_id = await resolve_tenant(str(wa_number))
+                except ValueError as e:
+                    logger.warning("Tenant resolution failed: %s", e)
+                    await audit.record(
+                        "SYSTEM",
+                        actor="system",
+                        event_type="unknown_recipient",
+                        payload={"wa_number": wa_number, "message_id": message_id},
+                    )
+                    continue
 
-    msg = messages[0]
-    message_id = msg.get("id")
-    metadata = value.get("metadata", {})
-    wa_number = metadata.get("display_phone_number")
+                sender = str(msg.get("from", ""))
+                if sender and await is_suppressed(tenant_id, sender):
+                    logger.info("Suppressed inbound event after erasure: %s", message_id)
+                    continue
 
-    if not message_id or not wa_number:
-        logger.warning("Webhook missing message_id or wa_number")
-        return Response(content='{"status":"invalid_payload"}', status_code=200)
-
-    # 3. Check Message Idempotency
-    is_new = await claim_message(message_id)
-    if not is_new:
-        logger.info(f"Duplicate message delivery ignored: {message_id}")
-        return Response(content='{"status":"duplicate"}', status_code=200)
-
-    # 4. Resolve Tenant
-    try:
-        tenant_id = await resolve_tenant(wa_number)
-    except ValueError as e:
-        logger.warning(f"Tenant resolution failed: {e}")
-        # Audit entry for unknown wa_number (platform-level, tenant "SYSTEM")
-        try:
-            await audit.record(
-                "SYSTEM",
-                actor="system",
-                event_type="unknown_recipient",
-                payload={"wa_number": wa_number, "message_id": message_id},
-            )
-        except Exception as audit_err:
-            logger.error(f"Failed to write audit log for unknown recipient: {audit_err}")
-        return Response(content='{"status":"unknown_recipient"}', status_code=200)
-
-    # 5. Enqueue Message
-    stream_payload: dict[str, str] = {
-        "tenant_id": tenant_id,
-        "message_id": message_id,
-        "payload": json.dumps(payload)
-    }
-
-    try:
-        r = get_redis()
-        # Enqueue to Redis stream. redis-py's xadd stub declares an invariant dict
-        # type that a plain dict[str, str] never satisfies; cast to Any to bypass.
-        await r.xadd("vaani:inbound_stream", cast(Any, stream_payload))
-        logger.info(f"Enqueued message {message_id} to Redis Stream")
-    except Exception as e:
-        logger.warning(f"Redis enqueuing failed, falling back to MongoDB: {e}")
-        try:
-            # MongoDB Fallback Queue
-            await Messages.upsert_fallback_message_unscoped(
-                tenant_id=tenant_id,
-                message_id=message_id,
-                document={
-                    "conversation_id": "fallback_queue",
-                    "direction": "inbound",
-                    "type": "text",
-                    "text": msg.get("text", {}).get("body", ""),
-                    "status": "queued",
-                    "payload": payload,
-                    "ts": datetime.now(UTC).replace(tzinfo=None),
-                    "retries": 0,
+                event_payload = {
+                    "entry": [{"changes": [{**change, "value": {**value, "messages": [msg]}}]}]
                 }
-            )
-            logger.info(f"Enqueued message {message_id} to MongoDB fallback queue")
-        except Exception as db_err:
-            logger.critical(f"MongoDB fallback queue also failed! Message lost: {db_err}")
-            return Response(content='{"status":"critical_failure"}', status_code=200)
+                try:
+                    await Messages.accept_inbound_unscoped(message_id, tenant_id, event_payload)
+                except DuplicateKeyError:
+                    duplicates += 1
+                    continue
+                except Exception as e:
+                    logger.error("Durable webhook acceptance failed: %s", e)
+                    return Response(content='{"status":"retry"}', status_code=503)
 
-    return Response(content='{"status":"accepted"}', status_code=200)
+                accepted += 1
+                stream_payload: dict[str, str] = {
+                    "tenant_id": tenant_id,
+                    "message_id": message_id,
+                    "payload": json.dumps(event_payload),
+                }
+                try:
+                    await get_redis().xadd("vaani:inbound_stream", cast(Any, stream_payload))
+                except Exception as e:
+                    # MongoDB is the queue of record; its scanner will recover this event.
+                    logger.warning("Redis wake-up failed for %s: %s", message_id, e)
+
+    status = "accepted" if accepted else "duplicate" if duplicates else "ignored"
+    return Response(content=json.dumps({"status": status, "accepted": accepted}), status_code=200)
 

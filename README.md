@@ -13,10 +13,14 @@ Planning pack — read [00-overview.md](00-overview.md) first.
 | [04-gtm-pricing.md](04-gtm-pricing.md) | Positioning, pricing, ICP, channels, funnel |
 | [05-risk-compliance.md](05-risk-compliance.md) | Risk register, Meta/WhatsApp policy, DPDP, legal |
 | [06-engineering-plan.md](06-engineering-plan.md) | End-to-end engineering execution: repo layout, week-by-week build, CI/eval gates |
+| [Production review](docs/production-review.md) | Confirmed production findings, reproduction evidence, verification results, and review limits |
+| [Production remediation plan](docs/production-remediation-plan.md) | Ordered fixes, acceptance criteria, migration/rollback steps, release gates, and completion ledger |
 
 ## Status
 
-Pre-code. Currently in Phase 0 (validation) per [03-build-plan.md](03-build-plan.md) — no product code ships before 5 signed pilot LOIs.
+Implementation exists, but it is **not ready for production**. The 6 November 2026 review identified 20 open findings across authentication, booking, handoff, delivery, voice, billing, data handling, and release verification. Follow the [production remediation plan](docs/production-remediation-plan.md) for the current work order and release decision. Passing offline tests does not establish live-provider readiness.
+
+The business validation gates in [03-build-plan.md](03-build-plan.md), including five signed pilot LOIs, remain separate prerequisites; this engineering review did not verify their completion.
 
 ## Ship criteria (binary gates — see 03-build-plan.md and 06-engineering-plan.md for detail)
 

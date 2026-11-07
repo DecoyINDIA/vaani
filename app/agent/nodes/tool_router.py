@@ -9,14 +9,15 @@ payment_link_create for payment flows. Every side-effect is a tool call
 from __future__ import annotations
 
 import logging
-from datetime import date
+from datetime import UTC, datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from app.agent.state import AgentState
 from app.agent.tools.kb_search import kb_search
 from app.agent.tools.slots_get import slots_get
 from app.booking.relative_date import resolve
-from app.models.collections import Practitioners
+from app.models.collections import Practitioners, Tenants
 
 logger = logging.getLogger(__name__)
 
@@ -43,11 +44,15 @@ async def tool_router(state: AgentState) -> dict[str, Any]:
         })
 
     # 2. Slots Lookup for Booking intent
-    elif intent_val in ("book", "booking_status"):
+    elif intent_val in ("book", "reschedule"):
         logger.info(f"Routing Booking intent '{intent_val}' to slots_get")
 
         # Resolve target date from text
-        target_date = resolve(text, today=date.today(), lang=lang)
+        tenant = await Tenants.find_by_id(tenant_id)
+        timezone = ZoneInfo(
+            str(tenant.get("timezone", "Asia/Kolkata")) if tenant else "Asia/Kolkata"
+        )
+        target_date = resolve(text, today=datetime.now(UTC).astimezone(timezone).date(), lang=lang)
         date_str = target_date.isoformat()
 
         # Find practitioner (default to first one found for the tenant)

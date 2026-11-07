@@ -3,13 +3,14 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from app.config import settings
+from app.config import Settings, settings
 from app.gateway.middleware import verify_meta_signature
 from app.gateway.razorpay import verify_razorpay_signature
 from app.main import app
 from app.models.base import get_db
 from app.models.collections import Bookings, Slots
 from app.owner_api.auth import create_access_token
+from bson import ObjectId
 from fastapi.testclient import TestClient
 
 
@@ -26,6 +27,12 @@ async def clean_db():
         "wa_number": "919999999999",
         "landmark_line": "Near Park",
         "location_pin": "https://maps.google.com"
+    })
+    await get_db()["users"].insert_one({
+        "_id": "u_test", "tenant_id": "t_test", "role": "owner", "status": "active"
+    })
+    await get_db()["users"].insert_one({
+        "_id": "u_staff", "tenant_id": "t_test", "role": "staff", "status": "active"
     })
     yield
 
@@ -49,6 +56,37 @@ def test_webhook_verify_fails_closed():
         settings.meta_app_secret = old_secret
         settings.razorpay_webhook_secret = old_rz_secret
 
+
+def test_unsafe_production_configuration_is_rejected() -> None:
+    with pytest.raises(ValueError, match="jwt_secret"):
+        Settings(app_env="prod", jwt_secret="changeme").validate_runtime()
+
+    valid = Settings(
+        app_env="prod",
+        jwt_secret="x" * 32,
+        meta_app_secret="x",
+        meta_webhook_verify_token="x",
+        bsp_access_token="x",
+        bsp_waba_id="x",
+        bsp_phone_number_id="x",
+        openrouter_api_key="x",
+        llm_model_classifier="classifier",
+        llm_model_responder="responder",
+        exotel_sid="x",
+        exotel_api_key="x",
+        exotel_api_token="x",
+        exotel_subdomain="x",
+        razorpay_key_id="x",
+        razorpay_key_secret="x",
+        razorpay_webhook_secret="x",
+        razorpay_plan_starter_id="plan_starter",
+        razorpay_plan_pro_id="plan_pro",
+        xolver_gstin="x",
+        sarvam_api_key="x",
+        use_mock_adapters=False,
+    )
+    valid.validate_runtime()
+
 def test_owner_api_jwt_access():
     client = TestClient(app)
     
@@ -66,6 +104,35 @@ def test_owner_api_jwt_access():
     assert resp.status_code == 200
     assert isinstance(resp.json(), list)
 
+
+def test_staff_cannot_change_owner_settings() -> None:
+    token = create_access_token(tenant_id="t_test", user_id="u_staff")
+    response = TestClient(app).put(
+        "/api/settings",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"name": "Changed", "landmark_line": "x", "location_pin": "x"},
+    )
+    assert response.status_code == 403
+
+
+def test_generated_object_ids_are_serialized() -> None:
+    conversation_id = ObjectId()
+
+    async def seed() -> None:
+        await get_db()["conversations"].insert_one(
+            {"_id": conversation_id, "tenant_id": "t_test", "state": "bot"}
+        )
+
+    import asyncio
+
+    asyncio.run(seed())
+    token = create_access_token(tenant_id="t_test", user_id="u_test")
+    response = TestClient(app).get(
+        "/api/conversations", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 200
+    assert response.json()[0]["_id"] == str(conversation_id)
+
 @pytest.mark.asyncio
 async def test_atomic_booking_rollback():
     # Insert a slot in held state
@@ -75,6 +142,7 @@ async def test_atomic_booking_rollback():
     await Slots(tenant_id).insert_one({
         "_id": slot_id,
         "status": "held",
+        "hold_owner": "op-test",
         "hold_expiry": now + timedelta(minutes=10)
     })
     
@@ -85,7 +153,9 @@ async def test_atomic_booking_rollback():
     
     with patch.object(Bookings, "insert_one", side_effect=Exception("DB write failure")):
         with pytest.raises(Exception, match="DB write failure"):
-            await confirm_booking(tenant_id, slot_id, "contact_123", "Tooth Extraction")
+            await confirm_booking(
+                tenant_id, slot_id, "contact_123", "Tooth Extraction", "op-test"
+            )
             
     # Verify slot was rolled back to "held"
     slot = await Slots(tenant_id).find_one({"_id": slot_id})
@@ -104,8 +174,12 @@ async def test_cross_tenant_isolation():
     
     client = TestClient(app)
     
+    await get_db()["users"].insert_one({
+        "_id": "u_other", "tenant_id": "t_other", "role": "owner", "status": "active"
+    })
+
     # Request with token for tenant B (t_other)
-    token_other = create_access_token(tenant_id="t_other", user_id="u_test")
+    token_other = create_access_token(tenant_id="t_other", user_id="u_other")
     resp = client.get("/api/conversations", headers={"Authorization": f"Bearer {token_other}"})
     assert resp.status_code == 200
     # Should be empty since t_other has no conversations

@@ -27,15 +27,16 @@ def resolve(phrase: str, *, today: date, lang: str) -> date:
     """Resolve a relative date phrase into an absolute date (always future/today)."""
     phrase = normalize_numerals(phrase).lower().strip()
 
-    # 1. Tomorrow
+    # Match the longer phrase first: "day after tomorrow" contains "tomorrow".
+    parso_keywords = [
+        "day after tomorrow", "parso", "parshon", "paradina", "ପରଦିନ", "परसों"
+    ]
+    if any(k in phrase for k in parso_keywords):
+        return today + timedelta(days=2)
+
     tomorrow_keywords = ["kal", "tomorrow", "kali", "କାଲି", "कल", "kal subah", "kal shaam"]
     if any(k in phrase for k in tomorrow_keywords):
         return today + timedelta(days=1)
-
-    # 2. Day after tomorrow
-    parso_keywords = ["parso", "parshon", "paradina", "ପରଦିନ", "परसों"]
-    if any(k in phrase for k in parso_keywords):
-        return today + timedelta(days=2)
 
     # 3. Weekdays
     weekdays_map = {
@@ -83,7 +84,8 @@ def resolve(phrase: str, *, today: date, lang: str) -> date:
     if match_short:
         day, month = map(int, match_short.groups())
         try:
-            return date(today.year, month, day)
+            resolved = date(today.year, month, day)
+            return resolved if resolved >= today else date(today.year + 1, month, day)
         except ValueError:
             pass
 
