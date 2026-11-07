@@ -10,7 +10,7 @@ on:
 
 jobs:
   quality:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -47,7 +47,7 @@ jobs:
         run: uv build --wheel
 
   dashboard:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: dashboard
@@ -64,7 +64,7 @@ jobs:
 
   build:
     needs: [quality, dashboard]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - name: Build image

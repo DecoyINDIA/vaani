@@ -23,11 +23,13 @@ WORKDIR /srv
 
 # Install deps first for layer caching.
 COPY pyproject.toml uv.lock README.md ./
-RUN uv sync --frozen --no-dev --no-install-project
+RUN --mount=type=cache,target=/root/.cache/uv \
+  uv sync --frozen --no-dev --no-install-project
 
 # App source + built dashboard static
 COPY app ./app
-RUN uv sync --frozen --no-dev --no-editable
+RUN --mount=type=cache,target=/root/.cache/uv \
+  uv sync --frozen --no-dev --no-editable
 COPY --from=dashboard /src/dist ./dashboard/dist
 
 # Change ownership to the non-root user
