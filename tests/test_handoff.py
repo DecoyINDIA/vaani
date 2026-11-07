@@ -4,6 +4,8 @@ import json
 from datetime import UTC, datetime
 
 import pytest
+from app.agent.nodes.handoff import handoff
+from app.agent.templates import get_template
 from app.agent.tools.escalate import escalate
 from app.models.base import get_db
 from app.owner_api.routes import (
@@ -51,6 +53,26 @@ def _payload(message_id: str, text: str) -> str:
             ]
         }
     )
+
+
+async def test_handoff_preserves_medical_refusal_after_hours(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def after_hours_escalation(*args: object, **kwargs: object) -> dict[str, str]:
+        return {"patient_message": get_template("handoff_after_hours", "en")}
+
+    monkeypatch.setattr("app.agent.nodes.handoff.escalate", after_hours_escalation)
+    refusal = get_template("medical_refusal", "en")
+
+    result = await handoff(
+        {
+            "tenant_id": "medical-safety",
+            "conversation_id": "medical-safety-conversation",
+            "intent": "medical_question",
+            "lang": "en",
+            "response": refusal,
+        }
+    )
+
+    assert result["response"] == refusal
 
 
 async def test_human_request_alerts_once_silences_bot_and_returns_with_summary() -> None:
