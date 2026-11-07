@@ -12,11 +12,11 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v10
       - name: Install
         run: uv sync --frozen --extra dev
 
@@ -52,8 +52,8 @@ jobs:
       run:
         working-directory: dashboard
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
@@ -66,6 +66,73 @@ jobs:
     needs: [quality, dashboard]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build image
         run: docker build -t vaani:${{ github.sha }} .
+
+      - name: Smoke API and worker from the built image
+        shell: bash
+        run: |
+          set -euo pipefail
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          network="vaani-ci-${suffix}"
+          mongo="vaani-mongo-${suffix}"
+          redis="vaani-redis-${suffix}"
+          api="vaani-api-${suffix}"
+          worker="vaani-worker-${suffix}"
+          cleanup() {
+            docker rm -f "$api" "$worker" "$mongo" "$redis" >/dev/null 2>&1 || true
+            docker network rm "$network" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          docker network create "$network"
+          docker run -d --name "$mongo" --network "$network" --network-alias mongo mongo:7.0
+          docker run -d --name "$redis" --network "$network" --network-alias redis redis:7-alpine
+
+          for _ in {1..30}; do
+            if docker exec "$mongo" mongosh --quiet --eval 'quit(db.runCommand({ping: 1}).ok ? 0 : 1)' \
+              && docker exec "$redis" redis-cli ping | grep -q PONG; then
+              break
+            fi
+            sleep 1
+          done
+          docker exec "$mongo" mongosh --quiet --eval 'quit(db.runCommand({ping: 1}).ok ? 0 : 1)'
+          docker exec "$redis" redis-cli ping | grep -q PONG
+
+          common_env=(
+            --env APP_ENV=dev
+            --env MONGODB_URI=mongodb://mongo:27017/vaani
+            --env REDIS_URL=redis://redis:6379/0
+          )
+          docker run -d --name "$api" --network "$network" -p 8000:8000 \
+            "${common_env[@]}" "vaani:${GITHUB_SHA}"
+          docker run -d --name "$worker" --network "$network" \
+            "${common_env[@]}" "vaani:${GITHUB_SHA}" python -m app.workers.inbound
+
+          for _ in {1..30}; do
+            curl --fail --silent http://127.0.0.1:8000/health | grep -q '"status":"ok"' && break
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:8000/health | grep -q '"status":"ok"'
+          curl --fail --silent http://127.0.0.1:8000/ | grep -q '<div id="root"></div>'
+
+          for _ in {1..30}; do
+            docker exec "$worker" python -m app.workers.healthcheck && break
+            sleep 1
+          done
+          docker exec "$worker" python -m app.workers.healthcheck
+          test "$(docker inspect --format '{{.State.Running}}' "$worker")" = true
+
+          image_id="$(docker image inspect --format '{{.Id}}' "vaani:${GITHUB_SHA}")"
+          echo "Built and smoke-tested image ID: \`${image_id}\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Scan built image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: vaani:${{ github.sha }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
