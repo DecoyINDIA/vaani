@@ -36,6 +36,11 @@ async def handoff(state: AgentState) -> dict[str, Any]:
         lang=str(state.get("lang", "en")),
     )
 
-    response = result.get("patient_message")
+    safety_response = state.get("response") if intent_val in {
+        "medical_question",
+        "complaint",
+        "abuse",
+    } else None
+    response = safety_response or result.get("patient_message") or state.get("response")
     return {"escalate": True, **({"response": response} if response else {})}
 
