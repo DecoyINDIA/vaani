@@ -67,7 +67,9 @@ function Dashboard({ signedOut }: { signedOut: () => void }) {
       const pages = { inbox: inbox as Item[], bookings: bookings as Item[], escalations: escalations as Item[], knowledge: knowledge as Item[] };
       setData({ inbox: pages.inbox.slice(0, PAGE_SIZE), bookings: pages.bookings.slice(0, PAGE_SIZE), escalations: pages.escalations.slice(0, PAGE_SIZE), knowledge: pages.knowledge.slice(0, PAGE_SIZE), settings: [settings as Item] });
       setHasMore({ inbox: pages.inbox.length > PAGE_SIZE, bookings: pages.bookings.length > PAGE_SIZE, escalations: pages.escalations.length > PAGE_SIZE, knowledge: pages.knowledge.length > PAGE_SIZE, settings: false });
-      setSelected((current) => current || pages.inbox[0] || null);
+      setSelected((current) => current
+        ? pages.inbox.find((item) => item._id === current._id) || pages.inbox[0] || null
+        : pages.inbox[0] || null);
     } catch (reason) { setError(errorText(reason)); } finally { setLoading(false); }
   }
   async function loadMore() {
