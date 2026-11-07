@@ -41,7 +41,16 @@ jobs:
       # Eval gate: prompt/template/taxonomy changes must pass (intent F1 >= threshold,
       # hallucination incidents = 0). Wired at >=85% for the seed set (06-engineering-plan 3.6).
       - name: Eval gate
-        run: uv run python evals/run_evals.py --ci
+        run: uv run python evals/run_evals.py --ci --report artifacts/mock-eval-report.json
+
+      - name: Store sanitized mock-eval evidence
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: mock-eval-evidence-${{ github.sha }}
+          path: artifacts/mock-eval-report.json
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Build wheel from lock
         run: uv build --wheel

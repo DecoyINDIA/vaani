@@ -12,9 +12,12 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
+import os
 import sys
 from collections import defaultdict
+from datetime import UTC, datetime
 from pathlib import Path
 
 # Reconfigure stdout/stderr to UTF-8 for Windows compatibility with Indic scripts
@@ -28,6 +31,7 @@ from app.agent.templates import TEMPLATES
 from app.config import settings
 
 DATASET = Path(__file__).parent / "dataset" / "utterances.jsonl"
+DATASET_LABEL = "evals/dataset/utterances.jsonl"
 INTENT_F1_THRESHOLD = 0.85
 
 # The medical refusal must be the static template verbatim (any language) —
@@ -145,6 +149,7 @@ async def run_evaluation(classifier_model: str | None, responder_model: str | No
     
     ci_pass = True
     
+    language_metrics = {}
     for lang, stats in lang_stats.items():
         # Calculate Macro F1
         intents_evaluated = set(list(stats["tp"].keys()) + list(stats["fp"].keys()) + list(stats["fn"].keys()))
@@ -158,6 +163,12 @@ async def run_evaluation(classifier_model: str | None, responder_model: str | No
             
         macro_f1 = sum(f1_scores) / len(f1_scores) if f1_scores else 0.0
         accuracy = stats["correct"] / stats["total"] if stats["total"] > 0 else 0.0
+        language_metrics[lang] = {
+            "accuracy": accuracy,
+            "macro_f1": macro_f1,
+            "correct": stats["correct"],
+            "total": stats["total"],
+        }
         
         print(f"Language: {lang.upper()}")
         print(f"  Accuracy: {accuracy * 100:.2f}% ({stats['correct']}/{stats['total']})")
@@ -190,7 +201,46 @@ async def run_evaluation(classifier_model: str | None, responder_model: str | No
         print("  [PASS] All factual responses cite their expected source_ref.")
 
     print("=" * 99)
-    return {"pass": ci_pass, "results": results}
+    return {
+        "pass": ci_pass,
+        "results": results,
+        "language_metrics": language_metrics,
+        "hallucination_incidents": len(hallucinations),
+        "ungrounded_responses": len(ungrounded),
+        "case_count": len(cases),
+    }
+
+
+def write_report(path: Path, result: dict) -> None:
+    """Write summary-only evidence; case text and responses stay out of the artifact."""
+    report = {
+        "schema_version": 1,
+        "evidence_kind": "mock_pipeline_eval",
+        "scope": "offline pipeline wiring; not model quality",
+        "generated_at": datetime.now(UTC).isoformat(),
+        "commit": os.getenv("GITHUB_SHA", "local"),
+        "adapter_mode": "mock",
+        "models": {
+            "classifier": settings.llm_model_classifier or "mock/fallback",
+            "responder": settings.llm_model_responder or "mock/fallback",
+        },
+        "corpus": {
+            "path": DATASET_LABEL,
+            "sha256": hashlib.sha256(DATASET.read_bytes()).hexdigest(),
+            "cases": result["case_count"],
+        },
+        "thresholds": {
+            "intent_macro_f1": INTENT_F1_THRESHOLD,
+            "hallucination_incidents": 0,
+            "ungrounded_responses": 0,
+        },
+        "language_metrics": result["language_metrics"],
+        "hallucination_incidents": result["hallucination_incidents"],
+        "ungrounded_responses": result["ungrounded_responses"],
+        "passed": result["pass"],
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def main() -> int:
@@ -198,10 +248,13 @@ def main() -> int:
     parser.add_argument("--ci", action="store_true", help="exit non-zero on gate failure")
     parser.add_argument("--classifier-model", type=str, default=None, help="override intent classifier model")
     parser.add_argument("--responder-model", type=str, default=None, help="override responder model")
+    parser.add_argument("--report", type=Path, help="write a sanitized JSON evidence summary")
     args = parser.parse_args()
 
     # Run the evaluation loop
     res = asyncio.run(run_evaluation(args.classifier_model, args.responder_model))
+    if args.report:
+        write_report(args.report, res)
     
     if args.ci and not res["pass"]:
         print("[evals] CI Gate Failed!")
