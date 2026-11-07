@@ -1,6 +1,6 @@
 # CI pipeline per 06-engineering-plan §4:
-#   ruff + mypy -> unit tests -> tenant-isolation suite -> eval gate -> image build.
-# Nightly (separate schedule) runs the 500-concurrent race test + full 4-language eval.
+#   ruff + mypy -> unit tests -> tenant-isolation suite -> eval gate -> real MongoDB
+#   transaction/race suite -> image build.
 name: ci
 
 on:
@@ -62,8 +62,47 @@ jobs:
       - run: npm run lint
       - run: npm run build
 
+  booking-transactions:
+    needs: quality
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v10.3.3
+      - name: Install
+        run: uv sync --frozen --extra dev
+
+      - name: Start MongoDB replica set
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name vaani-mongo-rs -p 27017:27017 \
+            mongo:7.0 --replSet rs0 --bind_ip_all
+          for _ in {1..30}; do
+            docker exec vaani-mongo-rs mongosh --quiet --eval \
+              'quit(db.runCommand({ping: 1}).ok ? 0 : 1)' && break
+            sleep 1
+          done
+          docker exec vaani-mongo-rs mongosh --quiet --eval \
+            'rs.initiate({_id: "rs0", members: [{_id: 0, host: "localhost:27017"}]})'
+          for _ in {1..30}; do
+            docker exec vaani-mongo-rs mongosh --quiet --eval \
+              'quit(db.hello().isWritablePrimary ? 0 : 1)' && break
+            sleep 1
+          done
+          docker exec vaani-mongo-rs mongosh --quiet --eval \
+            'quit(db.hello().isWritablePrimary ? 0 : 1)'
+
+      - name: Run booking transaction and 500-claim race suite
+        env:
+          USE_MOCK_ADAPTERS: "false"
+          VAANI_INTEGRATION_MONGODB_URI: mongodb://127.0.0.1:27017/vaani_integration?replicaSet=rs0&directConnection=true
+        run: uv run pytest -q tests/integration/test_booking_transactions.py
+
   build:
-    needs: [quality, dashboard]
+    needs: [quality, dashboard, booking-transactions]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
