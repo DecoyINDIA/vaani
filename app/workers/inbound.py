@@ -601,14 +601,20 @@ async def process_event(fields: dict[str, Any]) -> None:
         )
         return
 
-    await messages.insert_one(
+    operation_key = f"reply:{message_id or conversation_id}"
+    await messages.update_one(
+        {"operation_key": operation_key},
         {
-            "conversation_id": conversation_id,
-            "direction": "outbound",
-            "type": "text",
-            "text": response,
-            "ts": _now(),
-        }
+            "$setOnInsert": {
+                "conversation_id": conversation_id,
+                "direction": "outbound",
+                "type": "text",
+                "text": response,
+                "operation_key": operation_key,
+                "ts": _now(),
+            }
+        },
+        upsert=True,
     )
 
 
@@ -633,6 +639,7 @@ async def _handle(r: Any, msg_id: str, fields: dict[str, Any], deliveries: int) 
         return
     try:
         await process_event(fields)
+        await Messages.mark_completed_unscoped(durable_id)
         await r.xack(STREAM, GROUP, msg_id)
     except Exception as e:
         await Messages.release_work_unscoped(durable_id, str(e))
@@ -672,6 +679,7 @@ async def _process_fallback_queue() -> None:
                 continue
             try:
                 await process_event(fields)
+                await Messages.mark_completed_unscoped(str(message_id))
             except Exception as e:
                 logger.warning("Processing fallback message %s failed: %s", message_id, e)
                 await Messages.release_work_unscoped(str(message_id), str(e))

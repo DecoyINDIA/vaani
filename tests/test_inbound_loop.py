@@ -60,6 +60,7 @@ async def test_inbound_event_produces_audited_reply():
     }
 
     await inbound.process_event(fields)
+    await inbound.process_event(fields)
 
     db = get_db()
 
@@ -69,7 +70,7 @@ async def test_inbound_event_produces_audited_reply():
     assert isinstance(contact["last_inbound_ts"], datetime)
     assert await whatsapp._window_open(tenant_id, wa_id) is True
 
-    # Both directions logged, tenant-scoped.
+    # A replay reuses the same inbound and outbound transcript records.
     msgs = await db["messages"].find({"tenant_id": tenant_id}).to_list(length=10)
     assert sorted(m["direction"] for m in msgs) == ["inbound", "outbound"]
     assert all(m["tenant_id"] == tenant_id for m in msgs)
