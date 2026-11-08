@@ -4,7 +4,7 @@ Endpoints (stubs — Week 5 task 5.3):
   GET  /conversations           GET  /conversations/{id}/messages
   POST /conversations/{id}/takeover   POST /conversations/{id}/return
   GET  /bookings   POST /bookings   PATCH /bookings/{id}
-  GET  /escalations
+  GET  /escalations   GET /deliveries
   GET/PUT /kb      GET/PUT /settings
   GET  /metrics/summary          GET  /audit/export
 """
@@ -27,6 +27,7 @@ from app.models.collections import (
     Escalations,
     KbEntries,
     Messages,
+    OutboundIntents,
     Tenants,
 )
 from app.owner_api.auth import require_owner_tenant, require_tenant
@@ -247,6 +248,32 @@ async def list_escalations(
         Escalations(tenant_id)
         .find({})
         .sort([("ts", -1), ("_id", -1)])
+        .skip(offset)
+        .limit(limit)
+    )
+    results: list[dict[str, Any]] = await cursor.to_list(length=limit)
+    return serialize_mongo(results)
+
+
+@router.get("/deliveries")
+async def list_delivery_exceptions(
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    tenant_id: str = Depends(require_tenant),
+) -> list[dict[str, Any]]:
+    cursor = (
+        OutboundIntents(tenant_id)
+        .find(
+            {"state": {"$in": ["sending", "unknown", "failed"]}},
+            {
+                "state": 1,
+                "kind": 1,
+                "attempted_at": 1,
+                "reconciled_at": 1,
+                "last_error": 1,
+            },
+        )
+        .sort([("attempted_at", -1), ("_id", -1)])
         .skip(offset)
         .limit(limit)
     )

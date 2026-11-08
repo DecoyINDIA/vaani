@@ -251,6 +251,12 @@ jobs:
                 access_token_env: "AMBIGUOUS_PROVIDER_TOKEN"
               }
             });
+            db.users.insertOne({
+              _id: "smoke-staff",
+              tenant_id: "smoke-tenant",
+              role: "staff",
+              status: "active"
+            });
             db.contacts.insertOne({
               _id: "smoke-contact",
               tenant_id: "smoke-tenant",
@@ -1024,6 +1030,11 @@ jobs:
             quit(intent && intent.state === "unknown" &&
               intent.last_error === "ProcessInterrupted" ? 0 : 1);
           '
+          delivery_token="$(docker exec "$api" python -c \
+            'from app.owner_api.auth import create_access_token; print(create_access_token("smoke-tenant", "smoke-staff"))')"
+          curl --fail --silent http://127.0.0.1:8000/api/deliveries \
+            --header "Authorization: Bearer ${delivery_token}" \
+            | python -c 'import json,sys; rows=json.load(sys.stdin); assert len(rows) == 1; row=rows[0]; assert row["state"] == "unknown" and row["last_error"] == "ProcessInterrupted"; assert "to" not in row and "operation_key" not in row'
           retry_script='import asyncio
           from app.channels import whatsapp
 
