@@ -110,8 +110,77 @@ jobs:
           VAANI_INTEGRATION_MONGODB_URI: mongodb://127.0.0.1:27017/vaani_integration?replicaSet=rs0&directConnection=true
         run: uv run pytest -q tests/integration/test_booking_transactions.py
 
+  recovery-drill:
+    needs: quality
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v10.3.3
+      - name: Install
+        run: uv sync --frozen --extra dev
+
+      - name: Dump, restore, and recover durable work
+        shell: bash
+        env:
+          APP_ENV: dev
+          USE_MOCK_ADAPTERS: "true"
+          REDIS_URL: redis://127.0.0.1:6380/0
+          RECOVERY_DRILL_CONFIRM: synthetic
+        run: |
+          set -euo pipefail
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          source="vaani-recovery-source-${suffix}"
+          target="vaani-recovery-target-${suffix}"
+          redis="vaani-recovery-redis-${suffix}"
+          cleanup() {
+            docker rm -f "$source" "$target" "$redis" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          docker run -d --name "$source" -p 27017:27017 mongo:7.0
+          docker run -d --name "$target" -p 27018:27017 mongo:7.0
+          docker run -d --name "$redis" -p 6380:6379 redis:7-alpine
+          for _ in {1..30}; do
+            if docker exec "$source" mongosh --quiet --eval \
+              'quit(db.runCommand({ping: 1}).ok ? 0 : 1)' \
+              && docker exec "$target" mongosh --quiet --eval \
+              'quit(db.runCommand({ping: 1}).ok ? 0 : 1)' \
+              && docker exec "$redis" redis-cli ping | grep -q PONG; then
+              break
+            fi
+            sleep 1
+          done
+
+          MONGODB_URI=mongodb://127.0.0.1:27017/vaani_recovery_drill \
+            uv run python -m ops.recovery_drill seed
+          started_at_epoch="$(date +%s)"
+          docker exec "$source" mongodump --quiet --gzip \
+            --db vaani_recovery_drill --archive=/tmp/recovery.archive
+          docker cp "$source:/tmp/recovery.archive" "$RUNNER_TEMP/recovery.archive"
+          backup_id="sha256:$(sha256sum "$RUNNER_TEMP/recovery.archive" | cut -d' ' -f1)"
+          docker cp "$RUNNER_TEMP/recovery.archive" "$target:/tmp/recovery.archive"
+          docker exec "$target" mongorestore --quiet --gzip \
+            --archive=/tmp/recovery.archive
+          MONGODB_URI=mongodb://127.0.0.1:27018/vaani_recovery_drill \
+            uv run python -m ops.recovery_drill verify \
+              --report artifacts/recovery-drill.json \
+              --backup-id "$backup_id" \
+              --started-at-epoch "$started_at_epoch"
+
+      - name: Store synthetic recovery evidence
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: synthetic-recovery-evidence-${{ github.sha }}
+          path: artifacts/recovery-drill.json
+          if-no-files-found: error
+          retention-days: 30
+
   build:
-    needs: [quality, dashboard, booking-transactions]
+    needs: [quality, dashboard, booking-transactions, recovery-drill]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
