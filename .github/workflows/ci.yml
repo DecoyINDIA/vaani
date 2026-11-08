@@ -269,6 +269,18 @@ jobs:
               channel: "wa",
               state: "human"
             });
+            db.contacts.insertOne({
+              _id: "ack-contact",
+              tenant_id: "smoke-tenant",
+              wa_id: "944444444444"
+            });
+            db.conversations.insertOne({
+              _id: "ack-conversation",
+              tenant_id: "smoke-tenant",
+              contact_id: "ack-contact",
+              channel: "wa",
+              state: "human"
+            });
           '
           webhook_payload='{"entry":[{"changes":[{"field":"messages","value":{"metadata":{"display_phone_number":"919999999999"},"messages":[{"id":"smoke-wamid","from":"911111111111","type":"text","text":{"body":"smoke handoff message"}}]}}]}]}'
           curl --fail --silent --request POST http://127.0.0.1:8000/webhooks/meta \
@@ -488,6 +500,104 @@ jobs:
               !("payload" in message) && escalations === 1 && audits === 1 ? 0 : 1);
           '
           docker start "$redis"
+          for _ in {1..30}; do
+            docker exec "$worker" python -m app.workers.healthcheck && break
+            sleep 1
+          done
+          docker exec "$worker" python -m app.workers.healthcheck
+
+          # Kill after Mongo completion but before Redis acknowledgment. The
+          # replacement worker must ACK the pending entry without reprocessing it.
+          docker rm -f "$worker" "$holder"
+          ack_script='import asyncio
+          import json
+          from app.gateway.middleware import get_redis
+          from app.models.collections import Messages
+          from app.workers import inbound
+
+          payload = {"entry": [{"changes": [{"value": {
+              "metadata": {"display_phone_number": "919999999999"},
+              "messages": [{"id": "ack-wamid", "from": "944444444444",
+                            "type": "text", "text": {"body": "pre ack recovery"}}]
+          }}]}]}
+          original_complete = Messages.mark_completed_unscoped
+
+          async def checkpoint(message_id):
+              await original_complete(message_id)
+              print("pre-ack checkpoint ready", flush=True)
+              await asyncio.Event().wait()
+
+          async def hold():
+              Messages.mark_completed_unscoped = checkpoint
+              await Messages.accept_inbound_unscoped("ack-wamid", "smoke-tenant", payload)
+              fields = {
+                  "tenant_id": "smoke-tenant",
+                  "message_id": "ack-wamid",
+                  "payload": json.dumps(payload),
+              }
+              redis_client = get_redis()
+              await inbound._ensure_group(redis_client)
+              stream_id = await redis_client.xadd(inbound.STREAM, fields)
+              response = await redis_client.xreadgroup(
+                  inbound.GROUP,
+                  inbound.CONSUMER,
+                  {inbound.STREAM: ">"},
+                  count=1,
+              )
+              claimed_id, claimed_fields = response[0][1][0]
+              assert claimed_id == stream_id
+              await inbound._handle(redis_client, claimed_id, claimed_fields, deliveries=1)
+
+          asyncio.run(hold())'
+          docker run -d --name "$holder" --network "$network" \
+            "${common_env[@]}" "vaani:${GITHUB_SHA}" python -c "$ack_script"
+          for _ in {1..30}; do
+            if docker exec "$mongo" mongosh --quiet vaani --eval '
+              const message = db.messages.findOne({_id: "ack-wamid"});
+              quit(message && message.text === "pre ack recovery" &&
+                message.attempts === 1 && !("status" in message) &&
+                !("payload" in message) ? 0 : 1);
+            ' && test "$(docker exec "$redis" redis-cli --raw \
+              XPENDING vaani:inbound_stream vaani:workers | head -n1)" = "1"; then
+              break
+            fi
+            sleep 1
+          done
+          docker exec "$mongo" mongosh --quiet vaani --eval '
+            const message = db.messages.findOne({_id: "ack-wamid"});
+            quit(message && message.text === "pre ack recovery" &&
+              message.attempts === 1 && !("status" in message) &&
+              !("payload" in message) ? 0 : 1);
+          '
+          test "$(docker exec "$redis" redis-cli --raw \
+            XPENDING vaani:inbound_stream vaani:workers | head -n1)" = "1"
+          docker kill "$holder"
+          pending_id="$(docker exec "$redis" redis-cli --raw \
+            XPENDING vaani:inbound_stream vaani:workers - + 1 | head -n1)"
+          test -n "$pending_id"
+          docker exec "$redis" redis-cli XCLAIM \
+            vaani:inbound_stream vaani:workers worker-1 0 "$pending_id" \
+            IDLE 60000 JUSTID | grep -q "$pending_id"
+          docker run -d --name "$worker" --network "$network" \
+            "${common_env[@]}" "vaani:${GITHUB_SHA}" python -m app.workers.inbound
+          for _ in {1..30}; do
+            if test "$(docker exec "$redis" redis-cli --raw \
+              XPENDING vaani:inbound_stream vaani:workers | head -n1)" = "0"; then
+              break
+            fi
+            sleep 1
+          done
+          test "$(docker exec "$redis" redis-cli --raw \
+            XPENDING vaani:inbound_stream vaani:workers | head -n1)" = "0"
+          docker exec "$mongo" mongosh --quiet vaani --eval '
+            const message = db.messages.findOne({_id: "ack-wamid"});
+            const audits = db.audit_log.countDocuments({
+              tenant_id: "smoke-tenant",
+              event_type: "inbound_message",
+              "payload.wa_id": "944444444444"
+            });
+            quit(message && message.attempts === 1 && audits === 1 ? 0 : 1);
+          '
           for _ in {1..30}; do
             docker exec "$worker" python -m app.workers.healthcheck && break
             sleep 1
