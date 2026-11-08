@@ -629,6 +629,8 @@ async def _ensure_group(r: Any) -> None:
 
 async def _dead_letter(r: Any, msg_id: str, fields: dict[str, Any], reason: str) -> None:
     logger.error("Dead-lettering %s after %d attempts: %s", msg_id, MAX_DELIVERIES, reason)
+    durable_id = str(fields.get("message_id", msg_id))
+    await Messages.mark_failed_unscoped(durable_id, reason=reason)
     await r.xadd(DEAD_LETTER, {**fields, "failed_msg_id": msg_id, "reason": reason})
     await r.xack(STREAM, GROUP, msg_id)
 
@@ -645,7 +647,7 @@ async def _handle(r: Any, msg_id: str, fields: dict[str, Any], deliveries: int) 
     except Exception as e:
         await Messages.release_work_unscoped(durable_id, str(e))
         if deliveries >= MAX_DELIVERIES:
-            await _dead_letter(r, msg_id, fields, str(e))
+            await _dead_letter(r, msg_id, fields, type(e).__name__)
         else:
             # Leave un-ACKed: it stays pending and is reclaimed for another attempt.
             logger.warning("Processing %s failed (attempt %d): %s", msg_id, deliveries, e)

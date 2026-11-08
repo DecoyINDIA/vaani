@@ -136,7 +136,7 @@ class Messages(TenantScoped):
             {"_id": message_id, "status": "processing"},
             {
                 "$set": {"status": "queued", "last_error": reason},
-                "$unset": {"lease_expires_at": ""},
+                "$unset": {"lease_expires_at": "", "last_error": ""},
             },
         )
 
@@ -173,7 +173,14 @@ class Messages(TenantScoped):
         """Mark a message as failed (dead-letter equivalent)."""
         await get_db()[cls.collection].update_one(
             {"_id": message_id},
-            {"$set": {"status": "failed", "fail_reason": reason}}
+            {
+                "$set": {
+                    "status": "failed",
+                    "fail_reason": reason,
+                    "failed_at": datetime.now(UTC).replace(tzinfo=None),
+                },
+                "$unset": {"lease_expires_at": ""},
+            },
         )
 
     @classmethod
