@@ -692,12 +692,20 @@ async def run_scheduler_background() -> None:
     """Background task to run reminders and weekly summaries on schedule."""
     logger.info("Starting background scheduler...")
     from app.booking.engine import run_schedule_expansion
+    from app.models.collections import OutboundIntents
     from app.workers.billing import run_monthly_invoices
     from app.workers.escalations import run_escalation_slas
     from app.workers.reminders import run_reminders
     from app.workers.weekly_summary import run_weekly_summaries
 
     while True:
+        try:
+            reconciled = await OutboundIntents.mark_stale_sending_unknown_unscoped()
+            if reconciled:
+                logger.warning("Marked %d interrupted outbound sends unknown", reconciled)
+        except Exception as e:
+            logger.error("Background scheduler error in send reconciliation: %s", e)
+
         # Run reminders every 15 minutes
         try:
             await run_schedule_expansion()
