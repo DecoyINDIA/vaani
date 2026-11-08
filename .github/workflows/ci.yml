@@ -191,7 +191,7 @@ jobs:
       - name: Build image
         run: docker build -t vaani:${{ github.sha }} .
 
-      - name: Smoke API, dashboard, webhook, and worker from the built image
+      - name: Smoke API, dashboard, webhook, worker, and crash recovery from the built image
         shell: bash
         run: |
           set -euo pipefail
@@ -201,8 +201,9 @@ jobs:
           redis="vaani-redis-${suffix}"
           api="vaani-api-${suffix}"
           worker="vaani-worker-${suffix}"
+          holder="vaani-crash-holder-${suffix}"
           cleanup() {
-            docker rm -f "$api" "$worker" "$mongo" "$redis" >/dev/null 2>&1 || true
+            docker rm -f "$api" "$worker" "$holder" "$mongo" "$redis" >/dev/null 2>&1 || true
             docker network rm "$network" >/dev/null 2>&1 || true
           }
           trap cleanup EXIT
@@ -256,6 +257,18 @@ jobs:
               channel: "wa",
               state: "human"
             });
+            db.contacts.insertOne({
+              _id: "crash-contact",
+              tenant_id: "smoke-tenant",
+              wa_id: "922222222222"
+            });
+            db.conversations.insertOne({
+              _id: "crash-conversation",
+              tenant_id: "smoke-tenant",
+              contact_id: "crash-contact",
+              channel: "wa",
+              state: "human"
+            });
           '
           webhook_payload='{"entry":[{"changes":[{"field":"messages","value":{"metadata":{"display_phone_number":"919999999999"},"messages":[{"id":"smoke-wamid","from":"911111111111","type":"text","text":{"body":"smoke handoff message"}}]}}]}]}'
           curl --fail --silent --request POST http://127.0.0.1:8000/webhooks/meta \
@@ -293,8 +306,87 @@ jobs:
           docker exec "$worker" python -m app.workers.healthcheck
           test "$(docker inspect --format '{{.State.Running}}' "$worker")" = true
 
+          # Kill a process after it has leased and partially recorded durable work.
+          # The replacement worker must recover from Mongo before Redis is available.
+          docker rm -f "$worker"
+          crash_script='import asyncio
+          from app.models.collections import Messages
+
+          payload = {"entry": [{"changes": [{"value": {
+              "metadata": {"display_phone_number": "919999999999"},
+              "messages": [{"id": "crash-wamid", "from": "922222222222",
+                            "type": "text", "text": {"body": "crash recovery message"}}]
+          }}]}]}
+
+          async def hold():
+              await Messages.accept_inbound_unscoped("crash-wamid", "smoke-tenant", payload)
+              assert await Messages.acquire_work_unscoped("crash-wamid")
+              await Messages.upsert_message_unscoped(
+                  "crash-wamid", "smoke-tenant",
+                  {"direction": "inbound", "type": "text", "text": "partial before kill"},
+              )
+              print("crash checkpoint ready", flush=True)
+              await asyncio.Event().wait()
+
+          asyncio.run(hold())'
+          docker run -d --name "$holder" --network "$network" \
+            "${common_env[@]}" "vaani:${GITHUB_SHA}" python -c "$crash_script"
+          for _ in {1..30}; do
+            if docker exec "$mongo" mongosh --quiet vaani --eval '
+              const message = db.messages.findOne({_id: "crash-wamid"});
+              quit(message && message.status === "processing" &&
+                message.text === "partial before kill" && message.payload ? 0 : 1);
+            '; then
+              break
+            fi
+            sleep 1
+          done
+          docker exec "$mongo" mongosh --quiet vaani --eval '
+            const message = db.messages.findOne({_id: "crash-wamid"});
+            quit(message && message.status === "processing" &&
+              message.text === "partial before kill" && message.payload ? 0 : 1);
+          '
+          docker kill "$holder"
+          docker stop "$redis"
+          docker exec "$mongo" mongosh --quiet vaani --eval '
+            db.messages.updateOne(
+              {_id: "crash-wamid"},
+              {$set: {lease_expires_at: new Date(0)}}
+            );
+          '
+          docker run -d --name "$worker" --network "$network" \
+            "${common_env[@]}" "vaani:${GITHUB_SHA}" python -m app.workers.inbound
+          for _ in {1..30}; do
+            if docker exec "$mongo" mongosh --quiet vaani --eval '
+              const message = db.messages.findOne({_id: "crash-wamid"});
+              quit(message && message.text === "crash recovery message" &&
+                message.attempts === 2 && !("status" in message) &&
+                !("payload" in message) ? 0 : 1);
+            '; then
+              break
+            fi
+            sleep 1
+          done
+          docker exec "$mongo" mongosh --quiet vaani --eval '
+            const message = db.messages.findOne({_id: "crash-wamid"});
+            const audit = db.audit_log.findOne({
+              tenant_id: "smoke-tenant",
+              event_type: "inbound_message",
+              "payload.wa_id": "922222222222"
+            });
+            quit(message && message.text === "crash recovery message" &&
+              message.attempts === 2 && !("status" in message) &&
+              !("payload" in message) && audit ? 0 : 1);
+          '
+          docker start "$redis"
+          for _ in {1..30}; do
+            docker exec "$worker" python -m app.workers.healthcheck && break
+            sleep 1
+          done
+          docker exec "$worker" python -m app.workers.healthcheck
+
           image_id="$(docker image inspect --format '{{.Id}}' "vaani:${GITHUB_SHA}")"
-          echo "Built and smoke-tested API/dashboard/webhook/worker image ID: \`${image_id}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Built and smoke/crash-tested API/dashboard/webhook/worker image ID: \`${image_id}\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Scan built image
         uses: aquasecurity/trivy-action@v0.36.0
