@@ -427,7 +427,7 @@ jobs:
                 tenant_id: "smoke-tenant", wa_id: "933333333333"
               });
               const conversation = contact && db.conversations.findOne({
-                tenant_id: "smoke-tenant", contact_id: contact._id
+                tenant_id: "smoke-tenant", contact_id: contact._id.toString()
               });
               const escalations = db.escalations.countDocuments({
                 tenant_id: "smoke-tenant", status: "open"
@@ -449,7 +449,7 @@ jobs:
               tenant_id: "smoke-tenant", wa_id: "933333333333"
             });
             const conversation = contact && db.conversations.findOne({
-              tenant_id: "smoke-tenant", contact_id: contact._id
+              tenant_id: "smoke-tenant", contact_id: contact._id.toString()
             });
             quit(message && message.status === "processing" && message.payload &&
               conversation && conversation.state === "human" ? 0 : 1);
