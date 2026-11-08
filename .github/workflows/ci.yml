@@ -281,6 +281,30 @@ jobs:
               channel: "wa",
               state: "human"
             });
+            db.contacts.insertOne({
+              _id: "receipt-contact",
+              tenant_id: "smoke-tenant",
+              wa_id: "955555555555"
+            });
+            db.conversations.insertOne({
+              _id: "receipt-conversation",
+              tenant_id: "smoke-tenant",
+              contact_id: "receipt-contact",
+              channel: "wa",
+              state: "human"
+            });
+            db.contacts.insertOne({
+              _id: "notify-contact",
+              tenant_id: "smoke-tenant",
+              wa_id: "966666666666"
+            });
+            db.conversations.insertOne({
+              _id: "notify-conversation",
+              tenant_id: "smoke-tenant",
+              contact_id: "notify-contact",
+              channel: "wa",
+              state: "human"
+            });
           '
           webhook_payload='{"entry":[{"changes":[{"field":"messages","value":{"metadata":{"display_phone_number":"919999999999"},"messages":[{"id":"smoke-wamid","from":"911111111111","type":"text","text":{"body":"smoke handoff message"}}]}}]}]}'
           curl --fail --silent --request POST http://127.0.0.1:8000/webhooks/meta \
@@ -597,6 +621,186 @@ jobs:
               "payload.wa_id": "944444444444"
             });
             quit(message && message.attempts === 1 && audits === 1 ? 0 : 1);
+          '
+          for _ in {1..30}; do
+            docker exec "$worker" python -m app.workers.healthcheck && break
+            sleep 1
+          done
+          docker exec "$worker" python -m app.workers.healthcheck
+
+          # Kill the webhook process after durable receipt but before Redis wake-up.
+          # Mongo must remain sufficient for a replacement worker to finish once.
+          docker rm -f "$worker" "$holder"
+          receipt_stream_length="$(docker exec "$redis" redis-cli XLEN vaani:inbound_stream)"
+          receipt_script='import asyncio
+          import json
+          from starlette.requests import Request
+          from app.gateway import meta
+          from app.models.collections import Messages
+
+          payload = {"entry": [{"changes": [{"value": {
+              "metadata": {"display_phone_number": "919999999999"},
+              "messages": [{"id": "receipt-wamid", "from": "955555555555",
+                            "type": "text", "text": {"body": "receipt recovery"}}]
+          }}]}]}
+          original_accept = Messages.accept_inbound_unscoped
+
+          async def checkpoint(message_id, tenant_id, event):
+              await original_accept(message_id, tenant_id, event)
+              print("receipt checkpoint ready", flush=True)
+              await asyncio.Event().wait()
+
+          async def hold():
+              body = json.dumps(payload).encode()
+              sent = False
+
+              async def receive():
+                  nonlocal sent
+                  if sent:
+                      return {"type": "http.disconnect"}
+                  sent = True
+                  return {"type": "http.request", "body": body, "more_body": False}
+
+              Messages.accept_inbound_unscoped = checkpoint
+              request = Request({"type": "http", "method": "POST", "path": "/webhooks/meta",
+                                 "headers": [], "query_string": b""}, receive)
+              await meta.receive(request)
+
+          asyncio.run(hold())'
+          docker run -d --name "$holder" --network "$network" \
+            "${common_env[@]}" "vaani:${GITHUB_SHA}" python -c "$receipt_script"
+          for _ in {1..30}; do
+            if docker exec "$mongo" mongosh --quiet vaani --eval '
+              const message = db.messages.findOne({_id: "receipt-wamid"});
+              quit(message && message.status === "queued" && message.attempts === 0 &&
+                message.payload ? 0 : 1);
+            '; then
+              break
+            fi
+            sleep 1
+          done
+          docker exec "$mongo" mongosh --quiet vaani --eval '
+            const message = db.messages.findOne({_id: "receipt-wamid"});
+            quit(message && message.status === "queued" && message.attempts === 0 &&
+              message.payload ? 0 : 1);
+          '
+          test "$(docker exec "$redis" redis-cli XLEN vaani:inbound_stream)" = \
+            "$receipt_stream_length"
+          docker kill "$holder"
+          docker stop "$redis"
+          docker run -d --name "$worker" --network "$network" \
+            "${common_env[@]}" "vaani:${GITHUB_SHA}" python -m app.workers.inbound
+          for _ in {1..30}; do
+            if docker exec "$mongo" mongosh --quiet vaani --eval '
+              const message = db.messages.findOne({_id: "receipt-wamid"});
+              quit(message && message.text === "receipt recovery" &&
+                message.attempts === 1 && !("status" in message) &&
+                !("payload" in message) ? 0 : 1);
+            '; then
+              break
+            fi
+            sleep 1
+          done
+          docker exec "$mongo" mongosh --quiet vaani --eval '
+            const message = db.messages.findOne({_id: "receipt-wamid"});
+            const audits = db.audit_log.countDocuments({
+              tenant_id: "smoke-tenant", event_type: "inbound_message",
+              "payload.wa_id": "955555555555"
+            });
+            quit(message && message.text === "receipt recovery" &&
+              message.attempts === 1 && !("status" in message) &&
+              !("payload" in message) && audits === 1 ? 0 : 1);
+          '
+          docker start "$redis"
+          for _ in {1..30}; do
+            docker exec "$worker" python -m app.workers.healthcheck && break
+            sleep 1
+          done
+          docker exec "$worker" python -m app.workers.healthcheck
+
+          # Kill the webhook process after the real Redis wake-up is committed.
+          # The replacement worker must consume that stream entry exactly once.
+          docker rm -f "$worker" "$holder"
+          notification_stream_length="$(docker exec "$redis" redis-cli XLEN vaani:inbound_stream)"
+          notification_script='import asyncio
+          import json
+          from starlette.requests import Request
+          from app.gateway import meta
+
+          payload = {"entry": [{"changes": [{"value": {
+              "metadata": {"display_phone_number": "919999999999"},
+              "messages": [{"id": "notify-wamid", "from": "966666666666",
+                            "type": "text", "text": {"body": "notification recovery"}}]
+          }}]}]}
+          redis_client = meta.get_redis()
+
+          class CheckpointRedis:
+              async def xadd(self, *args, **kwargs):
+                  result = await redis_client.xadd(*args, **kwargs)
+                  print("notification checkpoint ready", flush=True)
+                  await asyncio.Event().wait()
+                  return result
+
+          async def hold():
+              body = json.dumps(payload).encode()
+              sent = False
+
+              async def receive():
+                  nonlocal sent
+                  if sent:
+                      return {"type": "http.disconnect"}
+                  sent = True
+                  return {"type": "http.request", "body": body, "more_body": False}
+
+              meta.get_redis = lambda: CheckpointRedis()
+              request = Request({"type": "http", "method": "POST", "path": "/webhooks/meta",
+                                 "headers": [], "query_string": b""}, receive)
+              await meta.receive(request)
+
+          asyncio.run(hold())'
+          docker run -d --name "$holder" --network "$network" \
+            "${common_env[@]}" "vaani:${GITHUB_SHA}" python -c "$notification_script"
+          for _ in {1..30}; do
+            current_stream_length="$(docker exec "$redis" redis-cli XLEN vaani:inbound_stream)"
+            if docker exec "$mongo" mongosh --quiet vaani --eval '
+              const message = db.messages.findOne({_id: "notify-wamid"});
+              quit(message && message.status === "queued" && message.attempts === 0 &&
+                message.payload ? 0 : 1);
+            ' && test "$current_stream_length" = "$((notification_stream_length + 1))"; then
+              break
+            fi
+            sleep 1
+          done
+          docker exec "$mongo" mongosh --quiet vaani --eval '
+            const message = db.messages.findOne({_id: "notify-wamid"});
+            quit(message && message.status === "queued" && message.attempts === 0 &&
+              message.payload ? 0 : 1);
+          '
+          test "$(docker exec "$redis" redis-cli XLEN vaani:inbound_stream)" = \
+            "$((notification_stream_length + 1))"
+          docker kill "$holder"
+          docker run -d --name "$worker" --network "$network" \
+            "${common_env[@]}" "vaani:${GITHUB_SHA}" python -m app.workers.inbound
+          for _ in {1..30}; do
+            if docker exec "$mongo" mongosh --quiet vaani --eval '
+              const message = db.messages.findOne({_id: "notify-wamid"});
+              quit(message && message.text === "notification recovery" &&
+                message.attempts === 1 && !("status" in message) &&
+                !("payload" in message) ? 0 : 1);
+            '; then
+              break
+            fi
+            sleep 1
+          done
+          docker exec "$mongo" mongosh --quiet vaani --eval '
+            const message = db.messages.findOne({_id: "notify-wamid"});
+            const audits = db.audit_log.countDocuments({
+              tenant_id: "smoke-tenant", event_type: "inbound_message",
+              "payload.wa_id": "966666666666"
+            });
+            quit(message && message.text === "notification recovery" &&
+              message.attempts === 1 && !("status" in message) &&
+              !("payload" in message) && audits === 1 ? 0 : 1);
           '
           for _ in {1..30}; do
             docker exec "$worker" python -m app.workers.healthcheck && break
