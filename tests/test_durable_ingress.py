@@ -146,6 +146,43 @@ async def test_expired_crash_lease_recovers_without_redis() -> None:
     assert completed["attempts"] == 2
 
 
+async def test_replayed_inbound_event_records_one_audit() -> None:
+    await get_db()["contacts"].insert_one(
+        {"_id": "audit-contact", "tenant_id": "t_ingress", "wa_id": "933"}
+    )
+    await get_db()["conversations"].insert_one(
+        {
+            "_id": "audit-conversation",
+            "tenant_id": "t_ingress",
+            "contact_id": "audit-contact",
+            "channel": "wa",
+            "state": "human",
+        }
+    )
+    event = {
+        "entry": [{"changes": [{"value": {
+            "metadata": {"display_phone_number": "919999999999"},
+            "messages": [{
+                "id": "wamid.audit", "from": "933", "type": "text",
+                "text": {"body": "replayed message"},
+            }],
+        }}]}]
+    }
+    fields = {
+        "tenant_id": "t_ingress",
+        "message_id": "wamid.audit",
+        "payload": json.dumps(event),
+    }
+
+    await inbound.process_event(fields)
+    await inbound.process_event(fields)
+
+    audits = await get_db()["audit_log"].count_documents(
+        {"tenant_id": "t_ingress", "operation_key": "inbound:wamid.audit"}
+    )
+    assert audits == 1
+
+
 def test_mongo_failure_is_not_acknowledged() -> None:
     with patch.object(
         Messages, "accept_inbound_unscoped", AsyncMock(side_effect=ConnectionError("mongo down"))

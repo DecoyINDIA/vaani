@@ -305,6 +305,18 @@ jobs:
               channel: "wa",
               state: "human"
             });
+            db.contacts.insertOne({
+              _id: "graph-contact",
+              tenant_id: "smoke-tenant",
+              wa_id: "977777777777"
+            });
+            db.conversations.insertOne({
+              _id: "graph-conversation",
+              tenant_id: "smoke-tenant",
+              contact_id: "graph-contact",
+              channel: "wa",
+              state: "bot"
+            });
           '
           webhook_payload='{"entry":[{"changes":[{"field":"messages","value":{"metadata":{"display_phone_number":"919999999999"},"messages":[{"id":"smoke-wamid","from":"911111111111","type":"text","text":{"body":"smoke handoff message"}}]}}]}]}'
           curl --fail --silent --request POST http://127.0.0.1:8000/webhooks/meta \
@@ -802,6 +814,103 @@ jobs:
               message.attempts === 1 && !("status" in message) &&
               !("payload" in message) && audits === 1 ? 0 : 1);
           '
+          for _ in {1..30}; do
+            docker exec "$worker" python -m app.workers.healthcheck && break
+            sleep 1
+          done
+          docker exec "$worker" python -m app.workers.healthcheck
+
+          # Kill during the first real LangGraph node. A concurrent staff takeover
+          # then exercises recovery without replaying the pre-graph inbound audit.
+          docker rm -f "$worker" "$holder"
+          graph_script='import asyncio
+          import json
+          from app.agent import graph
+          from app.models.collections import Messages
+          from app.workers import inbound
+
+          payload = {"entry": [{"changes": [{"value": {
+              "metadata": {"display_phone_number": "919999999999"},
+              "messages": [{"id": "graph-wamid", "from": "977777777777",
+                            "type": "text", "text": {"body": "graph recovery"}}]
+          }}]}]}
+          original_lang_detect = graph.lang_detect
+
+          async def checkpoint(state):
+              result = await original_lang_detect(state)
+              print("in-graph checkpoint ready", flush=True)
+              await asyncio.Event().wait()
+              return result
+
+          async def hold():
+              graph.lang_detect = checkpoint
+              await Messages.accept_inbound_unscoped("graph-wamid", "smoke-tenant", payload)
+              assert await Messages.acquire_work_unscoped("graph-wamid")
+              await inbound.process_event({
+                  "tenant_id": "smoke-tenant",
+                  "message_id": "graph-wamid",
+                  "payload": json.dumps(payload),
+              })
+
+          asyncio.run(hold())'
+          docker run -d --name "$holder" --network "$network" \
+            "${common_env[@]}" "vaani:${GITHUB_SHA}" python -c "$graph_script"
+          for _ in {1..30}; do
+            if docker exec "$mongo" mongosh --quiet vaani --eval '
+              const message = db.messages.findOne({_id: "graph-wamid"});
+              const audits = db.audit_log.countDocuments({
+                tenant_id: "smoke-tenant", operation_key: "inbound:graph-wamid"
+              });
+              quit(message && message.status === "processing" && message.attempts === 1 &&
+                message.payload && audits === 1 ? 0 : 1);
+            '; then
+              break
+            fi
+            sleep 1
+          done
+          docker exec "$mongo" mongosh --quiet vaani --eval '
+            const message = db.messages.findOne({_id: "graph-wamid"});
+            const audits = db.audit_log.countDocuments({
+              tenant_id: "smoke-tenant", operation_key: "inbound:graph-wamid"
+            });
+            quit(message && message.status === "processing" && message.attempts === 1 &&
+              message.payload && audits === 1 ? 0 : 1);
+          '
+          docker kill "$holder"
+          docker stop "$redis"
+          docker exec "$mongo" mongosh --quiet vaani --eval '
+            db.messages.updateOne(
+              {_id: "graph-wamid"},
+              {$set: {lease_expires_at: new Date(0)}}
+            );
+            db.conversations.updateOne(
+              {_id: "graph-conversation"},
+              {$set: {state: "human"}}
+            );
+          '
+          docker run -d --name "$worker" --network "$network" \
+            "${common_env[@]}" "vaani:${GITHUB_SHA}" python -m app.workers.inbound
+          for _ in {1..30}; do
+            if docker exec "$mongo" mongosh --quiet vaani --eval '
+              const message = db.messages.findOne({_id: "graph-wamid"});
+              quit(message && message.text === "graph recovery" &&
+                message.attempts === 2 && !("status" in message) &&
+                !("payload" in message) ? 0 : 1);
+            '; then
+              break
+            fi
+            sleep 1
+          done
+          docker exec "$mongo" mongosh --quiet vaani --eval '
+            const message = db.messages.findOne({_id: "graph-wamid"});
+            const audits = db.audit_log.countDocuments({
+              tenant_id: "smoke-tenant", operation_key: "inbound:graph-wamid"
+            });
+            quit(message && message.text === "graph recovery" &&
+              message.attempts === 2 && !("status" in message) &&
+              !("payload" in message) && audits === 1 ? 0 : 1);
+          '
+          docker start "$redis"
           for _ in {1..30}; do
             docker exec "$worker" python -m app.workers.healthcheck && break
             sleep 1

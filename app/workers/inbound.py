@@ -407,6 +407,7 @@ async def process_event(fields: dict[str, Any]) -> None:
     conversation_id, conversation_state, conversation_db_id, contact_id = (
         await _resolve_conversation(tenant_id, wa_id, parsed["profile_name"])
     )
+    message_id = fields.get("message_id")
 
     await audit.record(
         tenant_id,
@@ -414,10 +415,10 @@ async def process_event(fields: dict[str, Any]) -> None:
         event_type="inbound_message",
         payload={"wa_id": wa_id, "text": text},
         conversation_id=conversation_id,
+        operation_key=f"inbound:{message_id}" if message_id else None,
     )
 
     messages = Messages(tenant_id)
-    message_id = fields.get("message_id")
     if conversation_state == "human":
         document = {
             "conversation_id": conversation_id,

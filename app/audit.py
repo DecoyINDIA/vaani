@@ -24,8 +24,9 @@ async def record(
     event_type: str,
     payload: dict[str, Any],
     conversation_id: str | None = None,
+    operation_key: str | None = None,
 ) -> None:
-    """Append one immutable audit entry. tenant_id is required and positional."""
+    """Append one immutable audit entry, or retain the first keyed replay."""
     audit_entry = {
         "actor": actor,
         "event_type": event_type,
@@ -36,4 +37,12 @@ async def record(
         audit_entry["conversation_id"] = conversation_id
 
     accessor = AuditLog(tenant_id)
-    await accessor.insert_one(audit_entry)
+    if operation_key:
+        audit_entry["operation_key"] = operation_key
+        await accessor.update_one(
+            {"operation_key": operation_key},
+            {"$setOnInsert": audit_entry},
+            upsert=True,
+        )
+    else:
+        await accessor.insert_one(audit_entry)
