@@ -85,6 +85,35 @@ async def test_ambiguous_send_is_visible_and_not_blindly_retried() -> None:
             os.environ[token_env] = old_tenant_token
 
 
+async def test_interrupted_send_becomes_unknown_without_retry() -> None:
+    now = datetime(2026, 11, 9, 12, 0)
+    intents = OutboundIntents("t_interrupted")
+    await intents.insert_one(
+        {
+            "operation_key": "interrupted:old",
+            "state": "sending",
+            "attempted_at": now - timedelta(minutes=6),
+        }
+    )
+    await intents.insert_one(
+        {
+            "operation_key": "interrupted:recent",
+            "state": "sending",
+            "attempted_at": now - timedelta(minutes=4),
+        }
+    )
+
+    assert await OutboundIntents.mark_stale_sending_unknown_unscoped(now=now) == 1
+
+    interrupted = await intents.find_one({"operation_key": "interrupted:old"})
+    recent = await intents.find_one({"operation_key": "interrupted:recent"})
+    assert interrupted is not None
+    assert interrupted["state"] == "unknown"
+    assert interrupted["last_error"] == "ProcessInterrupted"
+    assert recent is not None
+    assert recent["state"] == "sending"
+
+
 async def test_failed_reminder_is_not_recorded_as_sent() -> None:
     tenant_id = "t_reminder_failure"
     now = datetime.now(UTC).replace(tzinfo=None)

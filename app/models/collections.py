@@ -212,6 +212,27 @@ class Payments(TenantScoped):
 class OutboundIntents(TenantScoped):
     collection = "outbound_intents"
 
+    @classmethod
+    async def mark_stale_sending_unknown_unscoped(
+        cls, *, now: datetime | None = None, stale_after: timedelta = timedelta(minutes=5)
+    ) -> int:
+        """Expose sends interrupted after provider dispatch without retrying them."""
+        current = now or datetime.now(UTC).replace(tzinfo=None)
+        result = await get_db()[cls.collection].update_many(
+            {
+                "state": "sending",
+                "attempted_at": {"$lte": current - stale_after},
+            },
+            {
+                "$set": {
+                    "state": "unknown",
+                    "last_error": "ProcessInterrupted",
+                    "reconciled_at": current,
+                }
+            },
+        )
+        return int(result.modified_count)
+
 
 class Escalations(TenantScoped):
     collection = "escalations"

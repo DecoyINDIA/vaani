@@ -202,8 +202,10 @@ jobs:
           api="vaani-api-${suffix}"
           worker="vaani-worker-${suffix}"
           holder="vaani-crash-holder-${suffix}"
+          provider="vaani-provider-${suffix}"
           cleanup() {
-            docker rm -f "$api" "$worker" "$holder" "$mongo" "$redis" >/dev/null 2>&1 || true
+            docker rm -f "$api" "$worker" "$holder" "$provider" "$mongo" "$redis" \
+              >/dev/null 2>&1 || true
             docker network rm "$network" >/dev/null 2>&1 || true
           }
           trap cleanup EXIT
@@ -243,7 +245,11 @@ jobs:
             db.tenants.insertOne({
               _id: "smoke-tenant",
               wa_number: "919999999999",
-              timezone: "Asia/Kolkata"
+              timezone: "Asia/Kolkata",
+              whatsapp: {
+                phone_number_id: "synthetic-phone",
+                access_token_env: "AMBIGUOUS_PROVIDER_TOKEN"
+              }
             });
             db.contacts.insertOne({
               _id: "smoke-contact",
@@ -911,6 +917,138 @@ jobs:
               !("payload" in message) && audits === 1 ? 0 : 1);
           '
           docker start "$redis"
+          for _ in {1..30}; do
+            docker exec "$worker" python -m app.workers.healthcheck && break
+            sleep 1
+          done
+          docker exec "$worker" python -m app.workers.healthcheck
+
+          # Kill after a provider accepted the request but before its response was
+          # persisted. Reconciliation must expose unknown and never send again.
+          docker rm -f "$worker" "$holder"
+          provider_script='from http.server import BaseHTTPRequestHandler, HTTPServer
+
+          class Handler(BaseHTTPRequestHandler):
+              def do_POST(self):
+                  self.rfile.read(int(self.headers.get("content-length", "0")))
+                  print("provider accepted request", flush=True)
+                  body = b"{\"messages\":[{\"id\":\"wamid-ambiguous\"}]}"
+                  self.send_response(200)
+                  self.send_header("Content-Type", "application/json")
+                  self.send_header("Content-Length", str(len(body)))
+                  self.end_headers()
+                  self.wfile.write(body)
+
+              def log_message(self, format, *args):
+                  return
+
+          HTTPServer(("0.0.0.0", 8080), Handler).serve_forever()'
+          docker run -d --name "$provider" --network "$network" --network-alias provider \
+            "vaani:${GITHUB_SHA}" python -c "$provider_script"
+          for _ in {1..30}; do
+            if docker exec "$provider" python -c \
+              "import socket; socket.create_connection(('127.0.0.1', 8080), 1).close()"; then
+              break
+            fi
+            sleep 1
+          done
+          docker exec "$provider" python -c \
+            "import socket; socket.create_connection(('127.0.0.1', 8080), 1).close()"
+          ambiguity_script='import asyncio
+          import time
+          from app.channels import whatsapp
+
+          original_wamid = whatsapp._wamid
+
+          def checkpoint(data):
+              provider_id = original_wamid(data)
+              print("provider ambiguity checkpoint ready", flush=True)
+              time.sleep(3600)
+              return provider_id
+
+          async def hold():
+              whatsapp._graph_url = lambda _phone_number_id: "http://provider:8080/messages"
+              whatsapp._wamid = checkpoint
+              await whatsapp.send_template(
+                  "smoke-tenant",
+                  "988888888888",
+                  "booking_confirm",
+                  {"name": "Asha"},
+                  operation_key="ambiguous:1",
+              )
+
+          asyncio.run(hold())'
+          docker run -d --name "$holder" --network "$network" \
+            "${common_env[@]}" --env AMBIGUOUS_PROVIDER_TOKEN=synthetic \
+            "vaani:${GITHUB_SHA}" python -c "$ambiguity_script"
+          for _ in {1..30}; do
+            provider_calls="$(docker logs "$provider" 2>&1 | \
+              grep -c "provider accepted request" || true)"
+            if docker exec "$mongo" mongosh --quiet vaani --eval '
+              const intent = db.outbound_intents.findOne({operation_key: "ambiguous:1"});
+              quit(intent && intent.state === "sending" &&
+                !("provider_message_id" in intent) ? 0 : 1);
+            ' && test "$provider_calls" = "1"; then
+              break
+            fi
+            sleep 1
+          done
+          docker exec "$mongo" mongosh --quiet vaani --eval '
+            const intent = db.outbound_intents.findOne({operation_key: "ambiguous:1"});
+            quit(intent && intent.state === "sending" &&
+              !("provider_message_id" in intent) ? 0 : 1);
+          '
+          test "$(docker logs "$provider" 2>&1 | \
+            grep -c "provider accepted request")" = "1"
+          docker kill "$holder"
+          docker exec "$mongo" mongosh --quiet vaani --eval '
+            db.outbound_intents.updateOne(
+              {operation_key: "ambiguous:1"},
+              {$set: {attempted_at: new Date(0)}}
+            );
+          '
+          docker run -d --name "$worker" --network "$network" \
+            "${common_env[@]}" "vaani:${GITHUB_SHA}" python -m app.workers.inbound
+          for _ in {1..30}; do
+            if docker exec "$mongo" mongosh --quiet vaani --eval '
+              const intent = db.outbound_intents.findOne({operation_key: "ambiguous:1"});
+              quit(intent && intent.state === "unknown" &&
+                intent.last_error === "ProcessInterrupted" ? 0 : 1);
+            '; then
+              break
+            fi
+            sleep 1
+          done
+          docker exec "$mongo" mongosh --quiet vaani --eval '
+            const intent = db.outbound_intents.findOne({operation_key: "ambiguous:1"});
+            quit(intent && intent.state === "unknown" &&
+              intent.last_error === "ProcessInterrupted" ? 0 : 1);
+          '
+          retry_script='import asyncio
+          from app.channels import whatsapp
+
+          async def retry():
+              whatsapp._graph_url = lambda _phone_number_id: "http://provider:8080/messages"
+              try:
+                  await whatsapp.send_template(
+                      "smoke-tenant",
+                      "988888888888",
+                      "booking_confirm",
+                      {"name": "Asha"},
+                      operation_key="ambiguous:1",
+                  )
+              except whatsapp.AmbiguousDeliveryError:
+                  print("ambiguous retry blocked", flush=True)
+                  return
+              raise AssertionError("ambiguous send was retried")
+
+          asyncio.run(retry())'
+          docker run --rm --network "$network" \
+            "${common_env[@]}" --env AMBIGUOUS_PROVIDER_TOKEN=synthetic \
+            "vaani:${GITHUB_SHA}" python -c "$retry_script" \
+            | grep -q "ambiguous retry blocked"
+          test "$(docker logs "$provider" 2>&1 | \
+            grep -c "provider accepted request")" = "1"
           for _ in {1..30}; do
             docker exec "$worker" python -m app.workers.healthcheck && break
             sleep 1
