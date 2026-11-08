@@ -183,6 +183,9 @@ jobs:
   build:
     needs: [quality, dashboard, booking-transactions, recovery-drill]
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v7
       - name: Build image
@@ -302,3 +305,21 @@ jobs:
           ignore-unfixed: true
           vuln-type: os,library
           severity: CRITICAL,HIGH
+
+      - name: Publish verified candidate by digest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          repository="ghcr.io/${GITHUB_REPOSITORY,,}"
+          candidate="${repository}:candidate-${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          echo "${{ secrets.GITHUB_TOKEN }}" \
+            | docker login ghcr.io --username "${GITHUB_ACTOR}" --password-stdin
+          docker tag "vaani:${GITHUB_SHA}" "$candidate"
+          docker push "$candidate"
+          digest_ref="$(docker image inspect --format '{{index .RepoDigests 0}}' "$candidate")"
+          case "$digest_ref" in
+            "${repository}"@sha256:*) ;;
+            *) echo "::error::Registry digest was not recorded"; exit 1 ;;
+          esac
+          echo "Published verified candidate: \`${digest_ref}\`" >> "$GITHUB_STEP_SUMMARY"
