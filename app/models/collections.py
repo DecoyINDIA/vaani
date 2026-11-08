@@ -340,6 +340,11 @@ async def ensure_indexes() -> None:
 
     # 12. AuditLog indexes (with 90-day TTL)
     await db["audit_log"].create_index([("tenant_id", 1)])
+    await db["audit_log"].create_index(
+        [("tenant_id", 1), ("operation_key", 1)],
+        unique=True,
+        partialFilterExpression={"operation_key": {"$type": "string"}},
+    )
     await db["audit_log"].create_index("ts", expireAfterSeconds=90 * 24 * 3600)
 
     # 13. UsageMeters indexes
