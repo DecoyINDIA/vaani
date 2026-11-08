@@ -40,6 +40,7 @@ STAFF_ROUTES: tuple[RouteCase, ...] = (
     ("PATCH", "/api/bookings/missing", {"status": "cancelled"}),
     ("GET", "/api/escalations", None),
     ("GET", "/api/deliveries", None),
+    ("GET", "/api/processing", None),
     ("GET", "/api/kb", None),
     (
         "PUT",
@@ -174,6 +175,7 @@ async def test_cross_tenant_ids_never_mutate_or_disclose_records() -> None:
     assert client.get("/api/conversations/conversation-a/messages", headers=headers).json() == []
     assert client.get("/api/bookings", headers=headers).json() == []
     assert client.get("/api/deliveries", headers=headers).json() == []
+    assert client.get("/api/processing", headers=headers).json() == []
     assert client.post("/api/conversations/conversation-a/takeover", headers=headers).status_code == 404
     assert client.post(
         "/api/conversations/conversation-a/return",
@@ -255,5 +257,41 @@ async def test_delivery_exceptions_are_pii_free_sorted_and_paginated() -> None:
             "state": "unknown",
             "attempted_at": "2026-11-09T00:01:00",
             "last_error": "ProcessInterrupted",
+        }
+    ]
+
+
+async def test_processing_failures_are_pii_free_sorted_and_paginated() -> None:
+    db = get_db()
+    base = datetime(2026, 11, 9, tzinfo=UTC).replace(tzinfo=None)
+    await db["messages"].insert_many(
+        [
+            {
+                "_id": f"failed-{index}",
+                "tenant_id": "route-a",
+                "status": "failed",
+                "attempts": 3,
+                "failed_at": base + timedelta(minutes=index),
+                "fail_reason": "RuntimeError",
+                "payload": {"from": f"91111111111{index}", "text": "private"},
+                "text": "private transcript",
+            }
+            for index in range(3)
+        ]
+    )
+    token = create_access_token("route-a", "staff-route-a")
+    response = TestClient(app).get(
+        "/api/processing?limit=1&offset=1",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == [
+        {
+            "_id": "failed-1",
+            "status": "failed",
+            "attempts": 3,
+            "failed_at": "2026-11-09T00:01:00",
+            "fail_reason": "RuntimeError",
         }
     ]

@@ -122,6 +122,32 @@ async def test_stream_ack_happens_after_durable_completion() -> None:
     assert "payload" not in completed
 
 
+async def test_retry_exhaustion_is_durable_before_stream_ack() -> None:
+    message_id = "wamid.exhausted"
+    event = payload()
+    await Messages.accept_inbound_unscoped(message_id, "t_ingress", event)
+    fields = {
+        "tenant_id": "t_ingress",
+        "message_id": message_id,
+        "payload": json.dumps(event),
+    }
+    redis = AsyncMock()
+
+    with patch.object(inbound, "process_event", side_effect=RuntimeError("patient data")):
+        await inbound._handle(redis, "stream-exhausted", fields, deliveries=inbound.MAX_DELIVERIES)
+
+    failed = await get_db()["messages"].find_one({"_id": message_id})
+    assert failed is not None
+    assert failed["status"] == "failed"
+    assert failed["fail_reason"] == "RuntimeError"
+    assert isinstance(failed["failed_at"], datetime)
+    assert "lease_expires_at" not in failed
+    assert "last_error" not in failed
+    assert await Messages.find_queued_unscoped() == []
+    redis.xadd.assert_awaited_once()
+    redis.xack.assert_awaited_once_with(inbound.STREAM, inbound.GROUP, "stream-exhausted")
+
+
 async def test_expired_crash_lease_recovers_without_redis() -> None:
     message_id = "wamid.abandoned"
     event = payload()

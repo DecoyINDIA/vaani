@@ -1035,6 +1035,20 @@ jobs:
           curl --fail --silent http://127.0.0.1:8000/api/deliveries \
             --header "Authorization: Bearer ${delivery_token}" \
             | python -c 'import json,sys; rows=json.load(sys.stdin); assert len(rows) == 1; row=rows[0]; assert row["state"] == "unknown" and row["last_error"] == "ProcessInterrupted"; assert "to" not in row and "operation_key" not in row'
+          docker exec "$mongo" mongosh --quiet vaani --eval '
+            db.messages.insertOne({
+              _id: "processing-exhausted",
+              tenant_id: "smoke-tenant",
+              status: "failed",
+              attempts: 3,
+              failed_at: new Date(),
+              fail_reason: "RuntimeError",
+              payload: {from: "977777777777", text: "private synthetic text"}
+            });
+          '
+          curl --fail --silent http://127.0.0.1:8000/api/processing \
+            --header "Authorization: Bearer ${delivery_token}" \
+            | python -c 'import json,sys; rows=json.load(sys.stdin); assert len(rows) == 1; row=rows[0]; assert row["status"] == "failed" and row["attempts"] == 3 and row["fail_reason"] == "RuntimeError"; assert "payload" not in row and "text" not in row'
           retry_script='import asyncio
           from app.channels import whatsapp
 

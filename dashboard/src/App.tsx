@@ -1,12 +1,13 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type Item = Record<string, unknown> & { _id: string };
-type Tab = "inbox" | "bookings" | "escalations" | "deliveries" | "knowledge" | "settings";
+type Tab = "inbox" | "bookings" | "escalations" | "deliveries" | "processing" | "knowledge" | "settings";
 const PAGE_SIZE = 50;
 const MESSAGE_PAGE_SIZE = 100;
 const tabs: { id: Tab; label: string }[] = [
   { id: "inbox", label: "Inbox" }, { id: "bookings", label: "Appointments" },
   { id: "escalations", label: "Escalations" }, { id: "deliveries", label: "Delivery issues" },
+  { id: "processing", label: "Processing issues" },
   { id: "knowledge", label: "Knowledge" },
   { id: "settings", label: "Clinic settings" },
 ];
@@ -55,8 +56,8 @@ function Login({ done }: { done: () => void }) {
 
 function Dashboard({ signedOut }: { signedOut: () => void }) {
   const [tab, setTab] = useState<Tab>("inbox");
-  const [data, setData] = useState<Record<Tab, Item[]>>({ inbox: [], bookings: [], escalations: [], deliveries: [], knowledge: [], settings: [] });
-  const [hasMore, setHasMore] = useState<Record<Tab, boolean>>({ inbox: false, bookings: false, escalations: false, deliveries: false, knowledge: false, settings: false });
+  const [data, setData] = useState<Record<Tab, Item[]>>({ inbox: [], bookings: [], escalations: [], deliveries: [], processing: [], knowledge: [], settings: [] });
+  const [hasMore, setHasMore] = useState<Record<Tab, boolean>>({ inbox: false, bookings: false, escalations: false, deliveries: false, processing: false, knowledge: false, settings: false });
   const [selected, setSelected] = useState<Item | null>(null);
   const [messages, setMessages] = useState<Item[]>([]);
   const [messageHasMore, setMessageHasMore] = useState(false);
@@ -64,10 +65,10 @@ function Dashboard({ signedOut }: { signedOut: () => void }) {
   async function load() {
     setLoading(true); setError("");
     try {
-      const [inbox, bookings, escalations, deliveries, knowledge, settings] = await Promise.all([api(`/api/conversations?limit=${PAGE_SIZE + 1}`), api(`/api/bookings?limit=${PAGE_SIZE + 1}`), api(`/api/escalations?limit=${PAGE_SIZE + 1}`), api(`/api/deliveries?limit=${PAGE_SIZE + 1}`), api(`/api/kb?limit=${PAGE_SIZE + 1}`), api("/api/settings")]);
-      const pages = { inbox: inbox as Item[], bookings: bookings as Item[], escalations: escalations as Item[], deliveries: deliveries as Item[], knowledge: knowledge as Item[] };
-      setData({ inbox: pages.inbox.slice(0, PAGE_SIZE), bookings: pages.bookings.slice(0, PAGE_SIZE), escalations: pages.escalations.slice(0, PAGE_SIZE), deliveries: pages.deliveries.slice(0, PAGE_SIZE), knowledge: pages.knowledge.slice(0, PAGE_SIZE), settings: [settings as Item] });
-      setHasMore({ inbox: pages.inbox.length > PAGE_SIZE, bookings: pages.bookings.length > PAGE_SIZE, escalations: pages.escalations.length > PAGE_SIZE, deliveries: pages.deliveries.length > PAGE_SIZE, knowledge: pages.knowledge.length > PAGE_SIZE, settings: false });
+      const [inbox, bookings, escalations, deliveries, processing, knowledge, settings] = await Promise.all([api(`/api/conversations?limit=${PAGE_SIZE + 1}`), api(`/api/bookings?limit=${PAGE_SIZE + 1}`), api(`/api/escalations?limit=${PAGE_SIZE + 1}`), api(`/api/deliveries?limit=${PAGE_SIZE + 1}`), api(`/api/processing?limit=${PAGE_SIZE + 1}`), api(`/api/kb?limit=${PAGE_SIZE + 1}`), api("/api/settings")]);
+      const pages = { inbox: inbox as Item[], bookings: bookings as Item[], escalations: escalations as Item[], deliveries: deliveries as Item[], processing: processing as Item[], knowledge: knowledge as Item[] };
+      setData({ inbox: pages.inbox.slice(0, PAGE_SIZE), bookings: pages.bookings.slice(0, PAGE_SIZE), escalations: pages.escalations.slice(0, PAGE_SIZE), deliveries: pages.deliveries.slice(0, PAGE_SIZE), processing: pages.processing.slice(0, PAGE_SIZE), knowledge: pages.knowledge.slice(0, PAGE_SIZE), settings: [settings as Item] });
+      setHasMore({ inbox: pages.inbox.length > PAGE_SIZE, bookings: pages.bookings.length > PAGE_SIZE, escalations: pages.escalations.length > PAGE_SIZE, deliveries: pages.deliveries.length > PAGE_SIZE, processing: pages.processing.length > PAGE_SIZE, knowledge: pages.knowledge.length > PAGE_SIZE, settings: false });
       setSelected((current) => current
         ? pages.inbox.find((item) => item._id === current._id) || pages.inbox[0] || null
         : pages.inbox[0] || null);
@@ -95,7 +96,7 @@ function Dashboard({ signedOut }: { signedOut: () => void }) {
   const open = useMemo(() => data.escalations.filter((item) => item.status === "open").length, [data.escalations]);
   async function logout() { await api("/api/auth/logout", { method: "POST" }).catch(() => undefined); sessionStorage.clear(); signedOut(); }
   return <div className="app-shell"><a className="skip" href="#main-content">Skip to content</a><header className="topbar"><div className="wordmark"><span className="brand small">वा</span><strong>Vaani</strong><em>clinic desk</em></div><nav aria-label="Workspace">{tabs.map((item) => <button key={item.id} className={tab === item.id ? "active" : ""} onClick={() => setTab(item.id)}>{item.label}{item.id === "escalations" && open > 0 && <span className="count">{open}</span>}</button>)}</nav><button className="text-button" onClick={logout}>Sign out</button></header>
-    <main className="workspace" id="main-content"><header className="page-heading"><div><p className="eyebrow">Clinic operations</p><h1>{tabs.find((item) => item.id === tab)?.label}</h1></div><button className="quiet" onClick={load}>Refresh data</button></header>{error && <div className="error-banner" role="alert"><strong>Couldn’t load the workspace.</strong><span>{error}</span></div>}{loading ? <Loading /> : <>{tab === "inbox" && <Inbox items={data.inbox} selected={selected} select={setSelected} messages={messages} messageHasMore={messageHasMore} loadMessages={() => selected && loadMessages(selected, true)} reload={load} />}{tab === "bookings" && <Bookings items={data.bookings} reload={load} />}{tab === "escalations" && <Escalations items={data.escalations} />}{tab === "deliveries" && <Deliveries items={data.deliveries} />}{tab === "knowledge" && <Knowledge items={data.knowledge} reload={load} />}{tab === "settings" && <Settings item={data.settings[0]} reload={load} />}{hasMore[tab] && <button className="quiet load-more" onClick={loadMore}>Load older records</button>}</>}</main>
+    <main className="workspace" id="main-content"><header className="page-heading"><div><p className="eyebrow">Clinic operations</p><h1>{tabs.find((item) => item.id === tab)?.label}</h1></div><button className="quiet" onClick={load}>Refresh data</button></header>{error && <div className="error-banner" role="alert"><strong>Couldn’t load the workspace.</strong><span>{error}</span></div>}{loading ? <Loading /> : <>{tab === "inbox" && <Inbox items={data.inbox} selected={selected} select={setSelected} messages={messages} messageHasMore={messageHasMore} loadMessages={() => selected && loadMessages(selected, true)} reload={load} />}{tab === "bookings" && <Bookings items={data.bookings} reload={load} />}{tab === "escalations" && <Escalations items={data.escalations} />}{tab === "deliveries" && <Deliveries items={data.deliveries} />}{tab === "processing" && <Processing items={data.processing} />}{tab === "knowledge" && <Knowledge items={data.knowledge} reload={load} />}{tab === "settings" && <Settings item={data.settings[0]} reload={load} />}{hasMore[tab] && <button className="quiet load-more" onClick={loadMore}>Load older records</button>}</>}</main>
     <footer><span>Vaani operational workspace</span><span>Privacy · Terms · Support</span></footer></div>;
 }
 
@@ -117,6 +118,7 @@ function Bookings({ items, reload }: { items: Item[]; reload: () => Promise<void
 }
 function Escalations({ items }: { items: Item[] }) { if (!items.length) return <Empty title="No escalations" detail="Patient handoffs will appear here." />; return <section className="escalation-grid">{items.map((item) => <article key={item._id}><header><span className={`flag ${item.status}`}>{String(item.status)}</span><span className={`delivery ${item.notification_status}`}>{String(item.notification_status || "pending")}</span></header><h2>{String(item.reason || "Staff handoff")}</h2><p className="mono">Conversation …{String(item.conversation_id).slice(-8)}</p>{Boolean(item.notification_error) && <p className="inline-error">{String(item.notification_error)}</p>}</article>)}</section>; }
 function Deliveries({ items }: { items: Item[] }) { if (!items.length) return <Empty title="No delivery issues" detail="Failed and uncertain sends will appear here without patient details." />; return <section className="table-panel"><table><thead><tr><th>Status</th><th>Channel item</th><th>Attempted</th><th>Reason</th></tr></thead><tbody>{items.map((item) => <tr key={item._id}><td><span className={`flag ${item.state}`}>{String(item.state)}</span></td><td>{String(item.kind || "message")}</td><td>{item.attempted_at ? new Date(String(item.attempted_at)).toLocaleString() : "Not recorded"}</td><td>{String(item.last_error || "Awaiting reconciliation")}</td></tr>)}</tbody></table></section>; }
+function Processing({ items }: { items: Item[] }) { if (!items.length) return <Empty title="No processing issues" detail="Inbound work that exhausts retries will appear here without patient details." />; return <section className="table-panel"><table><thead><tr><th>Status</th><th>Attempts</th><th>Failed</th><th>Reason</th></tr></thead><tbody>{items.map((item) => <tr key={item._id}><td><span className={`flag ${item.status}`}>{String(item.status)}</span></td><td>{String(item.attempts || "Not recorded")}</td><td>{item.failed_at ? new Date(String(item.failed_at)).toLocaleString() : "Not recorded"}</td><td>{String(item.fail_reason || "Retry limit reached")}</td></tr>)}</tbody></table></section>; }
 function Knowledge({ items, reload }: { items: Item[]; reload: () => Promise<void> }) {
   const [question, setQuestion] = useState(""); const [answer, setAnswer] = useState(""); const [error, setError] = useState(""); const [busy, setBusy] = useState(false);
   async function save(event: FormEvent<HTMLFormElement>) { event.preventDefault(); if (busy) return; setBusy(true); setError(""); try { await api("/api/kb", { method: "PUT", body: JSON.stringify({ question: question.trim(), answer: answer.trim(), kind: "faq" }) }); setQuestion(""); setAnswer(""); await reload(); } catch (reason) { setError(errorText(reason)); } finally { setBusy(false); } }

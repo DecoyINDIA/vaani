@@ -4,7 +4,7 @@ Endpoints (stubs — Week 5 task 5.3):
   GET  /conversations           GET  /conversations/{id}/messages
   POST /conversations/{id}/takeover   POST /conversations/{id}/return
   GET  /bookings   POST /bookings   PATCH /bookings/{id}
-  GET  /escalations   GET /deliveries
+  GET  /escalations   GET /deliveries   GET /processing
   GET/PUT /kb      GET/PUT /settings
   GET  /metrics/summary          GET  /audit/export
 """
@@ -274,6 +274,32 @@ async def list_delivery_exceptions(
             },
         )
         .sort([("attempted_at", -1), ("_id", -1)])
+        .skip(offset)
+        .limit(limit)
+    )
+    results: list[dict[str, Any]] = await cursor.to_list(length=limit)
+    return serialize_mongo(results)
+
+
+@router.get("/processing")
+async def list_processing_failures(
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    tenant_id: str = Depends(require_tenant),
+) -> list[dict[str, Any]]:
+    cursor = (
+        Messages(tenant_id)
+        .find(
+            {"status": "failed"},
+            {
+                "status": 1,
+                "attempts": 1,
+                "accepted_at": 1,
+                "failed_at": 1,
+                "fail_reason": 1,
+            },
+        )
+        .sort([("failed_at", -1), ("_id", -1)])
         .skip(offset)
         .limit(limit)
     )
