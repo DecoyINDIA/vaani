@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import asyncio
+import json
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, patch
 
 import pytest
 from app.main import app
 from app.models.base import get_db
 from app.models.collections import Messages, OutboundIntents
+from app.workers import inbound
 from fastapi.testclient import TestClient
 
 
@@ -64,6 +67,83 @@ async def test_only_one_worker_acquires_an_event() -> None:
         Messages.acquire_work_unscoped("wamid.race"),
     )
     assert sum(result is not None for result in results) == 1
+
+
+async def test_transcript_keeps_recovery_payload_until_completion() -> None:
+    message_id = "wamid.crash-window"
+    await Messages.accept_inbound_unscoped(message_id, "t_ingress", payload())
+    assert await Messages.acquire_work_unscoped(message_id) is not None
+
+    await Messages.upsert_message_unscoped(
+        message_id,
+        "t_ingress",
+        {"direction": "inbound", "type": "text", "text": "committed"},
+    )
+    in_flight = await get_db()["messages"].find_one({"_id": message_id})
+    assert in_flight is not None
+    assert in_flight["status"] == "processing"
+    assert in_flight["payload"] == payload()
+
+    await Messages.mark_completed_unscoped(message_id)
+    completed = await get_db()["messages"].find_one({"_id": message_id})
+    assert completed is not None
+    assert "status" not in completed
+    assert "payload" not in completed
+    assert "lease_expires_at" not in completed
+    assert isinstance(completed["processed_at"], datetime)
+
+
+async def test_stream_ack_happens_after_durable_completion() -> None:
+    message_id = "wamid.stream-complete"
+    event = payload()
+    await Messages.accept_inbound_unscoped(message_id, "t_ingress", event)
+    fields = {
+        "tenant_id": "t_ingress",
+        "message_id": message_id,
+        "payload": json.dumps(event),
+    }
+
+    async def record_transcript(_: dict[str, str]) -> None:
+        await Messages.upsert_message_unscoped(
+            message_id,
+            "t_ingress",
+            {"direction": "inbound", "type": "text", "text": "processed"},
+        )
+
+    redis = AsyncMock()
+    with patch.object(inbound, "process_event", side_effect=record_transcript):
+        await inbound._handle(redis, "stream-id", fields, deliveries=1)
+
+    redis.xack.assert_awaited_once_with(inbound.STREAM, inbound.GROUP, "stream-id")
+    completed = await get_db()["messages"].find_one({"_id": message_id})
+    assert completed is not None
+    assert completed["text"] == "processed"
+    assert "status" not in completed
+    assert "payload" not in completed
+
+
+async def test_expired_crash_lease_recovers_without_redis() -> None:
+    message_id = "wamid.abandoned"
+    event = payload()
+    await Messages.accept_inbound_unscoped(message_id, "t_ingress", event)
+    assert await Messages.acquire_work_unscoped(message_id) is not None
+    await get_db()["messages"].update_one(
+        {"_id": message_id},
+        {"$set": {"lease_expires_at": datetime.now(UTC).replace(tzinfo=None) - timedelta(seconds=1)}},
+    )
+
+    with patch.object(inbound, "process_event", AsyncMock()) as process:
+        await inbound._process_fallback_queue()
+
+    process.assert_awaited_once()
+    fields = process.await_args.args[0]
+    assert fields["message_id"] == message_id
+    assert fields["tenant_id"] == "t_ingress"
+    completed = await get_db()["messages"].find_one({"_id": message_id})
+    assert completed is not None
+    assert "status" not in completed
+    assert "payload" not in completed
+    assert completed["attempts"] == 2
 
 
 def test_mongo_failure_is_not_acknowledged() -> None:

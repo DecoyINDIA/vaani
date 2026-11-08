@@ -103,18 +103,10 @@ class Messages(TenantScoped):
     async def upsert_message_unscoped(
         cls, message_id: str, tenant_id: str, document: dict[str, Any]
     ) -> None:
-        """Upsert a message document by its unique message_id, setting tenant_id."""
+        """Record the transcript without discarding in-flight recovery metadata."""
         await get_db()[cls.collection].update_one(
             {"_id": message_id},
-            {
-                "$set": {**document, "tenant_id": tenant_id},
-                "$unset": {
-                    "status": "",
-                    "payload": "",
-                    "lease_expires_at": "",
-                    "last_error": "",
-                },
-            },
+            {"$set": {**document, "tenant_id": tenant_id}},
             upsert=True
         )
 
@@ -145,6 +137,22 @@ class Messages(TenantScoped):
             {
                 "$set": {"status": "queued", "last_error": reason},
                 "$unset": {"lease_expires_at": ""},
+            },
+        )
+
+    @classmethod
+    async def mark_completed_unscoped(cls, message_id: str) -> None:
+        """Remove queue data only after all event processing has completed."""
+        await get_db()[cls.collection].update_one(
+            {"_id": message_id, "status": "processing"},
+            {
+                "$set": {"processed_at": datetime.now(UTC).replace(tzinfo=None)},
+                "$unset": {
+                    "status": "",
+                    "payload": "",
+                    "lease_expires_at": "",
+                    "last_error": "",
+                },
             },
         )
 
