@@ -15,8 +15,11 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/srv/.venv/bin:$PATH"
 
-# Create a secure non-root user and group
-RUN groupadd -g 10001 appgroup && \
+# Apply available base-image security fixes, then create the non-root user.
+RUN apt-get update && \
+    apt-get install --only-upgrade --yes --no-install-recommends zlib1g && \
+    rm -rf /var/lib/apt/lists/* && \
+    groupadd -g 10001 appgroup && \
     useradd -u 10001 -g appgroup -m -s /bin/bash appuser
 
 WORKDIR /srv
