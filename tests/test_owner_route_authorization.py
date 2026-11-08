@@ -39,6 +39,7 @@ STAFF_ROUTES: tuple[RouteCase, ...] = (
     ),
     ("PATCH", "/api/bookings/missing", {"status": "cancelled"}),
     ("GET", "/api/escalations", None),
+    ("GET", "/api/deliveries", None),
     ("GET", "/api/kb", None),
     (
         "PUT",
@@ -155,6 +156,16 @@ async def test_cross_tenant_ids_never_mutate_or_disclose_records() -> None:
             "status": "confirmed",
         }
     )
+    await db["outbound_intents"].insert_one(
+        {
+            "_id": "delivery-a",
+            "tenant_id": "route-a",
+            "operation_key": "private:911111111111",
+            "to": "911111111111",
+            "state": "unknown",
+            "last_error": "ProcessInterrupted",
+        }
+    )
     client = TestClient(app)
     token = create_access_token("route-b", "owner-route-b")
     headers = {"Authorization": f"Bearer {token}"}
@@ -162,6 +173,7 @@ async def test_cross_tenant_ids_never_mutate_or_disclose_records() -> None:
     assert client.get("/api/conversations", headers=headers).json() == []
     assert client.get("/api/conversations/conversation-a/messages", headers=headers).json() == []
     assert client.get("/api/bookings", headers=headers).json() == []
+    assert client.get("/api/deliveries", headers=headers).json() == []
     assert client.post("/api/conversations/conversation-a/takeover", headers=headers).status_code == 404
     assert client.post(
         "/api/conversations/conversation-a/return",
@@ -209,3 +221,39 @@ async def test_growing_lists_are_sorted_and_paginated() -> None:
 
     assert response.status_code == 200
     assert [item["_id"] for item in response.json()] == ["page-1"]
+
+
+async def test_delivery_exceptions_are_pii_free_sorted_and_paginated() -> None:
+    db = get_db()
+    base = datetime(2026, 11, 9, tzinfo=UTC).replace(tzinfo=None)
+    await db["outbound_intents"].insert_many(
+        [
+            {
+                "_id": f"delivery-{index}",
+                "tenant_id": "route-a",
+                "operation_key": f"private:91111111111{index}",
+                "to": f"91111111111{index}",
+                "kind": "template",
+                "state": "unknown",
+                "attempted_at": base + timedelta(minutes=index),
+                "last_error": "ProcessInterrupted",
+            }
+            for index in range(3)
+        ]
+    )
+    token = create_access_token("route-a", "staff-route-a")
+    response = TestClient(app).get(
+        "/api/deliveries?limit=1&offset=1",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == [
+        {
+            "_id": "delivery-1",
+            "kind": "template",
+            "state": "unknown",
+            "attempted_at": "2026-11-09T00:01:00",
+            "last_error": "ProcessInterrupted",
+        }
+    ]
