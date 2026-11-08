@@ -385,6 +385,115 @@ jobs:
           done
           docker exec "$worker" python -m app.workers.healthcheck
 
+          # Kill after the handoff business commit but before event completion.
+          # Recovery must not duplicate the escalation or lose the inbound event.
+          docker rm -f "$worker" "$holder"
+          commit_script='import asyncio
+          import json
+          from app import audit
+          from app.models.collections import Messages
+          from app.workers import inbound
+
+          payload = {"entry": [{"changes": [{"value": {
+              "metadata": {"display_phone_number": "919999999999"},
+              "messages": [{"id": "commit-wamid", "from": "933333333333",
+                            "type": "text", "text": {"body": "I need a human"}}]
+          }}]}]}
+          original_record = audit.record
+
+          async def checkpoint(*args, **kwargs):
+              await original_record(*args, **kwargs)
+              if kwargs.get("event_type") == "escalation":
+                  print("business commit checkpoint ready", flush=True)
+                  await asyncio.Event().wait()
+
+          async def hold():
+              audit.record = checkpoint
+              await Messages.accept_inbound_unscoped("commit-wamid", "smoke-tenant", payload)
+              assert await Messages.acquire_work_unscoped("commit-wamid")
+              await inbound.process_event({
+                  "tenant_id": "smoke-tenant",
+                  "message_id": "commit-wamid",
+                  "payload": json.dumps(payload),
+              })
+
+          asyncio.run(hold())'
+          docker run -d --name "$holder" --network "$network" \
+            "${common_env[@]}" "vaani:${GITHUB_SHA}" python -c "$commit_script"
+          for _ in {1..30}; do
+            if docker exec "$mongo" mongosh --quiet vaani --eval '
+              const message = db.messages.findOne({_id: "commit-wamid"});
+              const contact = db.contacts.findOne({
+                tenant_id: "smoke-tenant", wa_id: "933333333333"
+              });
+              const conversation = contact && db.conversations.findOne({
+                tenant_id: "smoke-tenant", contact_id: contact._id
+              });
+              const escalations = db.escalations.countDocuments({
+                tenant_id: "smoke-tenant", status: "open"
+              });
+              const audits = db.audit_log.countDocuments({
+                tenant_id: "smoke-tenant", event_type: "escalation"
+              });
+              quit(message && message.status === "processing" && message.payload &&
+                conversation && conversation.state === "human" &&
+                escalations === 1 && audits === 1 ? 0 : 1);
+            '; then
+              break
+            fi
+            sleep 1
+          done
+          docker exec "$mongo" mongosh --quiet vaani --eval '
+            const message = db.messages.findOne({_id: "commit-wamid"});
+            const contact = db.contacts.findOne({
+              tenant_id: "smoke-tenant", wa_id: "933333333333"
+            });
+            const conversation = contact && db.conversations.findOne({
+              tenant_id: "smoke-tenant", contact_id: contact._id
+            });
+            quit(message && message.status === "processing" && message.payload &&
+              conversation && conversation.state === "human" ? 0 : 1);
+          '
+          docker kill "$holder"
+          docker stop "$redis"
+          docker exec "$mongo" mongosh --quiet vaani --eval '
+            db.messages.updateOne(
+              {_id: "commit-wamid"},
+              {$set: {lease_expires_at: new Date(0)}}
+            );
+          '
+          docker run -d --name "$worker" --network "$network" \
+            "${common_env[@]}" "vaani:${GITHUB_SHA}" python -m app.workers.inbound
+          for _ in {1..30}; do
+            if docker exec "$mongo" mongosh --quiet vaani --eval '
+              const message = db.messages.findOne({_id: "commit-wamid"});
+              quit(message && message.text === "I need a human" &&
+                message.attempts === 2 && !("status" in message) &&
+                !("payload" in message) ? 0 : 1);
+            '; then
+              break
+            fi
+            sleep 1
+          done
+          docker exec "$mongo" mongosh --quiet vaani --eval '
+            const message = db.messages.findOne({_id: "commit-wamid"});
+            const escalations = db.escalations.countDocuments({
+              tenant_id: "smoke-tenant", status: "open"
+            });
+            const audits = db.audit_log.countDocuments({
+              tenant_id: "smoke-tenant", event_type: "escalation"
+            });
+            quit(message && message.text === "I need a human" &&
+              message.attempts === 2 && !("status" in message) &&
+              !("payload" in message) && escalations === 1 && audits === 1 ? 0 : 1);
+          '
+          docker start "$redis"
+          for _ in {1..30}; do
+            docker exec "$worker" python -m app.workers.healthcheck && break
+            sleep 1
+          done
+          docker exec "$worker" python -m app.workers.healthcheck
+
           image_id="$(docker image inspect --format '{{.Id}}' "vaani:${GITHUB_SHA}")"
           echo "Built and smoke/crash-tested API/dashboard/webhook/worker image ID: \`${image_id}\`" >> "$GITHUB_STEP_SUMMARY"
 
