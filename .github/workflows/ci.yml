@@ -187,7 +187,7 @@ jobs:
       - name: Build image
         run: docker build -t vaani:${{ github.sha }} .
 
-      - name: Smoke API and worker from the built image
+      - name: Smoke API, dashboard, webhook, and worker from the built image
         shell: bash
         run: |
           set -euo pipefail
@@ -234,6 +234,54 @@ jobs:
           curl --fail --silent http://127.0.0.1:8000/health | grep -q '"status":"ok"'
           curl --fail --silent http://127.0.0.1:8000/ | grep -q '<div id="root"></div>'
 
+          docker exec "$mongo" mongosh --quiet vaani --eval '
+            db.tenants.insertOne({
+              _id: "smoke-tenant",
+              wa_number: "919999999999",
+              timezone: "Asia/Kolkata"
+            });
+            db.contacts.insertOne({
+              _id: "smoke-contact",
+              tenant_id: "smoke-tenant",
+              wa_id: "911111111111"
+            });
+            db.conversations.insertOne({
+              _id: "smoke-conversation",
+              tenant_id: "smoke-tenant",
+              contact_id: "smoke-contact",
+              channel: "wa",
+              state: "human"
+            });
+          '
+          webhook_payload='{"entry":[{"changes":[{"field":"messages","value":{"metadata":{"display_phone_number":"919999999999"},"messages":[{"id":"smoke-wamid","from":"911111111111","type":"text","text":{"body":"smoke handoff message"}}]}}]}]}'
+          curl --fail --silent --request POST http://127.0.0.1:8000/webhooks/meta \
+            --header 'Content-Type: application/json' --data "$webhook_payload" \
+            | grep -q '"accepted": 1'
+          curl --fail --silent --request POST http://127.0.0.1:8000/webhooks/meta \
+            --header 'Content-Type: application/json' --data "$webhook_payload" \
+            | grep -q '"status": "duplicate"'
+          for _ in {1..30}; do
+            if docker exec "$mongo" mongosh --quiet vaani --eval '
+              const message = db.messages.findOne({_id: "smoke-wamid"});
+              quit(message && message.direction === "inbound" &&
+                message.text === "smoke handoff message" && !("status" in message) ? 0 : 1);
+            '; then
+              break
+            fi
+            sleep 1
+          done
+          docker exec "$mongo" mongosh --quiet vaani --eval '
+            const message = db.messages.findOne({_id: "smoke-wamid"});
+            const audit = db.audit_log.findOne({
+              tenant_id: "smoke-tenant",
+              event_type: "inbound_message"
+            });
+            const outbound = db.outbound_intents.countDocuments({tenant_id: "smoke-tenant"});
+            quit(message && message.direction === "inbound" &&
+              message.text === "smoke handoff message" && !("status" in message) &&
+              audit && outbound === 0 ? 0 : 1);
+          '
+
           for _ in {1..30}; do
             docker exec "$worker" python -m app.workers.healthcheck && break
             sleep 1
@@ -242,7 +290,7 @@ jobs:
           test "$(docker inspect --format '{{.State.Running}}' "$worker")" = true
 
           image_id="$(docker image inspect --format '{{.Id}}' "vaani:${GITHUB_SHA}")"
-          echo "Built and smoke-tested image ID: \`${image_id}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Built and smoke-tested API/dashboard/webhook/worker image ID: \`${image_id}\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Scan built image
         uses: aquasecurity/trivy-action@v0.36.0
