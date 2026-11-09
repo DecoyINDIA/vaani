@@ -437,6 +437,49 @@ async def process_event(fields: dict[str, Any]) -> None:
             await messages.insert_one(document)
         return
 
+    upper_text = text.strip().upper()
+    if upper_text in {"STOP", "UNSUBSCRIBE"}:
+        await Contacts(tenant_id).update_one(
+            {"_id": {"$in": mongo_id_candidates(contact_id)}},
+            {"$set": {"messaging_opt_out": True, "opt_out_at": _now()}},
+        )
+        await _store_inbound(
+            tenant_id,
+            conversation_id,
+            text,
+            message_id,
+            intent="opt_out",
+        )
+        reply_key = f"optout:{message_id or conversation_id}"
+        await send_freeform(
+            tenant_id,
+            wa_id,
+            "You have been unsubscribed from automated reminders. Reply START to opt back in.",
+            operation_key=reply_key,
+        )
+        return
+
+    if upper_text in {"START", "SUBSCRIBE", "UNSTOP"}:
+        await Contacts(tenant_id).update_one(
+            {"_id": {"$in": mongo_id_candidates(contact_id)}},
+            {"$set": {"messaging_opt_out": False}, "$unset": {"opt_out_at": ""}},
+        )
+        await _store_inbound(
+            tenant_id,
+            conversation_id,
+            text,
+            message_id,
+            intent="opt_in",
+        )
+        reply_key = f"optin:{message_id or conversation_id}"
+        await send_freeform(
+            tenant_id,
+            wa_id,
+            "You have re-subscribed to appointment reminders. How can I help you today?",
+            operation_key=reply_key,
+        )
+        return
+
     if await _handle_booking_action(
         tenant_id=tenant_id,
         wa_id=wa_id,
