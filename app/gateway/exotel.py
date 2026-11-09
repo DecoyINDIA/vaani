@@ -431,6 +431,7 @@ async def websocket_stream(
         await websocket.close(code=4004)
         return
 
+    tenant_lang = str(tenant.get("locale_default", "hi-Latn"))
     logger.info("Accepted Exotel WebSocket for tenant %s, call %s", tenant_id, call_sid)
     stream_sid: str | None = None
     sample_rate = 0
@@ -487,7 +488,8 @@ async def websocket_stream(
                     caller_phone=verified_caller,
                     called_number=str(tenant["voice_number"]),
                 )
-                consent = await session.handle_user_input(b"INIT", lang="hi-Latn")
+                session.sample_rate = sample_rate
+                consent = await session.handle_user_input(b"INIT", lang=tenant_lang)
                 await send_audio(consent)
                 continue
             if stream_sid is None:
@@ -513,14 +515,14 @@ async def websocket_stream(
                         utterance = pcm_to_wav(bytes(speech), sample_rate)
                         speech.clear()
                         silence_ms = 0
-                        result = await session.handle_user_input(utterance, lang="hi-Latn")
+                        result = await session.handle_user_input(utterance, lang=tenant_lang)
                         await send_audio(result)
             elif event_name == "dtmf":
                 dtmf = event.get("dtmf")
                 if not isinstance(dtmf, dict) or str(dtmf.get("digit")) not in set("0123456789#*"):
                     raise ValueError("invalid DTMF event")
                 result = await session.handle_user_input(
-                    f"DTMF_{dtmf['digit']}".encode(), lang="hi-Latn"
+                    f"DTMF_{dtmf['digit']}".encode(), lang=tenant_lang
                 )
                 await send_audio(result)
             elif event_name == "mark":
@@ -551,7 +553,12 @@ async def websocket_stream(
         if session.conversation_id:
             from app.models.collections import Conversations
 
-            await Conversations(tenant_id).update_one(
-                {"_id": session.conversation_id},
+            convs = Conversations(tenant_id)
+            target_id = (
+                await convs.resolve_id(str(session.conversation_id))
+                or session.conversation_id
+            )
+            await convs.update_one(
+                {"_id": target_id},
                 {"$set": {"state": "closed", "ended_at": datetime.now(UTC).replace(tzinfo=None)}},
             )

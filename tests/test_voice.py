@@ -14,6 +14,7 @@ from unittest.mock import AsyncMock
 from urllib.parse import urlsplit
 
 import pytest
+from app.channels.voice.session import VoiceSession
 from app.config import settings
 from app.main import app
 from fastapi.testclient import TestClient
@@ -239,3 +240,168 @@ async def test_cross_model_compatibility() -> None:
         # Revert settings
         settings.llm_model_classifier = old_classifier
         settings.llm_model_responder = old_responder
+
+
+def test_exotel_malformed_stream_events_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
+    from fastapi import WebSocketDisconnect
+
+    client = TestClient(app)
+
+    # 1. Event before start -> code 4002
+    stream_path = _stream_path(client, monkeypatch, "call_malformed_1")
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with client.websocket_connect(stream_path) as ws:
+            ws.send_json(
+                {
+                    "event": "media",
+                    "sequence_number": "1",
+                    "stream_sid": "stream-early",
+                    "media": {"payload": "AAAA"},
+                }
+            )
+            ws.receive_json()
+    assert exc.value.code == 4002
+
+    # 2. Duplicate start -> code 4002
+    stream_path = _stream_path(client, monkeypatch, "call_malformed_2")
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with client.websocket_connect(stream_path) as ws:
+            ws.send_json({"event": "connected"})
+            ws.send_json(_start_event("call_malformed_2", sequence=1))
+            _receive_playback(ws)
+            ws.send_json(_start_event("call_malformed_2", sequence=2))
+            ws.receive_json()
+    assert exc.value.code == 4002
+
+    # 3. Changed stream_sid -> code 4002
+    stream_path = _stream_path(client, monkeypatch, "call_malformed_3")
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with client.websocket_connect(stream_path) as ws:
+            ws.send_json({"event": "connected"})
+            ws.send_json(_start_event("call_malformed_3", sequence=1))
+            _receive_playback(ws)
+            ws.send_json(
+                {
+                    "event": "mark",
+                    "sequence_number": "2",
+                    "stream_sid": "changed_sid",
+                    "mark": {"name": "test"},
+                }
+            )
+            ws.receive_json()
+    assert exc.value.code == 4002
+
+    # 4. Out of order sequence number -> code 4002
+    stream_path = _stream_path(client, monkeypatch, "call_malformed_4")
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with client.websocket_connect(stream_path) as ws:
+            ws.send_json({"event": "connected"})
+            ws.send_json(_start_event("call_malformed_4", sequence=5))
+            _receive_playback(ws)
+            ws.send_json(
+                {
+                    "event": "mark",
+                    "sequence_number": "4",
+                    "stream_sid": "stream-call_malformed_4",
+                    "mark": {"name": "test"},
+                }
+            )
+            ws.receive_json()
+    assert exc.value.code == 4002
+
+    # 5. Invalid DTMF digit -> code 4002
+    stream_path = _stream_path(client, monkeypatch, "call_malformed_5")
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with client.websocket_connect(stream_path) as ws:
+            ws.send_json({"event": "connected"})
+            ws.send_json(_start_event("call_malformed_5", sequence=1))
+            _receive_playback(ws)
+            ws.send_json(
+                {
+                    "event": "dtmf",
+                    "sequence_number": "2",
+                    "stream_sid": "stream-call_malformed_5",
+                    "dtmf": {"digit": "Z"},
+                }
+            )
+            ws.receive_json()
+    assert exc.value.code == 4002
+
+    # 6. Unsupported event name -> code 4002
+    stream_path = _stream_path(client, monkeypatch, "call_malformed_6")
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with client.websocket_connect(stream_path) as ws:
+            ws.send_json({"event": "connected"})
+            ws.send_json(_start_event("call_malformed_6", sequence=1))
+            _receive_playback(ws)
+            ws.send_json(
+                {
+                    "event": "unsupported_event",
+                    "sequence_number": "2",
+                    "stream_sid": "stream-call_malformed_6",
+                }
+            )
+            ws.receive_json()
+    assert exc.value.code == 4002
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("lang", ["hi", "hi-Latn", "or", "en"])
+async def test_voice_multi_language_and_latency_budgets(lang: str) -> None:
+    session = VoiceSession("test_tenant", f"call_lang_{lang}", caller_phone="919876543210")
+    await session.initialize()
+
+    # Step 1: Consent
+    consent = await session.handle_user_input(b"INIT", lang=lang)
+    assert consent["consent_pending"] is True
+    assert "Sharma Dental Clinic" in consent["response"]
+    assert len(consent["audio"]) > 44
+
+    # Step 2: DTMF_1 acceptance
+    accept = await session.handle_user_input(b"DTMF_1", lang=lang)
+    assert accept["consent_accepted"] is True
+    assert len(accept["audio"]) > 44
+
+    # Step 3: Query
+    query_bytes = b"evals/voice_corpus/audio/vc_hi_032.wav"
+    res = await session.handle_user_input(query_bytes, lang=lang)
+    assert res["response"]
+    assert len(res["audio"]) > 44
+
+    # Latencies
+    latencies = res["latencies"]
+    assert "stt_ms" in latencies
+    assert "llm_ms" in latencies
+    assert "tts_ms" in latencies
+    assert "total_ms" in latencies
+    assert latencies["total_ms"] > 0
+    assert latencies["total_ms"] <= 2000
+    assert latencies["stt_ms"] <= 300
+    assert latencies["llm_ms"] <= 700
+    assert latencies["tts_ms"] <= 400
+
+
+@pytest.mark.asyncio
+async def test_voice_low_confidence_and_empty_utterance_recovery() -> None:
+    from unittest.mock import AsyncMock
+
+    import app.channels.voice.session as session_module
+
+    session = VoiceSession("test_tenant", "call_recovery", caller_phone="919876543210")
+    await session.initialize()
+    await session.handle_user_input(b"INIT", lang="hi")
+    await session.handle_user_input(b"DTMF_1", lang="hi")
+
+    # STT returning empty transcript
+    empty_stt = AsyncMock(
+        return_value={"text": "   ", "confidence": 0.1, "latency_ms": 50, "provider": "sarvam"}
+    )
+    old_transcribe = session_module.transcribe_audio
+    session_module.transcribe_audio = empty_stt
+    try:
+        res = await session.handle_user_input(b"dummy_silence", lang="hi")
+        assert res.get("low_confidence_recovery") is True
+        assert "माफ़ कीजिये" in res["response"]
+        assert len(res["audio"]) > 44
+    finally:
+        session_module.transcribe_audio = old_transcribe

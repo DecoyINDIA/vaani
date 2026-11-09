@@ -117,6 +117,8 @@ class Settings(BaseSettings):
             errors.append("sarvam_api_key is required by stt_provider")
         if self.stt_provider == "deepgram" and not self.deepgram_api_key:
             errors.append("deepgram_api_key is required by stt_provider")
+        if self.tts_provider == "sarvam" and not self.sarvam_api_key:
+            errors.append("sarvam_api_key is required by tts_provider")
         if self.tts_provider == "elevenlabs" and not self.elevenlabs_api_key:
             errors.append("elevenlabs_api_key is required by tts_provider")
         if self.kb_embedding_dimensions < 1:
