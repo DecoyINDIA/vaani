@@ -17,6 +17,8 @@ from app.agent.templates import get_template
 
 logger = logging.getLogger(__name__)
 
+INDIC_DIGITS = str.maketrans("०१२३४५६७८९୦୧୨୩୪୫୬୭୮୯", "01234567890123456789")
+
 
 async def output_gate(state: AgentState) -> dict[str, Any]:
     """Node 6 — output scope check (TRD §4.2, gate 2).
@@ -36,10 +38,14 @@ async def output_gate(state: AgentState) -> dict[str, Any]:
     # 2. Check if the response contains numbers, prices, timings, or location words
     # but lacks a citation tag "[source_ref:"
     factual_patterns = [
-        r"\b\d+\b",                    # numbers (fees, slots)
-        r"\b(rs\.?|inr|rupees)\b",     # currency indicators
-        r"\b(am|pm|baje|time)\b",      # timings — word-bounded, else "am" matches inside "Namaste"
-        r"\b(address|location|landmark|bhubaneswar)\b"  # location details
+        # numbers (fees, slots in ASCII/Devanagari/Odia)
+        r"[\d\u0966-\u096F\u0B66-\u0B6F]+",
+        # currency indicators
+        r"(?:^|\b)(?:rs\.?|inr|rupees|रुपये|रुपए|रु\.?|ଟଙ୍କା)(?:$|\b)",
+        # timings — word-bounded, else "am" matches inside "Namaste"
+        r"\b(am|pm|baje|time)\b",
+        # location details
+        r"\b(address|location|landmark|bhubaneswar)\b",
     ]
     
     response_lower = response.lower()
@@ -61,11 +67,21 @@ async def output_gate(state: AgentState) -> dict[str, Any]:
     cited_source_text = " ".join(
         allowed_sources[ref] for ref in cited_refs if ref in allowed_sources
     )
+    raw_numbers = re.findall(
+        r"[\d\u0966-\u096F\u0B66-\u0B6F]+(?:[.,][\d\u0966-\u096F\u0B66-\u0B6F]+)?",
+        response,
+    )
+    normalized_numbers = [num.translate(INDIC_DIGITS) for num in raw_numbers]
+    source_numbers = re.findall(
+        r"[\d\u0966-\u096F\u0B66-\u0B6F]+(?:[.,][\d\u0966-\u096F\u0B66-\u0B6F]+)?",
+        cited_source_text,
+    )
+    normalized_source_numbers = {num.translate(INDIC_DIGITS) for num in source_numbers}
     unsupported_numbers = bool(
         cited_refs
         and any(
-            number not in cited_source_text
-            for number in re.findall(r"\d+(?:[.,]\d+)?", response)
+            num not in normalized_source_numbers
+            for num in normalized_numbers
         )
     )
 
