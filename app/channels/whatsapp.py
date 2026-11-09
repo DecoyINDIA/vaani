@@ -234,6 +234,7 @@ async def send_freeform(
         tenant_id,
         actor="agent",
         event_type="outbound_freeform",
+        operation_key=operation_key,
         payload={"wa_id": wa_id, "text": text, "wamid": _wamid(result)},
     )
     return result
@@ -294,6 +295,7 @@ async def send_template(
         tenant_id,
         actor="agent",
         event_type="outbound_template",
+        operation_key=operation_key,
         payload={
             "wa_id": wa_id,
             "template": template,
@@ -339,6 +341,7 @@ async def send_slot_picker(
         tenant_id,
         actor="agent",
         event_type="outbound_interactive",
+        operation_key=operation_key,
         payload={"wa_id": wa_id, "kind": "slot_picker", "wamid": _wamid(result)},
     )
     return result
@@ -380,6 +383,7 @@ async def send_booking_confirmation(
         tenant_id,
         actor="agent",
         event_type="outbound_interactive",
+        operation_key=operation_key,
         payload={"wa_id": wa_id, "kind": "booking_confirmation", "wamid": _wamid(result)},
     )
     return result

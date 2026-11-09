@@ -730,14 +730,8 @@ async def run_scheduler_background() -> None:
         except Exception as e:
             logger.error("Background scheduler error in billing: %s", e, exc_info=True)
 
-        # Run weekly summaries on Sunday at 23:00
         try:
-            from datetime import datetime
-            now = datetime.now()
-            # Run weekly summary on Sunday (weekday 6) at 23:00 (approx. 23:00 - 23:15)
-            if now.weekday() == 6 and now.hour == 23 and now.minute < 15:
-                logger.info("Background scheduler: running weekly summaries...")
-                await run_weekly_summaries()
+            await run_weekly_summaries()
         except Exception as e:
             logger.error("Background scheduler error in weekly summaries: %s", e, exc_info=True)
 

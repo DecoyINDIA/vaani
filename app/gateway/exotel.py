@@ -307,30 +307,29 @@ async def missed_call(request: Request) -> Response:
 
     # 3. Dispatch template bridge
     from app import audit
-    await audit.record(
-        tenant_id,
-        actor="system",
-        event_type="outbound_template",
-        payload={
-            "template": "T_MISSED_CALL_BRIDGE",
-            "to": from_number,
-            "reason": "missed_call"
-        },
-        conversation_id=None
-    )
-
-    # Wire up actual WhatsApp template send
     from app.channels.whatsapp import send_template
+    operation_key = f"missed-call:{tenant_id}:{from_number}:{call_sid or 'unknown'}"
     try:
         await send_template(
             tenant_id=tenant_id,
             wa_id=str(from_number),
             template="missed_call_bridge",
             variables={"clinic_name": str((tenant or {}).get("name", "the clinic"))},
-            operation_key=f"missed-call:{tenant_id}:{from_number}:{call_sid or 'unknown'}",
+            operation_key=operation_key,
+        )
+        await audit.record(
+            tenant_id,
+            actor="system",
+            event_type="outbound_template",
+            operation_key=f"missed-call-record:{operation_key}",
+            payload={
+                "template": "T_MISSED_CALL_BRIDGE",
+                "to": from_number,
+                "reason": "missed_call",
+            },
         )
     except Exception as e:
-        logger.error(f"Failed to send missed call bridge template to {from_number}: {e}")
+        logger.error("Failed to send missed call bridge template: %s", type(e).__name__)
 
     return Response(content='{"status":"bridge_initiated"}', status_code=200)
 

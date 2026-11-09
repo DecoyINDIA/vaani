@@ -11,6 +11,7 @@ from app.config import settings
 from app.models.base import get_db
 from app.models.collections import Bookings, Contacts, OutboundIntents, Slots
 from app.workers.reminders import run_reminders
+from app.workers.weekly_summary import run_weekly_summaries
 
 
 async def test_operation_key_deduplicates_provider_send() -> None:
@@ -31,6 +32,9 @@ async def test_operation_key_deduplicates_provider_send() -> None:
     assert first["mock"] is True
     assert repeated["deduplicated"] is True
     assert await OutboundIntents("t_outbound").count_documents({}) == 1
+    assert await get_db()["audit_log"].count_documents(
+        {"tenant_id": "t_outbound", "operation_key": "booking-confirm:1"}
+    ) == 1
 
 
 async def test_ambiguous_send_is_visible_and_not_blindly_retried() -> None:
@@ -75,6 +79,9 @@ async def test_ambiguous_send_is_visible_and_not_blindly_retried() -> None:
         intent = await OutboundIntents("t_unknown").find_one({"operation_key": "unknown:1"})
         assert intent is not None
         assert intent["state"] == "unknown"
+        assert await get_db()["audit_log"].count_documents(
+            {"tenant_id": "t_unknown", "event_type": "outbound_template"}
+        ) == 0
     finally:
         settings.use_mock_adapters = old_mock
         settings.bsp_access_token = old_token
@@ -209,3 +216,39 @@ async def test_reminder_uses_approved_contract_and_contact_language() -> None:
         operation_key="reminder:contract-booking:24h",
         language_code="or",
     )
+
+
+async def test_weekly_summary_failure_does_not_starve_other_tenants() -> None:
+    db = get_db()
+    await db["tenants"].insert_one(
+        {"_id": "weekly-invalid", "timezone": "Invalid/Timezone"}
+    )
+    await db["tenants"].insert_one(
+        {
+            "_id": "weekly-continues",
+            "name": "Continues Clinic",
+            "timezone": "Asia/Kolkata",
+        }
+    )
+    await db["users"].insert_one(
+        {
+            "tenant_id": "weekly-continues",
+            "role": "owner",
+            "status": "active",
+            "wa_id": "944444444444",
+        }
+    )
+
+    await run_weekly_summaries(now=datetime(2026, 11, 8, 17, 30, tzinfo=UTC))
+
+    assert await OutboundIntents("weekly-continues").count_documents(
+        {"operation_key": "weekly-summary:weekly-continues:2026-45"}
+    ) == 1
+    alert = await db["audit_log"].find_one(
+        {"tenant_id": "weekly-invalid", "event_type": "operational_alert"}
+    )
+    assert alert["payload"] == {
+        "kind": "weekly_summary_failed",
+        "week": "2026-45",
+        "error_type": "ZoneInfoNotFoundError",
+    }
