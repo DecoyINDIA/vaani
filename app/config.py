@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     jwt_access_ttl_min: int = 15
     jwt_refresh_ttl_days: int = 30
     use_mock_adapters: bool = False
+    use_mock_llm: bool = False
 
     # --- Datastore (ADR-03: MongoDB Atlas ap-south-1 + Redis) ---
     mongodb_uri: str = "mongodb://localhost:27017/vaani"
@@ -84,6 +85,8 @@ class Settings(BaseSettings):
             errors.append("jwt_secret must be at least 32 characters and not a default")
         if self.use_mock_adapters:
             errors.append("use_mock_adapters must be false")
+        if self.use_mock_llm:
+            errors.append("use_mock_llm must be false")
 
         required = (
             "meta_app_secret",

@@ -92,11 +92,14 @@ def test_unsafe_production_configuration_is_rejected() -> None:
     invalid_dimensions = valid.model_copy(update={"kb_embedding_dimensions": 0})
     with pytest.raises(ValueError, match="kb_embedding_dimensions"):
         invalid_dimensions.validate_runtime()
+    with pytest.raises(ValueError, match="use_mock_llm"):
+        valid.model_copy(update={"use_mock_llm": True}).validate_runtime()
 
 
 @pytest.mark.asyncio
 async def test_llm_mock_requires_explicit_adapter(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(settings, "use_mock_adapters", False)
+    monkeypatch.setattr(settings, "use_mock_llm", False)
     monkeypatch.setattr(settings, "openrouter_api_key", "")
     with pytest.raises(RuntimeError, match="OPENROUTER_API_KEY"):
         await query_llm("hello", "classifier")
@@ -117,7 +120,7 @@ async def test_llm_mock_requires_explicit_adapter(monkeypatch: pytest.MonkeyPatc
     with pytest.raises(httpx.ReadTimeout):
         await query_llm("hello", "classifier")
 
-    monkeypatch.setattr(settings, "use_mock_adapters", True)
+    monkeypatch.setattr(settings, "use_mock_llm", True)
     assert "greet" in await query_llm("User message: 'hello'", "classifier", "classify")
 
 def test_owner_api_jwt_access():

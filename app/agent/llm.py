@@ -127,7 +127,7 @@ async def query_llm(
     max_tokens: int = 500
 ) -> str:
     """Query OpenRouter, using the rule-based adapter only when explicitly enabled."""
-    if settings.use_mock_adapters:
+    if settings.use_mock_adapters or settings.use_mock_llm:
         logger.debug("[LLM Mock] model=%s", model)
         return get_mock_response(prompt + " ---SYSTEM_PROMPT--- " + (system_prompt or ""), model)
     if not settings.openrouter_api_key:
