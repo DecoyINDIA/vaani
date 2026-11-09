@@ -121,6 +121,17 @@ async def receive(request: Request) -> Response:
                 await audit.record(
                     tenant_id,
                     actor="system",
+                    event_type="operational_alert",
+                    operation_key=f"payment-reconciliation:{link_id}",
+                    payload={
+                        "kind": "payment_reconciliation_required",
+                        "rzp_link_id": link_id,
+                        "errors": sorted(set(errors)),
+                    },
+                )
+                await audit.record(
+                    tenant_id,
+                    actor="system",
                     event_type="payment_reconciliation_required",
                     payload={"rzp_link_id": link_id, "errors": sorted(set(errors))},
                 )
@@ -154,6 +165,46 @@ async def receive(request: Request) -> Response:
                     },
                 )
 
+    elif event in {"payment_link.cancelled", "payment_link.expired"}:
+        link_entity = payload.get("payload", {}).get("payment_link", {}).get("entity", {})
+        link_id = link_entity.get("id")
+        if link_id:
+            payment_record = await Payments.find_by_link_id_unscoped(link_id)
+            if not payment_record:
+                return Response(content='{"status":"unknown_link"}', status_code=202)
+            tenant_id = payment_record["tenant_id"]
+            if payment_record.get("status") == "paid":
+                await audit.record(
+                    tenant_id,
+                    actor="system",
+                    event_type="operational_alert",
+                    operation_key=f"payment-cancelled-after-paid:{link_id}",
+                    payload={
+                        "kind": "payment_reconciliation_required",
+                        "rzp_link_id": link_id,
+                        "event": event,
+                        "error": "link_cancelled_after_paid",
+                    },
+                )
+                return Response(content='{"status":"reconciliation_required"}', status_code=202)
+            new_status = "cancelled" if event == "payment_link.cancelled" else "expired"
+            await Payments(tenant_id).update_one(
+                {"rzp_link_id": link_id},
+                {
+                    "$set": {
+                        "status": new_status,
+                        "updated_at": datetime.now(UTC).replace(tzinfo=None),
+                    }
+                },
+            )
+            await audit.record(
+                tenant_id,
+                actor="system",
+                event_type=f"payment_{new_status}",
+                payload={"rzp_link_id": link_id, "event": event},
+            )
+            return Response(content='{"status":"accepted"}', status_code=200)
+
     elif event in {
         "subscription.activated",
         "subscription.charged",
@@ -175,6 +226,17 @@ async def receive(request: Request) -> Response:
             plan = plan_from_provider_id(str(provider_plan_id))
         except ValueError:
             logger.error("Unknown Razorpay plan ID: %s", provider_plan_id)
+            await audit.record(
+                str(tenant_id),
+                actor="system",
+                event_type="operational_alert",
+                operation_key=f"sub-unknown-plan:{provider_subscription_id}",
+                payload={
+                    "kind": "subscription_reconciliation_required",
+                    "provider_plan_id": provider_plan_id,
+                    "provider_subscription_id": provider_subscription_id,
+                },
+            )
             return Response(content='{"status":"reconciliation_required"}', status_code=202)
 
         billing_status = {

@@ -413,6 +413,19 @@ async def process_event(fields: dict[str, Any]) -> None:
     )
     message_id = fields.get("message_id")
 
+    try:
+        from app.billing.meters import record_usage
+
+        await record_usage(
+            tenant_id,
+            event_id=f"wa_conv:{conversation_id}",
+            metric="wa_conversations",
+            quantity=1,
+            occurred_at=datetime.now(UTC),
+        )
+    except Exception as usage_err:
+        logger.warning("Failed to meter wa_conversations usage: %s", usage_err)
+
     await audit.record(
         tenant_id,
         actor="user",

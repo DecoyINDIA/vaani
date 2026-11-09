@@ -7,7 +7,11 @@ from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from app import audit
-from app.billing.invoice import generate_invoice
+from app.billing.invoice import (
+    deliver_invoice,
+    generate_invoice,
+    record_invoice_delivery_failure,
+)
 from app.models.collections import Tenants
 
 logger = logging.getLogger(__name__)
@@ -28,7 +32,14 @@ async def run_monthly_invoices(*, now: datetime | None = None) -> None:
             if local_now.day != 1:
                 continue
             period = (local_now.replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
-            await generate_invoice(tenant_id, period)
+            inv = await generate_invoice(tenant_id, period)
+            if inv.get("delivery_status") == "pending":
+                try:
+                    await deliver_invoice(tenant_id, inv["invoice_number"])
+                except Exception as del_err:
+                    await record_invoice_delivery_failure(
+                        tenant_id, inv["invoice_number"], str(del_err)
+                    )
         except Exception as exc:
             error_type = type(exc).__name__
             await audit.record(

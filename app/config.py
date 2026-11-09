@@ -66,7 +66,7 @@ class Settings(BaseSettings):
 
     # --- Billing / GST (F-17) ---
     xolver_gstin: str = ""
-    invoice_sac_code: str = "998314"
+    invoice_sac_code: str = "998313"
 
     # --- Observability ---
     sentry_dsn: str = ""
