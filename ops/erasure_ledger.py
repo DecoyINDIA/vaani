@@ -11,6 +11,7 @@ from typing import Any
 
 from app.models.base import get_db
 from app.privacy import identifier_hash, is_suppressed
+
 from ops.dpdp_delete import erase_patient
 
 
