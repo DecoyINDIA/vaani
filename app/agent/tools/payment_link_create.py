@@ -40,12 +40,28 @@ async def payment_link_create(
             "deduplicated": True,
         }
 
-    contact = await Contacts(tenant_id).find_one({"_id": contact_id})
+    try:
+        contact_id_resolved = await Contacts(tenant_id).resolve_id(contact_id)
+    except ValueError as e:
+        raise ValueError(f"ambiguous contact: {e}") from e
+    if contact_id_resolved is None:
+        raise ValueError("contact not found")
+    contact = await Contacts(tenant_id).find_one({"_id": contact_id_resolved})
     if not contact:
         raise ValueError("contact not found")
+    booking = None
     if booking_id:
+        try:
+            booking_id_resolved = await Bookings(tenant_id).resolve_id(booking_id)
+        except ValueError as e:
+            raise ValueError(f"ambiguous booking: {e}") from e
+        if booking_id_resolved is None:
+            raise ValueError("booking not found for contact")
         booking = await Bookings(tenant_id).find_one(
-            {"_id": booking_id, "contact_id": contact_id}
+            {
+                "_id": booking_id_resolved,
+                "contact_id": {"$in": [contact_id_resolved, contact_id, str(contact["_id"])]},
+            }
         )
         if not booking:
             raise ValueError("booking not found for contact")
@@ -111,8 +127,8 @@ async def payment_link_create(
     await Payments(tenant_id).insert_one(
         {
             "request_id": request_id,
-            "contact_id": contact_id,
-            "booking_id": booking_id,
+            "contact_id": str(contact["_id"]),
+            "booking_id": str(booking["_id"]) if booking else None,
             "rzp_link_id": provider_id,
             "provider_url": provider_url,
             "reference_id": reference_id,

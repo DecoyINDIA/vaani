@@ -54,6 +54,22 @@ async def list_conversations(
     return serialize_mongo(results)
 
 
+@router.get("/conversations/{id}")
+async def get_conversation(
+    id: str, tenant_id: str = Depends(require_tenant)
+) -> dict[str, Any]:
+    try:
+        conv_id = await Conversations(tenant_id).resolve_id(id)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
+    if conv_id is None:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    conversation = await Conversations(tenant_id).find_one({"_id": conv_id})
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    return serialize_mongo(conversation)
+
+
 @router.get("/conversations/{id}/messages")
 async def list_messages(
     id: str,
@@ -63,7 +79,7 @@ async def list_messages(
 ) -> list[dict[str, Any]]:
     cursor = (
         Messages(tenant_id)
-        .find({"conversation_id": id})
+        .find({"conversation_id": {"$in": mongo_id_candidates(id)}})
         .sort([("ts", 1), ("_id", 1)])
         .skip(offset)
         .limit(limit)
@@ -76,8 +92,14 @@ async def list_messages(
 async def takeover_conversation(
     id: str, tenant_id: str = Depends(require_tenant)
 ) -> dict[str, Any]:
+    try:
+        conv_id = await Conversations(tenant_id).resolve_id(id)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
+    if conv_id is None:
+        raise HTTPException(status_code=404, detail="Conversation not found")
     result = await Conversations(tenant_id).update_one(
-        {"_id": {"$in": mongo_id_candidates(id)}}, {"$set": {"state": "human"}}
+        {"_id": conv_id}, {"$set": {"state": "human"}}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Conversation not found")
@@ -102,16 +124,26 @@ async def reply_to_conversation(
     text = payload.text.strip()
     if not text or not payload.request_id.strip():
         raise HTTPException(status_code=422, detail="Reply text and request ID are required")
-    conversation = await Conversations(tenant_id).find_one(
-        {"_id": {"$in": mongo_id_candidates(id)}}
-    )
+    try:
+        conv_id = await Conversations(tenant_id).resolve_id(id)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
+    if conv_id is None:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    conversation = await Conversations(tenant_id).find_one({"_id": conv_id})
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
     if conversation.get("state") != "human":
         raise HTTPException(status_code=409, detail="Take over the conversation before replying")
     contact_id = str(conversation.get("contact_id", ""))
-    contact = await Contacts(tenant_id).find_one(
-        {"_id": {"$in": mongo_id_candidates(contact_id)}}
+    try:
+        contact_id_resolved = await Contacts(tenant_id).resolve_id(contact_id)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
+    contact = (
+        await Contacts(tenant_id).find_one({"_id": contact_id_resolved})
+        if contact_id_resolved is not None
+        else None
     )
     if not contact or not (contact.get("wa_id") or contact.get("phone")):
         raise HTTPException(status_code=409, detail="Conversation has no reachable contact")
@@ -127,7 +159,7 @@ async def reply_to_conversation(
         {"staff_request_id": request_id},
         {
             "$setOnInsert": {
-                "conversation_id": id,
+                "conversation_id": str(conv_id),
                 "direction": "outbound",
                 "type": "text",
                 "text": text,
@@ -149,20 +181,26 @@ async def return_conversation(
     summary = payload.summary.strip()
     if not summary:
         raise HTTPException(status_code=422, detail="Resolution summary is required")
+    try:
+        conv_id = await Conversations(tenant_id).resolve_id(id)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
+    if conv_id is None:
+        raise HTTPException(status_code=404, detail="Conversation not found")
     result = await Conversations(tenant_id).update_one(
-        {"_id": {"$in": mongo_id_candidates(id)}}, {"$set": {"state": "bot"}}
+        {"_id": conv_id}, {"$set": {"state": "bot"}}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Conversation not found")
     await Messages(tenant_id).insert_one({
-        "conversation_id": id,
+        "conversation_id": str(conv_id),
         "direction": "system",
         "type": "resolution_summary",
         "text": summary,
         "ts": datetime.now(UTC).replace(tzinfo=None)
     })
     await Escalations(tenant_id).update_one(
-        {"conversation_id": id, "status": "open"},
+        {"conversation_id": {"$in": mongo_id_candidates(str(conv_id))}, "status": "open"},
         {
             "$set": {
                 "status": "resolved",
@@ -189,6 +227,22 @@ async def list_bookings(
     )
     results: list[dict[str, Any]] = await cursor.to_list(length=limit)
     return serialize_mongo(results)
+
+
+@router.get("/bookings/{id}")
+async def get_booking(
+    id: str, tenant_id: str = Depends(require_tenant)
+) -> dict[str, Any]:
+    try:
+        booking_id = await Bookings(tenant_id).resolve_id(id)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
+    if booking_id is None:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    booking = await Bookings(tenant_id).find_one({"_id": booking_id})
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    return serialize_mongo(booking)
 
 
 class BookingCreate(BaseModel):
@@ -223,21 +277,29 @@ async def update_booking_api(
 ) -> dict[str, Any]:
     from app.booking.engine import cancel_booking, move_booking
 
-    if payload.status == "cancelled":
-        booking = await cancel_booking(tenant_id, id)
-        if not booking:
-            raise HTTPException(status_code=404, detail="Booking not found")
-        return {"status": "success", "booking_id": id}
-    if payload.status == "rescheduled":
-        if not payload.new_slot_id or not payload.request_id:
-            raise HTTPException(status_code=422, detail="new_slot_id and request_id are required")
-        result = await move_booking(
-            tenant_id, id, payload.new_slot_id, payload.request_id
-        )
-        if not result:
-            raise HTTPException(status_code=409, detail="Booking or slot is unavailable")
-        return result
-    raise HTTPException(status_code=422, detail="Unsupported booking transition")
+    try:
+        if payload.status == "cancelled":
+            booking = await cancel_booking(tenant_id, id)
+            if not booking:
+                raise HTTPException(status_code=404, detail="Booking not found")
+            return {"status": "success", "booking_id": str(booking.get("_id", id))}
+        if payload.status == "rescheduled":
+            if not payload.new_slot_id or not payload.request_id:
+                raise HTTPException(
+                    status_code=422,
+                    detail="new_slot_id and request_id are required",
+                )
+            result = await move_booking(
+                tenant_id, id, payload.new_slot_id, payload.request_id
+            )
+            if not result:
+                raise HTTPException(status_code=409, detail="Booking or slot is unavailable")
+            return result
+        raise HTTPException(status_code=422, detail="Unsupported booking transition")
+    except ValueError as e:
+        if "ambiguous" in str(e).lower():
+            raise HTTPException(status_code=409, detail=str(e)) from e
+        raise HTTPException(status_code=422, detail=str(e)) from e
 
 
 @router.get("/escalations")

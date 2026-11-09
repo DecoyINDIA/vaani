@@ -12,6 +12,7 @@ from zoneinfo import ZoneInfo
 
 from app import audit
 from app.channels.whatsapp import AmbiguousDeliveryError, send_template
+from app.models.base import mongo_id_candidates
 from app.models.collections import Bookings, Contacts, Practitioners, Slots, Tenants
 
 logger = logging.getLogger(__name__)
@@ -30,11 +31,15 @@ async def _scan_reminders(tenants: list[dict[str, Any]], now: datetime) -> None:
         
         async for booking in bookings_cursor:
             slot_id = booking.get("slot_id")
-            slot = await slots_accessor.find_one({"_id": slot_id})
+            slot = (
+                await slots_accessor.find_one({"_id": {"$in": mongo_id_candidates(str(slot_id))}})
+                if slot_id
+                else None
+            )
             if (
                 not slot
                 or slot.get("status") != "booked"
-                or slot.get("booking_id") != booking.get("_id")
+                or str(slot.get("booking_id")) != str(booking.get("_id"))
             ):
                 continue
                 
@@ -49,7 +54,13 @@ async def _scan_reminders(tenants: list[dict[str, Any]], now: datetime) -> None:
                     timedelta(hours=earliest) <= time_diff <= timedelta(hours=latest)
                 ):
                     continue
-                contact = await contacts_accessor.find_one({"_id": booking.get("contact_id")})
+                contact = (
+                    await contacts_accessor.find_one(
+                        {"_id": {"$in": mongo_id_candidates(str(booking.get("contact_id")))}}
+                    )
+                    if booking.get("contact_id")
+                    else None
+                )
                 if contact and (
                     contact.get("messaging_opt_out")
                     or contact.get("profile", {}).get("messaging_opt_out")
