@@ -137,6 +137,32 @@ async def test_monthly_worker_issues_previous_period_once(
     ) == 1
 
 
+async def test_monthly_worker_records_failure_and_continues_other_tenants(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "xolver_gstin", "27XOLVER1111A1Z1")
+    await _tenant("billing-invalid", timezone="UTC", gstin="")
+    await _tenant("billing-continues", timezone="UTC")
+    now = datetime(2026, 8, 1, 0, 5, tzinfo=UTC)
+
+    await run_monthly_invoices(now=now)
+    await run_monthly_invoices(now=now)
+
+    db = get_db()
+    assert await db["invoices"].count_documents(
+        {"tenant_id": "billing-continues", "period": "2026-07"}
+    ) == 1
+    alerts = await db["audit_log"].find(
+        {"tenant_id": "billing-invalid", "event_type": "operational_alert"}
+    ).to_list(length=10)
+    assert len(alerts) == 1
+    assert alerts[0]["payload"] == {
+        "kind": "invoice_issuance_failed",
+        "period": "2026-07",
+        "error_type": "ValueError",
+    }
+
+
 async def test_subscription_unknown_plan_fails_closed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
