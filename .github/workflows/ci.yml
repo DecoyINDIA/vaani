@@ -226,6 +226,7 @@ jobs:
 
           common_env=(
             --env APP_ENV=dev
+            --env USE_MOCK_LLM=true
             --env MONGODB_URI=mongodb://mongo:27017/vaani
             --env REDIS_URL=redis://redis:6379/0
           )
