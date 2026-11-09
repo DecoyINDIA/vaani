@@ -12,12 +12,14 @@ Endpoints (stubs — Week 5 task 5.3):
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.channels.whatsapp import send_freeform
+from app.config import settings
+from app.kb.embedding import embed_text
 from app.models.base import get_db, mongo_id_candidates, serialize_mongo
 from app.models.collections import (
     AuditLog,
@@ -315,7 +317,17 @@ async def list_kb(
 ) -> list[dict[str, Any]]:
     cursor = (
         KbEntries(tenant_id)
-        .find({})
+        .find(
+            {},
+            {
+                "question": 1,
+                "answer": 1,
+                "kind": 1,
+                "key": 1,
+                "version": 1,
+                "ts": 1,
+            },
+        )
         .sort([("question", 1), ("_id", 1)])
         .skip(offset)
         .limit(limit)
@@ -325,21 +337,38 @@ async def list_kb(
 
 
 class KbUpsert(BaseModel):
-    question: str
-    answer: str
-    kind: str = "faq"
+    question: str = Field(min_length=1, max_length=500)
+    answer: str = Field(min_length=1, max_length=5000)
+    kind: Literal["field", "faq"] = "faq"
 
 
 @router.put("/kb")
 async def upsert_kb(payload: KbUpsert, tenant_id: str = Depends(require_tenant)) -> dict[str, Any]:
+    question = payload.question.strip()
+    answer = payload.answer.strip()
+    if not question or not answer:
+        raise HTTPException(status_code=422, detail="Question and answer are required")
+    try:
+        embedding = await embed_text(
+            f"{question}\n{answer}", input_type="search_document"
+        )
+    except Exception as error:
+        raise HTTPException(
+            status_code=503,
+            detail="Knowledge embedding is unavailable; entry was not saved",
+        ) from error
     await KbEntries(tenant_id).update_one(
-        {"question": payload.question},
+        {"question": question},
         {
             "$set": {
-                "answer": payload.answer,
+                "answer": answer,
                 "kind": payload.kind,
-                "ts": datetime.now(UTC).replace(tzinfo=None)
-            }
+                "embedding": embedding,
+                "embedding_model": settings.llm_model_embedding or "mock",
+                "embedding_dimensions": len(embedding),
+                "ts": datetime.now(UTC).replace(tzinfo=None),
+            },
+            "$inc": {"version": 1},
         },
         upsert=True
     )

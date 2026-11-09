@@ -12,6 +12,7 @@ from typing import Any, cast
 
 from pymongo import ReturnDocument
 
+from app.config import settings
 from app.models.base import TenantScoped, get_db
 
 
@@ -194,6 +195,86 @@ class Messages(TenantScoped):
 
 class KbEntries(TenantScoped):
     collection = "kb_entries"
+
+    @classmethod
+    async def embedding_candidates_unscoped(
+        cls, *, tenant_id: str | None = None, limit: int = 100
+    ) -> list[dict[str, Any]]:
+        query: dict[str, Any] = {
+            "question": {"$type": "string"},
+            "answer": {"$type": "string"},
+            "$or": [
+                {"embedding": {"$exists": False}},
+                {"embedding_model": {"$ne": settings.llm_model_embedding}},
+                {"embedding_dimensions": {"$ne": settings.kb_embedding_dimensions}},
+            ],
+        }
+        if tenant_id:
+            query["tenant_id"] = tenant_id
+        cursor = get_db()[cls.collection].find(
+            query,
+            {"tenant_id": 1, "question": 1, "answer": 1},
+        ).sort([("tenant_id", 1), ("_id", 1)]).limit(limit)
+        return [document async for document in cursor]
+
+    async def hybrid_search(
+        self, query: str, embedding: list[float], *, k: int
+    ) -> list[dict[str, Any]]:
+        candidates = max(k * 20, 50)
+        pool = max(k * 4, 10)
+        pipeline: list[dict[str, Any]] = [
+            {
+                "$rankFusion": {
+                    "input": {
+                        "pipelines": {
+                            "vector": [
+                                {
+                                    "$vectorSearch": {
+                                        "index": settings.kb_vector_index,
+                                        "path": "embedding",
+                                        "queryVector": embedding,
+                                        "numCandidates": candidates,
+                                        "limit": pool,
+                                        "filter": {"tenant_id": self.tenant_id},
+                                    }
+                                }
+                            ],
+                            "text": [
+                                {
+                                    "$search": {
+                                        "index": settings.kb_text_index,
+                                        "compound": {
+                                            "must": [
+                                                {
+                                                    "text": {
+                                                        "query": query,
+                                                        "path": ["question", "answer", "key"],
+                                                    }
+                                                }
+                                            ],
+                                            "filter": [
+                                                {
+                                                    "equals": {
+                                                        "path": "tenant_id",
+                                                        "value": self.tenant_id,
+                                                    }
+                                                }
+                                            ],
+                                        },
+                                    }
+                                },
+                                {"$limit": pool},
+                            ],
+                        }
+                    },
+                    "combination": {"weights": {"vector": 1, "text": 1}},
+                }
+            },
+            {"$match": {"tenant_id": self.tenant_id}},
+            {"$project": {"key": 1, "question": 1, "answer": 1}},
+            {"$limit": k},
+        ]
+        return [document async for document in self._col.aggregate(pipeline)]
 
 
 class Practitioners(TenantScoped):

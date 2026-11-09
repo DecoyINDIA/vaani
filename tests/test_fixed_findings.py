@@ -72,6 +72,7 @@ def test_unsafe_production_configuration_is_rejected() -> None:
         openrouter_api_key="x",
         llm_model_classifier="classifier",
         llm_model_responder="responder",
+        llm_model_embedding="embedding",
         exotel_sid="x",
         exotel_api_key="x",
         exotel_api_token="x",
@@ -86,6 +87,9 @@ def test_unsafe_production_configuration_is_rejected() -> None:
         use_mock_adapters=False,
     )
     valid.validate_runtime()
+    invalid_dimensions = valid.model_copy(update={"kb_embedding_dimensions": 0})
+    with pytest.raises(ValueError, match="kb_embedding_dimensions"):
+        invalid_dimensions.validate_runtime()
 
 def test_owner_api_jwt_access():
     client = TestClient(app)

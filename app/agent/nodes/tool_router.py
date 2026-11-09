@@ -14,6 +14,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from app.agent.state import AgentState
+from app.agent.templates import get_template
 from app.agent.tools.kb_search import kb_search
 from app.agent.tools.slots_get import slots_get
 from app.booking.relative_date import resolve
@@ -37,11 +38,22 @@ async def tool_router(state: AgentState) -> dict[str, Any]:
     # 1. KB Search for FAQ intents
     if intent_val.startswith("faq_"):
         logger.info(f"Routing FAQ intent '{intent_val}' to kb_search")
-        kb_results = await kb_search(tenant_id, text, k=3)
+        kb_results = await kb_search(
+            tenant_id,
+            text,
+            k=3,
+            fallback_key=intent_val,
+        )
         tool_results.append({
             "tool": "kb_search",
             "result": kb_results
         })
+        if not kb_results:
+            return {
+                "tool_results": tool_results,
+                "escalate": True,
+                "response": get_template("handoff_ack", lang),
+            }
 
     # 2. Slots Lookup for Booking intent
     elif intent_val in ("book", "reschedule"):
