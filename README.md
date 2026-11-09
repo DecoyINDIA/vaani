@@ -1,38 +1,30 @@
-# Project Vaani
+<p align="center">
+  <img src="assets/hero.svg" alt="Vaani: an AI front desk that books clinic appointments on WhatsApp and voice" width="800">
+</p>
 
-Vernacular AI front-desk agent (WhatsApp + voice) for Indian appointment-driven SMBs. v1 vertical: clinics.
+<h3 align="center">Stop losing patients to missed calls and unanswered messages.</h3>
 
-Planning pack — read [00-overview.md](00-overview.md) first.
+Vaani is an AI front desk for clinics. It answers patients on **WhatsApp and voice**, in the language they speak, and books the appointment while your team focuses on care.
 
-| Doc | Contents |
-|-----|----------|
-| [00-overview.md](00-overview.md) | Index, key decisions, Week-1 blockers, top risks |
-| [01-PRD.md](01-PRD.md) | Problem, personas, goals, requirements, acceptance criteria |
-| [02-TRD.md](02-TRD.md) | Architecture, ADRs, data model, agent design, NFRs, cost model |
-| [03-build-plan.md](03-build-plan.md) | Phased business plan, milestones, gates, budget |
-| [04-gtm-pricing.md](04-gtm-pricing.md) | Positioning, pricing, ICP, channels, funnel |
-| [05-risk-compliance.md](05-risk-compliance.md) | Risk register, Meta/WhatsApp policy, DPDP, legal |
-| [06-engineering-plan.md](06-engineering-plan.md) | End-to-end engineering execution: repo layout, week-by-week build, CI/eval gates |
-| [Production review](docs/production-review.md) | Confirmed production findings, reproduction evidence, verification results, and review limits |
-| [Production remediation plan](docs/production-remediation-plan.md) | Ordered fixes, acceptance criteria, migration/rollback steps, release gates, and completion ledger |
+## What your clinic gets
 
-## Status
+- **More booked appointments.** Every message and missed call gets an instant reply, day or night, so fewer patients drift to the next clinic.
+- **A calmer front desk.** Routine questions (timings, fees, directions, rescheduling) are handled for you. Your staff only step in when a person is really needed.
+- **Fewer no-shows.** Patients get confirmations and reminders automatically, and cancelled slots can be offered to others.
+- **Patients feel at home.** Natural conversation in their own language, booking in a couple of taps instead of typing back and forth.
+- **Answers you can trust.** Vaani replies only from the facts your clinic approves. If it isn't sure, it hands the chat to your team rather than guessing.
+- **Privacy by design.** Each clinic's data stays separate, and Vaani is built around India's DPDP rules.
 
-Implementation exists, but it is **not ready for production**. The 6 November 2026 review identified 20 open findings across authentication, booking, handoff, delivery, voice, billing, data handling, and release verification. Follow the [production remediation plan](docs/production-remediation-plan.md) for the current work order and release decision. Passing offline tests does not establish live-provider readiness.
+## How it works
 
-The business validation gates in [03-build-plan.md](03-build-plan.md), including five signed pilot LOIs, remain separate prerequisites; this engineering review did not verify their completion.
+1. **Share your details:** timings, doctors, fees, FAQs.
+2. **Connect your WhatsApp number.**
+3. **Go live.** Vaani starts booking, and your dashboard shows every appointment it handled.
 
-## Ship criteria (binary gates — see 03-build-plan.md and 06-engineering-plan.md for detail)
+## Get in touch
 
-- **G0 (before any code):** ≥5 signed LOIs, WABA verification submitted, pricing memo confirms >60% Starter gross margin.
-- **Every PR:** lint + typecheck + unit tests + tenant-isolation suite pass; prompt/taxonomy changes additionally require the eval suite to pass (intent F1 ≥ threshold, hallucination incidents = 0).
-- **G1 (pilot exit):** containment ≥60%, booking conversion ≥50%, hallucination incidents = 0.
-- **G2 (voice exit):** COGS ≤₹4/min, containment ≥50%, no open compliance/legal items.
+Interested in a pilot for your clinic? Contact **Subham Jena, Xolver** at [subhamjena.j@gmail.com](mailto:subhamjena.j@gmail.com).
 
-## Environment
+> Vaani is in active development and is being prepared for pilot clinics. It is not yet generally available.
 
-Copy `.env.example` → `.env` and fill in per the comments (grouped by TRD ADR). Never commit `.env`.
-
-## License
-
-Proprietary — Xolver / Subham Jena. All rights reserved.
+<sub>Engineering and planning docs: [internal overview](docs/internal-overview.md) · License: Proprietary, Xolver / Subham Jena. All rights reserved.</sub>

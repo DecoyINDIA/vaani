@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 440" width="800" height="440" role="img" aria-label="Animated WhatsApp chat: a patient asks for an appointment in Hinglish and Vaani books it in two taps.">
+  <style>
+    text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+    .m{opacity:0;animation-duration:14s;animation-iteration-count:infinite;animation-timing-function:ease-out}
+    #m1{animation-name:k1}#m2{animation-name:k2}#m3{animation-name:k3}#m4{animation-name:k4}#t1{animation-name:kt1}#t2{animation-name:kt2}
+    @keyframes k1{0%,3%{opacity:0;transform:translateY(8px)}6%,92%{opacity:1;transform:none}97%,100%{opacity:0}}
+    @keyframes kt1{0%,10%{opacity:0}12%,17%{opacity:1}19%,100%{opacity:0}}
+    @keyframes k2{0%,18%{opacity:0;transform:translateY(8px)}21%,92%{opacity:1;transform:none}97%,100%{opacity:0}}
+    @keyframes k3{0%,35%{opacity:0;transform:translateY(8px)}38%,92%{opacity:1;transform:none}97%,100%{opacity:0}}
+    @keyframes kt2{0%,42%{opacity:0}44%,49%{opacity:1}51%,100%{opacity:0}}
+    @keyframes k4{0%,50%{opacity:0;transform:translateY(8px)}53%,92%{opacity:1;transform:none}97%,100%{opacity:0}}
+    .d{animation:b 1s infinite}.d2{animation-delay:.15s}.d3{animation-delay:.3s}
+    @keyframes b{0%,100%{opacity:.25}50%{opacity:1}}
+    @media (prefers-reduced-motion:reduce){.m{animation:none;opacity:1}#t1,#t2{display:none}.d{animation:none}}
+  </style>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0F172A"/><stop offset="1" stop-color="#134E4A"/></linearGradient>
+  </defs>
+  <rect width="800" height="440" rx="20" fill="url(#bg)"/>
+
+  <!-- left: brand -->
+  <text x="44" y="150" font-size="60" font-weight="800" fill="#fff">Vaani</text>
+  <text x="44" y="192" font-size="22" font-weight="600" fill="#5EEAD4">Your AI front desk.</text>
+  <text x="44" y="232" font-size="16" fill="#CBD5E1">Books appointments on WhatsApp and voice,</text>
+  <text x="44" y="256" font-size="16" fill="#CBD5E1">in your patients' own language, 24/7.</text>
+  <rect x="44" y="290" width="150" height="34" rx="17" fill="#0D9488"/>
+  <text x="119" y="312" font-size="14" font-weight="700" fill="#fff" text-anchor="middle">Built for clinics</text>
+
+  <!-- phone -->
+  <rect x="440" y="30" width="320" height="380" rx="22" fill="#ECE5DD"/>
+  <path d="M440 52a22 22 0 0 1 22-22h276a22 22 0 0 1 22 22v28H440z" fill="#075E54"/>
+  <circle cx="470" cy="55" r="15" fill="#5EEAD4"/>
+  <text x="470" y="60" font-size="14" font-weight="800" fill="#0F172A" text-anchor="middle">V</text>
+  <text x="494" y="52" font-size="14" font-weight="700" fill="#fff">Sharma Clinic</text>
+  <text x="494" y="68" font-size="11" fill="#B7F0E3">Vaani · online</text>
+
+  <!-- patient 1 -->
+  <g id="m1" class="m">
+    <rect x="480" y="98" width="260" height="38" rx="12" fill="#DCF8C6"/>
+    <text x="494" y="122" font-size="13" fill="#111">Kal shaam ko doctor se milna hai</text>
+  </g>
+  <!-- typing 1 -->
+  <g id="t1" class="m">
+    <rect x="460" y="152" width="62" height="30" rx="14" fill="#fff"/>
+    <circle class="d" cx="480" cy="167" r="3.5" fill="#667781"/><circle class="d d2" cx="491" cy="167" r="3.5" fill="#667781"/><circle class="d d3" cx="502" cy="167" r="3.5" fill="#667781"/>
+  </g>
+  <!-- vaani 1 -->
+  <g id="m2" class="m">
+    <rect x="460" y="152" width="270" height="96" rx="12" fill="#fff"/>
+    <text x="474" y="176" font-size="13" fill="#111">Namaste! Kal shaam ke slots khaali hain:</text>
+    <rect x="474" y="192" width="72" height="34" rx="17" fill="#E6F4F1" stroke="#0D9488"/><text x="510" y="213" font-size="12" font-weight="600" fill="#0F766E" text-anchor="middle">5:00 PM</text>
+    <rect x="554" y="192" width="72" height="34" rx="17" fill="#0D9488"/><text x="590" y="213" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">5:30 PM</text>
+    <rect x="634" y="192" width="72" height="34" rx="17" fill="#E6F4F1" stroke="#0D9488"/><text x="670" y="213" font-size="12" font-weight="600" fill="#0F766E" text-anchor="middle">6:00 PM</text>
+  </g>
+  <!-- patient 2 -->
+  <g id="m3" class="m">
+    <rect x="630" y="262" width="110" height="34" rx="12" fill="#DCF8C6"/>
+    <text x="685" y="284" font-size="13" fill="#111" text-anchor="middle">5:30 PM</text>
+  </g>
+  <!-- typing 2 -->
+  <g id="t2" class="m">
+    <rect x="460" y="308" width="62" height="30" rx="14" fill="#fff"/>
+    <circle class="d" cx="480" cy="323" r="3.5" fill="#667781"/><circle class="d d2" cx="491" cy="323" r="3.5" fill="#667781"/><circle class="d d3" cx="502" cy="323" r="3.5" fill="#667781"/>
+  </g>
+  <!-- vaani 2 -->
+  <g id="m4" class="m">
+    <rect x="460" y="308" width="270" height="78" rx="12" fill="#fff"/>
+    <text x="474" y="332" font-size="13" font-weight="700" fill="#0F766E">✓ Booking confirmed</text>
+    <text x="474" y="352" font-size="13" fill="#111">Dr. Rao · Kal, 5:30 PM</text>
+    <text x="474" y="372" font-size="12" fill="#667781">Reminder bhej dungi. Dhanyavaad!</text>
+  </g>
+</svg>
