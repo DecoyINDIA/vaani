@@ -23,6 +23,9 @@ seconds; request latency is observability data and must not be billed.
 Periods follow the tenant's IANA timezone. On the first local calendar day of a
 month, the worker snapshots the previous month's immutable usage events and
 creates one invoice record. A later plan change cannot rewrite that snapshot.
+One tenant's invalid timezone, plan, or billing identity does not stop other
+tenants: the worker records one PII-free `invoice_issuance_failed` operational
+alert per tenant/period and retries on its next scan.
 
 ## Delivery and reconciliation
 
