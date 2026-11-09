@@ -22,8 +22,16 @@ from pymongo.errors import DuplicateKeyError
 
 from app import audit
 from app.config import settings
-from app.models.base import get_db, serialize_mongo
-from app.models.collections import Bookings, JobRuns, Practitioners, Slots, Tenants, Waitlist
+from app.models.base import get_db, mongo_id_candidates, serialize_mongo
+from app.models.collections import (
+    Bookings,
+    Contacts,
+    JobRuns,
+    Practitioners,
+    Slots,
+    Tenants,
+    Waitlist,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -243,23 +251,30 @@ def _session(session: Any | None) -> dict[str, Any]:
 
 async def _booking_id(tenant_id: str, external_id: str) -> Any | None:
     """Resolve legacy string/generated IDs and fail on an ambiguous collision."""
-    candidates: list[Any] = [external_id]
-    if ObjectId.is_valid(external_id):
-        candidates.append(ObjectId(external_id))
-    matches = await Bookings(tenant_id).find({"_id": {"$in": candidates}}).to_list(length=2)
-    if len(matches) > 1:
-        raise ValueError("ambiguous booking id")
-    return matches[0]["_id"] if matches else None
+    return await Bookings(tenant_id).resolve_id(external_id)
+
+
+async def _slot_id(tenant_id: str, external_id: str) -> Any | None:
+    """Resolve legacy string/generated slot IDs and fail on an ambiguous collision."""
+    return await Slots(tenant_id).resolve_id(external_id)
+
+
+async def _contact_id(tenant_id: str, external_id: str) -> Any | None:
+    """Resolve legacy string/generated contact IDs and fail on an ambiguous collision."""
+    return await Contacts(tenant_id).resolve_id(external_id)
 
 
 async def hold_slot(tenant_id: str, slot_id: str, operation_id: str) -> bool:
     """Atomically hold a slot for 120 seconds if open or expired."""
     if not operation_id:
         raise ValueError("operation_id is required")
+    stored_slot_id = await _slot_id(tenant_id, slot_id)
+    if stored_slot_id is None:
+        return False
     now = dt.now(datetime.UTC).replace(tzinfo=None)
 
     query = {
-        "_id": slot_id,
+        "_id": stored_slot_id,
         "$or": [
             {"status": "open"},
             {"status": "held", "hold_expiry": {"$lt": now}},
@@ -289,12 +304,19 @@ async def confirm_booking(
     if existing:
         return serialize_mongo(existing)
 
+    stored_slot_id = await _slot_id(tenant_id, slot_id)
+    if stored_slot_id is None:
+        return None
+
+    stored_contact_id = await _contact_id(tenant_id, contact_id)
+    final_contact_id = stored_contact_id if stored_contact_id is not None else contact_id
+
     now = dt.now(datetime.UTC).replace(tzinfo=None)
     booking_id = ObjectId()
     booking = {
         "_id": booking_id,
-        "slot_id": slot_id,
-        "contact_id": contact_id,
+        "slot_id": stored_slot_id,
+        "contact_id": final_contact_id,
         "service": service,
         "status": "confirmed",
         "request_id": operation_id,
@@ -305,7 +327,7 @@ async def confirm_booking(
         async with _transaction() as session:
             slot = await Slots(tenant_id).find_one_and_update(
                 {
-                    "_id": slot_id,
+                    "_id": stored_slot_id,
                     "status": "held",
                     "hold_owner": operation_id,
                     "hold_expiry": {"$gt": now},
@@ -323,7 +345,7 @@ async def confirm_booking(
         logger.error("Failed to confirm booking for slot %s: %s", slot_id, e)
         if settings.use_mock_adapters:
             await Slots(tenant_id).update_one(
-                {"_id": slot_id, "booking_id": booking_id},
+                {"_id": stored_slot_id, "booking_id": booking_id},
                 {
                     "$set": {
                         "status": "held",
@@ -361,7 +383,13 @@ async def cancel_booking(
         return None
     query: dict[str, Any] = {"_id": stored_id}
     if contact_id is not None:
-        query["contact_id"] = contact_id
+        stored_contact = await _contact_id(tenant_id, contact_id)
+        candidates = (
+            [stored_contact, contact_id]
+            if stored_contact is not None
+            else mongo_id_candidates(contact_id)
+        )
+        query["contact_id"] = {"$in": candidates}
 
     async with _transaction() as session:
         booking = await Bookings(tenant_id).find_one(query, **_session(session))
@@ -384,8 +412,15 @@ async def cancel_booking(
         )
         if result.modified_count != 1:
             raise RuntimeError("booking changed during cancellation")
+
+        slot_candidates = mongo_id_candidates(str(booking["slot_id"]))
+        booking_id_candidates = mongo_id_candidates(str(booking["_id"]))
         await Slots(tenant_id).update_one(
-            {"_id": booking["slot_id"], "status": "booked", "booking_id": booking["_id"]},
+            {
+                "_id": {"$in": slot_candidates},
+                "status": "booked",
+                "booking_id": {"$in": booking_id_candidates},
+            },
             {"$set": {"status": "open"}, "$unset": {"booking_id": ""}},
             **_session(session),
         )
@@ -405,11 +440,20 @@ async def move_booking(
     stored_id = await _booking_id(tenant_id, booking_id)
     if stored_id is None:
         return None
+    stored_new_slot_id = await _slot_id(tenant_id, new_slot_id)
+    if stored_new_slot_id is None:
+        return None
     if not await hold_slot(tenant_id, new_slot_id, operation_id):
         return None
     query: dict[str, Any] = {"_id": stored_id}
     if contact_id is not None:
-        query["contact_id"] = contact_id
+        stored_contact = await _contact_id(tenant_id, contact_id)
+        candidates = (
+            [stored_contact, contact_id]
+            if stored_contact is not None
+            else mongo_id_candidates(contact_id)
+        )
+        query["contact_id"] = {"$in": candidates}
     now = dt.now(datetime.UTC).replace(tzinfo=None)
 
     async with _transaction() as session:
@@ -419,7 +463,7 @@ async def move_booking(
         old_slot_id = booking["slot_id"]
         new_slot = await Slots(tenant_id).find_one_and_update(
             {
-                "_id": new_slot_id,
+                "_id": stored_new_slot_id,
                 "status": "held",
                 "hold_owner": operation_id,
                 "hold_expiry": {"$gt": now},
@@ -432,11 +476,13 @@ async def move_booking(
         )
         if not new_slot:
             return None
+        old_slot_candidates = mongo_id_candidates(str(old_slot_id))
+        booking_id_candidates = mongo_id_candidates(str(booking["_id"]))
         updated = await Bookings(tenant_id).update_one(
-            {**query, "status": booking["status"], "slot_id": old_slot_id},
+            {**query, "status": booking["status"], "slot_id": {"$in": old_slot_candidates}},
             {
                 "$set": {
-                    "slot_id": new_slot_id,
+                    "slot_id": stored_new_slot_id,
                     "status": "rescheduled",
                     "move_request_id": operation_id,
                 }
@@ -446,7 +492,11 @@ async def move_booking(
         if updated.modified_count != 1:
             raise RuntimeError("booking changed during reschedule")
         await Slots(tenant_id).update_one(
-            {"_id": old_slot_id, "status": "booked", "booking_id": booking["_id"]},
+            {
+                "_id": {"$in": old_slot_candidates},
+                "status": "booked",
+                "booking_id": {"$in": booking_id_candidates},
+            },
             {"$set": {"status": "open"}, "$unset": {"booking_id": ""}},
             **_session(session),
         )
@@ -454,7 +504,7 @@ async def move_booking(
             "status": "success",
             "booking_id": str(booking["_id"]),
             "old_slot_id": str(old_slot_id),
-            "new_slot_id": str(new_slot_id),
+            "new_slot_id": str(stored_new_slot_id),
         }
 
 
@@ -474,7 +524,8 @@ async def claim_waitlist_slot(tenant_id: str, slot_id: str, contact_id: str, ser
         return False
         
     # 3. Update waitlist entry to fulfilled
-    slot = await Slots(tenant_id).find_one({"_id": slot_id})
+    stored_slot_id = await _slot_id(tenant_id, slot_id)
+    slot = await Slots(tenant_id).find_one({"_id": stored_slot_id}) if stored_slot_id else None
     if slot:
         practitioner_id = slot.get("practitioner_id")
         slot_date = slot.get("start")

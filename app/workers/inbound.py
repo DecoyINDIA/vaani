@@ -26,6 +26,7 @@ from app.channels.whatsapp import (
 )
 from app.config import settings
 from app.gateway.middleware import get_redis
+from app.models.base import mongo_id_candidates
 from app.models.collections import Bookings, Contacts, Conversations, Messages, Slots
 
 logger = logging.getLogger(__name__)
@@ -100,7 +101,10 @@ async def _resolve_conversation(
 
     conversations = Conversations(tenant_id)
     convo = await conversations.find_one(
-        {"contact_id": contact_id, "state": {"$in": ["bot", "human", "open"]}}
+        {
+            "contact_id": {"$in": mongo_id_candidates(contact_id)},
+            "state": {"$in": ["bot", "human", "open"]},
+        }
     )
     if convo:
         state = "bot" if convo["state"] == "open" else str(convo["state"])
@@ -458,10 +462,15 @@ async def process_event(fields: dict[str, Any]) -> None:
     intent = result.get("intent")
     if intent == "booking_status":
         booking = await Bookings(tenant_id).find_one(
-            {"contact_id": contact_id, "status": {"$in": ["confirmed", "rescheduled"]}}
+            {
+                "contact_id": {"$in": mongo_id_candidates(contact_id)},
+                "status": {"$in": ["confirmed", "rescheduled"]},
+            }
         )
         if booking:
-            slot = await Slots(tenant_id).find_one({"_id": booking["slot_id"]})
+            slot = await Slots(tenant_id).find_one(
+                {"_id": {"$in": mongo_id_candidates(str(booking["slot_id"]))}}
+            )
             start = slot.get("start") if slot else None
             when = start.isoformat() if isinstance(start, datetime) else "unknown time"
             response = f"Your appointment is {booking['status']} for {when}."
@@ -469,7 +478,10 @@ async def process_event(fields: dict[str, Any]) -> None:
             response = "I could not find an active appointment for this WhatsApp number."
     elif intent == "cancel":
         booking = await Bookings(tenant_id).find_one(
-            {"contact_id": contact_id, "status": {"$in": ["confirmed", "rescheduled"]}}
+            {
+                "contact_id": {"$in": mongo_id_candidates(contact_id)},
+                "status": {"$in": ["confirmed", "rescheduled"]},
+            }
         )
         if booking:
             cancellation = await booking_cancel(
@@ -494,7 +506,10 @@ async def process_event(fields: dict[str, Any]) -> None:
         existing_booking = None
         if intent == "reschedule":
             existing_booking = await Bookings(tenant_id).find_one(
-                {"contact_id": contact_id, "status": {"$in": ["confirmed", "rescheduled"]}}
+                {
+                    "contact_id": {"$in": mongo_id_candidates(contact_id)},
+                    "status": {"$in": ["confirmed", "rescheduled"]},
+                }
             )
             if not existing_booking:
                 response = "I could not find an active appointment to reschedule."

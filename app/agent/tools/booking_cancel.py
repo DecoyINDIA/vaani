@@ -7,6 +7,7 @@ from typing import Any
 
 from app import audit
 from app.booking.engine import cancel_booking
+from app.models.base import mongo_id_candidates
 from app.models.collections import Slots, Waitlist
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ async def booking_cancel(
         return {"status": "failed", "reason": "booking_not_found"}
 
     slot_id = booking["slot_id"]
-    slot = await slots.find_one({"_id": slot_id})
+    slot = await slots.find_one({"_id": {"$in": mongo_id_candidates(str(slot_id))}})
     
     # Audit cancellation
     await audit.record(

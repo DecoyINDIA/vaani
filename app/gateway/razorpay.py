@@ -18,7 +18,7 @@ from fastapi import APIRouter, Request, Response
 from app import audit
 from app.billing.plans import plan_from_provider_id
 from app.config import settings
-from app.models.base import get_db
+from app.models.base import get_db, mongo_id_candidates
 from app.models.collections import BillingSubscriptions, Bookings, Payments, Tenants
 
 logger = logging.getLogger(__name__)
@@ -99,7 +99,11 @@ async def receive(request: Request) -> Response:
                 errors.append("payment_status")
             booking_id = payment_record.get("booking_id")
             booking = (
-                await Bookings(tenant_id).find_one({"_id": booking_id}) if booking_id else None
+                await Bookings(tenant_id).find_one(
+                    {"_id": {"$in": mongo_id_candidates(str(booking_id))}}
+                )
+                if booking_id
+                else None
             )
             if booking and booking.get("status") == "cancelled":
                 errors.append("cancelled_booking")

@@ -31,7 +31,7 @@ def serialize_mongo[T](value: T) -> T:
         return cast(T, str(value))
     if isinstance(value, dict):
         return cast(T, {key: serialize_mongo(item) for key, item in value.items()})
-    if isinstance(value, list):
+    if isinstance(value, (list, tuple)):
         return cast(T, [serialize_mongo(item) for item in value])
     return value
 
@@ -102,6 +102,11 @@ class TenantScoped:
     ) -> Any:
         return await self._col.update_one(self._scoped(filter), update, *args, **kwargs)
 
+    async def update_many(
+        self, filter: dict[str, Any], update: dict[str, Any], *args: Any, **kwargs: Any
+    ) -> Any:
+        return await self._col.update_many(self._scoped(filter), update, *args, **kwargs)
+
     async def find_one_and_update(
         self, filter: dict[str, Any], update: dict[str, Any], *args: Any, **kwargs: Any
     ) -> Any:
@@ -112,4 +117,14 @@ class TenantScoped:
 
     async def count_documents(self, filter: dict[str, Any], *args: Any, **kwargs: Any) -> int:
         return await self._col.count_documents(self._scoped(filter), *args, **kwargs)
+
+    async def resolve_id(self, external_id: str) -> Any | None:
+        """Resolve legacy string or generated ObjectId IDs; reject ambiguous collisions."""
+        if not external_id:
+            return None
+        candidates = mongo_id_candidates(external_id)
+        matches = await self.find({"_id": {"$in": candidates}}).to_list(length=2)
+        if len(matches) > 1:
+            raise ValueError(f"ambiguous {self.collection} id")
+        return matches[0]["_id"] if matches else None
 
