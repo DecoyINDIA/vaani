@@ -34,6 +34,55 @@ def test_unverified_callback_cannot_mint_stream_grant() -> None:
     assert "token=" not in response.text
 
 
+def test_unverified_missed_call_callback_is_rejected() -> None:
+    response = TestClient(app).post(
+        "/webhooks/exotel/missed_call",
+        data={
+            "To": "919999999998",
+            "From": "919876543299",
+            "CallSid": "attacker-selected-missed-call",
+        },
+    )
+    assert response.status_code == 401
+
+
+async def test_verified_missed_call_callback_triggers_bridge(monkeypatch: pytest.MonkeyPatch) -> None:
+    db = get_db()
+    tenant_id = "test_tenant"
+    await db["tenants"].update_one(
+        {"_id": tenant_id},
+        {"$set": {"voice_number": "919999999998", "name": "Sharma Dental Clinic"}},
+        upsert=True,
+    )
+    from unittest.mock import AsyncMock
+
+    monkeypatch.setattr(
+        "app.gateway.exotel.verify_exotel_call",
+        AsyncMock(return_value={"Sid": "verified-missed-call"}),
+    )
+    monkeypatch.setattr(
+        "app.channels.whatsapp.send_template",
+        AsyncMock(return_value={"status": "sent"}),
+    )
+    client = TestClient(app)
+    response = client.post(
+        "/webhooks/exotel/missed_call",
+        data={
+            "To": "919999999998",
+            "From": "919876543299",
+            "CallSid": "verified-missed-call",
+        },
+    )
+    assert response.status_code == 200
+    contact = await db["contacts"].find_one({"tenant_id": tenant_id, "phone": "919876543299"})
+    assert contact is not None
+    conv = await db["conversations"].find_one(
+        {"tenant_id": tenant_id, "contact_id": str(contact["_id"])}
+    )
+    assert conv is not None
+    assert conv["state"] == "bot"
+
+
 async def test_call_details_contract_is_verified(monkeypatch: pytest.MonkeyPatch) -> None:
     class Response:
         status_code = 200
@@ -195,3 +244,97 @@ async def test_verified_call_duration_is_metered_once_and_callback_mismatch_reje
         {"tenant_id": tenant_id, "period": "2026-08"}
     )
     assert meter["voice_audio_seconds"] == 61
+
+
+async def test_websocket_stream_grant_security_boundaries() -> None:
+    from fastapi import WebSocketDisconnect
+
+    client = TestClient(app)
+    db = get_db()
+    await db["tenants"].update_one(
+        {"_id": "test_tenant"},
+        {"$set": {"voice_number": "919999999998"}},
+        upsert=True,
+    )
+    # 1. No token provided -> 4003
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with client.websocket_connect("/webhooks/stream/test_tenant/call-ws-no-token") as ws:
+            ws.receive_json()
+    assert exc.value.code == 4003
+
+    # 2. Token issued for call-1, caller-1
+    token = await issue_stream_grant("test_tenant", "call-ws-1", "919876543210")
+    assert token is not None
+
+    # Mismatched caller query param -> 4003
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with client.websocket_connect(
+            f"/webhooks/stream/test_tenant/call-ws-1?token={token}&caller_phone=919999999999"
+        ) as ws:
+            ws.receive_json()
+    assert exc.value.code == 4003
+
+    # Wrong tenant in path -> 4003
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with client.websocket_connect(
+            f"/webhooks/stream/other_tenant/call-ws-1?token={token}&caller_phone=919876543210"
+        ) as ws:
+            ws.receive_json()
+    assert exc.value.code == 4003
+
+    # Wrong call_sid in path -> 4003
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with client.websocket_connect(
+            f"/webhooks/stream/test_tenant/wrong-call?token={token}&caller_phone=919876543210"
+        ) as ws:
+            ws.receive_json()
+    assert exc.value.code == 4003
+
+    # Tampered signature -> 4003
+    parts = token.split(".")
+    tampered = f"{parts[0]}.{parts[1]}.{'0' * len(parts[2])}"
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with client.websocket_connect(
+            f"/webhooks/stream/test_tenant/call-ws-1?token={tampered}&caller_phone=919876543210"
+        ) as ws:
+            ws.receive_json()
+    assert exc.value.code == 4003
+
+    # Successful connection consumes token once
+    with client.websocket_connect(
+        f"/webhooks/stream/test_tenant/call-ws-1?token={token}&caller_phone=919876543210"
+    ) as ws:
+        ws.send_json({"event": "connected"})
+
+    # Replay of consumed token is rejected -> 4003
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with client.websocket_connect(
+            f"/webhooks/stream/test_tenant/call-ws-1?token={token}&caller_phone=919876543210"
+        ) as ws:
+            ws.receive_json()
+    assert exc.value.code == 4003
+
+
+async def test_voice_stream_session_cleanup_on_disconnect() -> None:
+    client = TestClient(app)
+    db = get_db()
+    tenant_id = "test_tenant"
+    await db["tenants"].update_one(
+        {"_id": tenant_id},
+        {"$set": {"voice_number": "919999999998"}},
+        upsert=True,
+    )
+    token = await issue_stream_grant(tenant_id, "call-cleanup-test", "919876543210")
+    assert token is not None
+
+    with client.websocket_connect(
+        f"/webhooks/stream/{tenant_id}/call-cleanup-test?token={token}&caller_phone=919876543210"
+    ):
+        pass
+
+    conv = await db["conversations"].find_one(
+        {"tenant_id": tenant_id, "_id": "conv_call-cleanup-test"}
+    )
+    assert conv is not None
+    assert conv["state"] == "closed"
+    assert conv["ended_at"] is not None

@@ -16,7 +16,12 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 
-async def synthesize(text: str, lang: str, provider: str | None = None) -> bytes:
+async def synthesize(
+    text: str,
+    lang: str,
+    provider: str | None = None,
+    sample_rate: int = 8000,
+) -> bytes:
     """Synthesize text into WAV/MP3 audio bytes using the configured TTS provider.
     
     If the API keys are not present, it generates simulated audio bytes
@@ -31,12 +36,12 @@ async def synthesize(text: str, lang: str, provider: str | None = None) -> bytes
         sleep_duration = min(latency_sec, 0.05)  # Keep tests fast
         time.sleep(sleep_duration)
 
-        audio_len = max(800, len(text) * 160)
+        audio_len = max(800, len(text) * (sample_rate // 50))
         output = BytesIO()
         with wave_open(output, "wb") as wav:
             wav.setnchannels(1)
             wav.setsampwidth(2)
-            wav.setframerate(8000)
+            wav.setframerate(sample_rate)
             wav.writeframes(b"\x00\x00" * audio_len)
         return output.getvalue()
 
@@ -55,7 +60,7 @@ async def synthesize(text: str, lang: str, provider: str | None = None) -> bytes
         lang_code_map = {
             "hi": "hi-IN",
             "hi-Latn": "hi-IN",
-            "or": "or-IN",
+            "or": "od-IN",
             "en": "en-IN"
         }
         target_lang = lang_code_map.get(lang, "en-IN")
@@ -66,7 +71,7 @@ async def synthesize(text: str, lang: str, provider: str | None = None) -> bytes
             "speaker": "priya",
             "model": "bulbul:v3",
             "output_audio_codec": "wav",
-            "speech_sample_rate": 8000,
+            "speech_sample_rate": sample_rate,
         }
         headers = {
             "api-subscription-key": settings.sarvam_api_key,
