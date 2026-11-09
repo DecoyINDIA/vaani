@@ -98,7 +98,10 @@ async def intent(state: AgentState) -> dict[str, Any]:
 
         return {"intent": detected_intent, "confidence": confidence}
     except Exception as e:
-        logger.error(f"Intent classification failed: {e}")
-        # Default fallback
-        return {"intent": "out_of_scope", "confidence": 0.0}
+        logger.error("Intent classification failed: %s", type(e).__name__)
+        return {
+            "intent": "out_of_scope",
+            "confidence": 0.0,
+            "agent_error": "llm_unavailable",
+        }
 

@@ -22,5 +22,6 @@ class AgentState(TypedDict, total=False):
     tool_results: list[dict[str, Any]]
     response: str
     escalate: bool
+    agent_error: str
     retry_count: int
     regenerate: bool
