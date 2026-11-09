@@ -31,7 +31,14 @@ async def _contact(tenant_id: str, contact_id: str) -> dict[str, Any] | None:
     if ObjectId.is_valid(contact_id):
         candidates.append(ObjectId(contact_id))
     matches = await get_db()["contacts"].find(
-        {"tenant_id": tenant_id, "_id": {"$in": candidates}}
+        {
+            "tenant_id": tenant_id,
+            "$or": [
+                {"_id": {"$in": candidates}},
+                {"phone": contact_id},
+                {"wa_id": contact_id},
+            ],
+        }
     ).to_list(length=2)
     if len(matches) > 1:
         raise ValueError("ambiguous contact id")
@@ -45,6 +52,7 @@ async def erase_patient(
     request_id: str,
     authorized_by: str | None = None,
     apply: bool = False,
+    provider_case_ids: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Report or apply erasure without returning patient data as evidence."""
     if apply and not authorized_by:
@@ -59,6 +67,7 @@ async def erase_patient(
             "request_id": request_id,
             "status": "already_completed" if previous else "not_found",
             "counts": previous.get("counts", {}) if previous else {},
+            "provider_case_ids": previous.get("provider_case_ids", {}) if previous else {},
         }
 
     stored_contact_id = contact["_id"]
@@ -116,13 +125,28 @@ async def erase_patient(
     escalation_count = await db["escalations"].count_documents(
         {"tenant_id": tenant_id, "conversation_id": {"$in": conversation_ids}}
     )
+    slot_count = (
+        await db["slots"].count_documents(
+            {
+                "tenant_id": tenant_id,
+                "booking_id": {"$in": booking_ids + [str(b) for b in booking_ids]},
+            }
+        )
+        if booking_ids
+        else 0
+    )
+    voice_grants_count = await db["voice_grants"].count_documents(
+        {"tenant_id": tenant_id, "caller_phone": {"$in": list(identifiers)}}
+    )
     counts = {
         "contacts_delete": 1,
         "conversations_delete": len(conversations),
         "messages_delete": len(message_ids),
         "bookings_delete": len(booking_docs),
+        "slots_unlinked": slot_count,
         "waitlist_delete": waitlist_count,
         "escalations_delete": escalation_count,
+        "voice_grants_delete": voice_grants_count,
         "payments_pseudonymize": len(payment_docs),
         "audit_pseudonymize": len(matching_audit),
         "outbound_suppress": len(matching_outbound),
@@ -132,6 +156,13 @@ async def erase_patient(
         "status": "dry_run" if not apply else "completed",
         "counts": counts,
         "retained_exceptions": ["payments", "audit_log", "erasure_suppression"],
+        "provider_deletion_obligations": [
+            "meta_whatsapp",
+            "exotel",
+            "sarvam_ai",
+            "razorpay",
+        ],
+        "provider_case_ids": provider_case_ids or {},
     }
     if not apply:
         return report
@@ -145,6 +176,13 @@ async def erase_patient(
                 "status": "running",
                 "contact_hash": contact_hash,
                 "authorized_by": authorized_by,
+                "provider_case_ids": provider_case_ids or {},
+                "provider_deletion_obligations": [
+                    "meta_whatsapp",
+                    "exotel",
+                    "sarvam_ai",
+                    "razorpay",
+                ],
                 "updated_at": now,
             }
         },
@@ -197,8 +235,19 @@ async def erase_patient(
             {"tenant_id": tenant_id, "_id": {"$in": conversation_ids}}
         )
     if booking_ids:
+        await db["slots"].update_many(
+            {
+                "tenant_id": tenant_id,
+                "booking_id": {"$in": booking_ids + [str(b) for b in booking_ids]},
+            },
+            {"$set": {"status": "open"}, "$unset": {"booking_id": ""}},
+        )
         await db["bookings"].delete_many(
             {"tenant_id": tenant_id, "_id": {"$in": booking_ids}}
+        )
+    if voice_grants_count > 0:
+        await db["voice_grants"].delete_many(
+            {"tenant_id": tenant_id, "caller_phone": {"$in": list(identifiers)}}
         )
     await db["waitlist"].delete_many(
         {"tenant_id": tenant_id, "contact_id": {"$in": id_variants}}
@@ -206,7 +255,14 @@ async def erase_patient(
     await db["contacts"].delete_one({"tenant_id": tenant_id, "_id": stored_contact_id})
     await db["erasure_requests"].update_one(
         {"tenant_id": tenant_id, "request_id": request_id},
-        {"$set": {"status": "completed", "counts": counts, "completed_at": now}},
+        {
+            "$set": {
+                "status": "completed",
+                "counts": counts,
+                "provider_case_ids": provider_case_ids or {},
+                "completed_at": now,
+            }
+        },
     )
     return report
 
@@ -218,13 +274,25 @@ async def main() -> None:
     parser.add_argument("--request-id", required=True)
     parser.add_argument("--authorized-by")
     parser.add_argument("--apply", action="store_true")
+    parser.add_argument(
+        "--provider-case-id",
+        action="append",
+        default=[],
+        help="Provider deletion case identifier in key=value format (e.g. whatsapp=CASE-1)",
+    )
     args = parser.parse_args()
+    provider_cases: dict[str, str] = {}
+    for item in args.provider_case_id:
+        if "=" in item:
+            k, v = item.split("=", 1)
+            provider_cases[k.strip()] = v.strip()
     report = await erase_patient(
         args.tenant,
         args.contact,
         request_id=args.request_id,
         authorized_by=args.authorized_by,
         apply=args.apply,
+        provider_case_ids=provider_cases,
     )
     print(json.dumps(report, indent=2))
 

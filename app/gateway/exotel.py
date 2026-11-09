@@ -27,6 +27,7 @@ from app.channels.voice.exotel_protocol import (
 from app.channels.voice.session import VoiceSession
 from app.config import settings
 from app.models.collections import Tenants, VoiceGrants
+from app.privacy import is_suppressed
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["webhooks"])
@@ -214,6 +215,17 @@ async def receive(request: Request) -> Response:
         )
         return Response(content=refusal_xml, media_type="application/xml")
 
+    if await is_suppressed(tenant_id, str(from_number)):
+        logger.info("Refusing call from suppressed caller %s", from_number)
+        refusal_xml = (
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            "<Response>\n"
+            "    <Say>This number is not registered on the Vaani platform.</Say>\n"
+            "    <Hangup/>\n"
+            "</Response>"
+        )
+        return Response(content=refusal_xml, media_type="application/xml")
+
     # Connect to the media stream WebSocket
     host = request.url.netloc
     scheme = "wss" if request.url.scheme == "https" else "ws"
@@ -274,6 +286,10 @@ async def missed_call(request: Request) -> Response:
         logger.warning(f"Tenant resolution failed for missed call: {e}")
         return Response(content="Tenant not found", status_code=404)
     tenant = await Tenants.find_by_id(tenant_id)
+
+    if await is_suppressed(tenant_id, str(from_number)):
+        logger.info("Ignoring missed call from suppressed caller %s", from_number)
+        return Response(content="Suppressed caller", status_code=200)
 
     # 1. Resolve or create contact
     from app.models.collections import Contacts, Conversations
