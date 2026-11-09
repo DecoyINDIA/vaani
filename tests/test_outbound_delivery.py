@@ -155,9 +155,47 @@ async def test_failed_reminder_is_not_recorded_as_sent() -> None:
     assert booking["reminder_status"]["24h"]["state"] == "failed"
 
 
+async def test_unknown_reminder_is_not_reclaimed() -> None:
+    tenant_id = "t_reminder_unknown"
+    now = datetime(2026, 11, 7, 3, 30)
+    await get_db()["tenants"].insert_one({"_id": tenant_id, "timezone": "UTC"})
+    await Slots(tenant_id).insert_one(
+        {
+            "_id": "unknown-reminder-slot",
+            "status": "booked",
+            "booking_id": "unknown-reminder-booking",
+            "start": now + timedelta(hours=24),
+        }
+    )
+    await Bookings(tenant_id).insert_one(
+        {
+            "_id": "unknown-reminder-booking",
+            "slot_id": "unknown-reminder-slot",
+            "contact_id": "unknown-reminder-contact",
+            "status": "confirmed",
+        }
+    )
+    await Contacts(tenant_id).insert_one(
+        {"_id": "unknown-reminder-contact", "wa_id": "933333333335"}
+    )
+    send = AsyncMock(side_effect=AmbiguousDeliveryError("provider result unknown"))
+
+    with patch("app.workers.reminders.send_template", send):
+        await run_reminders(now=now)
+        await run_reminders(now=now)
+
+    assert send.await_count == 1
+    booking = await Bookings(tenant_id).find_one({"_id": "unknown-reminder-booking"})
+    assert booking is not None
+    assert booking["reminder_status"]["24h"]["state"] == "unknown"
+
+
 async def test_reminder_uses_approved_contract_and_contact_language() -> None:
     tenant_id = "t_reminder_contract"
-    now = datetime(2026, 11, 7, 3, 30)
+    now = datetime(2026, 11, 7, 3, 30, tzinfo=UTC)
+    await get_db()["tenants"].insert_one(
+        {"_id": "t_reminder_invalid", "timezone": "Invalid/Timezone"}
+    )
     await get_db()["tenants"].insert_one(
         {
             "_id": tenant_id,
@@ -172,7 +210,7 @@ async def test_reminder_uses_approved_contract_and_contact_language() -> None:
             "status": "booked",
             "booking_id": "contract-booking",
             "practitioner_id": "contract-doctor",
-            "start": now + timedelta(hours=24),
+            "start": now.replace(tzinfo=None) + timedelta(hours=24),
         }
     )
     await get_db()["practitioners"].insert_one(
@@ -216,6 +254,14 @@ async def test_reminder_uses_approved_contract_and_contact_language() -> None:
         operation_key="reminder:contract-booking:24h",
         language_code="or",
     )
+    alert = await get_db()["audit_log"].find_one(
+        {"tenant_id": "t_reminder_invalid", "event_type": "operational_alert"}
+    )
+    assert alert["payload"] == {
+        "kind": "reminder_scan_failed",
+        "date": "2026-11-07",
+        "error_type": "ZoneInfoNotFoundError",
+    }
 
 
 async def test_weekly_summary_failure_does_not_starve_other_tenants() -> None:

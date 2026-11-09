@@ -7,6 +7,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
+from typing import Any
 from zoneinfo import ZoneInfo
 
 from app import audit
@@ -16,13 +17,7 @@ from app.models.collections import Bookings, Contacts, Practitioners, Slots, Ten
 logger = logging.getLogger(__name__)
 
 
-async def run_reminders(*, now: datetime | None = None) -> None:
-    """Scan all tenants and send upcoming booking reminders."""
-    # 1. Fetch all tenants
-    tenants = await Tenants.all()
-    
-    now = now or datetime.now(UTC).replace(tzinfo=None)
-    
+async def _scan_reminders(tenants: list[dict[str, Any]], now: datetime) -> None:
     for tenant in tenants:
         tenant_id = str(tenant["_id"])
         bookings_accessor = Bookings(tenant_id)
@@ -98,7 +93,9 @@ async def run_reminders(*, now: datetime | None = None) -> None:
                     {
                         "_id": booking["_id"],
                         "status": {"$in": ["confirmed", "rescheduled"]},
-                        f"{state_path}.state": {"$nin": ["sending", "sent", "delivered"]},
+                        f"{state_path}.state": {
+                            "$nin": ["sending", "sent", "delivered", "unknown"]
+                        },
                     },
                     {
                         "$set": {
@@ -185,6 +182,34 @@ async def run_reminders(*, now: datetime | None = None) -> None:
                         "language": language_code,
                     },
                 )
+
+
+async def run_reminders(*, now: datetime | None = None) -> None:
+    """Scan tenants independently so one invalid configuration cannot starve others."""
+    instant = now or datetime.now(UTC)
+    scan_now = (
+        instant.astimezone(UTC).replace(tzinfo=None)
+        if instant.tzinfo is not None
+        else instant
+    )
+    for tenant in await Tenants.all():
+        tenant_id = str(tenant["_id"])
+        try:
+            await _scan_reminders([tenant], scan_now)
+        except Exception as exc:
+            error_type = type(exc).__name__
+            await audit.record(
+                tenant_id,
+                actor="system",
+                event_type="operational_alert",
+                operation_key=f"reminder-scan-failed:{scan_now:%Y-%m-%d}",
+                payload={
+                    "kind": "reminder_scan_failed",
+                    "date": scan_now.date().isoformat(),
+                    "error_type": error_type,
+                },
+            )
+            logger.exception("Reminder scan failed for tenant %s", tenant_id)
 
 
 def main() -> None:
