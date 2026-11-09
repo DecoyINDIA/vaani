@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 from app.channels.whatsapp import send_freeform
 from app.config import settings
 from app.kb.embedding import embed_text
-from app.models.base import get_db, mongo_id_candidates, serialize_mongo
+from app.models.base import mongo_id_candidates, serialize_mongo
 from app.models.collections import (
     AuditLog,
     Bookings,
@@ -455,10 +455,7 @@ class SettingsUpdate(BaseModel):
 async def update_settings_api(
     payload: SettingsUpdate, tenant_id: str = Depends(require_owner_tenant)
 ) -> dict[str, Any]:
-    await get_db()["tenants"].update_one(
-        {"_id": tenant_id},
-        {"$set": payload.model_dump()}
-    )
+    await Tenants.update_settings(tenant_id, payload.model_dump())
     return {"status": "success"}
 
 

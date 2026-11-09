@@ -36,6 +36,15 @@ class Tenants(TenantScoped):
         )
 
     @classmethod
+    async def update_settings(
+        cls, tenant_id: str, values: dict[str, Any]
+    ) -> None:
+        await get_db()[cls.collection].update_one(
+            {"_id": tenant_id},
+            {"$set": values},
+        )
+
+    @classmethod
     async def find_by_wa_number(cls, wa_number: str) -> dict[str, Any] | None:
         return await get_db()[cls.collection].find_one({"wa_number": wa_number})
 
