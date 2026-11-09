@@ -71,7 +71,11 @@ def build_graph() -> Any:
     )
     
     # 5. Core flow edges
-    workflow.add_edge("tool_router", "responder")
+    workflow.add_conditional_edges(
+        "tool_router",
+        lambda state: "handoff" if state.get("escalate") else "responder",
+        {"handoff": "handoff", "responder": "responder"},
+    )
     workflow.add_edge("responder", "output_gate")
     
     # 6. Conditional edge from output_gate for regeneration

@@ -39,7 +39,11 @@ class Settings(BaseSettings):
     openrouter_api_key: str = ""
     llm_model_classifier: str = ""       # small/cheap model, temp 0
     llm_model_responder: str = ""        # frontier model
+    llm_model_embedding: str = ""        # OpenRouter embedding model
     llm_model_fallback_provider: str = ""
+    kb_text_index: str = "kb_text"
+    kb_vector_index: str = "kb_vector"
+    kb_embedding_dimensions: int = 1536
 
     # --- Voice (ADR-05, Phase 2: Exotel + Sarvam-first STT/TTS) ---
     exotel_sid: str = ""
@@ -90,6 +94,7 @@ class Settings(BaseSettings):
             "openrouter_api_key",
             "llm_model_classifier",
             "llm_model_responder",
+            "llm_model_embedding",
             "exotel_sid",
             "exotel_api_key",
             "exotel_api_token",
@@ -111,6 +116,8 @@ class Settings(BaseSettings):
             errors.append("deepgram_api_key is required by stt_provider")
         if self.tts_provider == "elevenlabs" and not self.elevenlabs_api_key:
             errors.append("elevenlabs_api_key is required by tts_provider")
+        if self.kb_embedding_dimensions < 1:
+            errors.append("kb_embedding_dimensions must be positive")
 
         if errors:
             raise ValueError("Unsafe runtime configuration: " + "; ".join(errors))
