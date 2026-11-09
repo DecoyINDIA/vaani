@@ -9,12 +9,52 @@ Writes to the `audit_log` collection (TRD §3): append-only, TTL 90d default.
 
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 from typing import Any, Literal
 
+import httpx
+
+from app.config import settings
 from app.models.collections import AuditLog
 
+logger = logging.getLogger(__name__)
+
 Actor = Literal["agent", "user", "owner", "system"]
+
+_FORBIDDEN_ALERT_KEYS = frozenset(
+    {
+        "phone",
+        "wa_id",
+        "caller_phone",
+        "patient_name",
+        "name",
+        "text",
+        "body",
+        "transcript",
+        "payload",
+        "email",
+    }
+)
+
+
+async def _dispatch_operational_alert(tenant_id: str, payload: dict[str, Any]) -> None:
+    destination = settings.alerts_destination_url
+    if not destination:
+        return
+    sanitized = {k: v for k, v in payload.items() if k not in _FORBIDDEN_ALERT_KEYS}
+    body = {
+        "tenant_id": tenant_id,
+        "event_type": "operational_alert",
+        "kind": str(sanitized.get("kind", "unknown")),
+        "details": sanitized,
+        "timestamp": datetime.now(UTC).isoformat(),
+    }
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            await client.post(destination, json=body)
+    except Exception as exc:
+        logger.warning("Failed to dispatch operational alert to %s: %s", destination, exc)
 
 
 async def record(
@@ -31,7 +71,7 @@ async def record(
         "actor": actor,
         "event_type": event_type,
         "payload": payload,
-        "ts": datetime.now(UTC).replace(tzinfo=None)
+        "ts": datetime.now(UTC).replace(tzinfo=None),
     }
     if conversation_id:
         audit_entry["conversation_id"] = conversation_id
@@ -46,3 +86,6 @@ async def record(
         )
     else:
         await accessor.insert_one(audit_entry)
+
+    if event_type == "operational_alert":
+        await _dispatch_operational_alert(tenant_id, payload)

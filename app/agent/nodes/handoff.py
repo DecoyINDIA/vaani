@@ -29,6 +29,21 @@ async def handoff(state: AgentState) -> dict[str, Any]:
 
     logger.info(f"Handoff node triggered for conversation {conv_id}")
     
+    if agent_error:
+        from app import audit
+
+        await audit.record(
+            tenant_id,
+            actor="system",
+            event_type="operational_alert",
+            payload={
+                "kind": "provider_failure",
+                "provider": "openrouter_llm",
+                "reason": str(agent_error),
+            },
+            operation_key=f"llm-failure-alert:{conv_id}",
+        )
+
     # Run the escalation tool to silence the bot, alert staff and create escalation row
     result = await escalate(
         tenant_id,

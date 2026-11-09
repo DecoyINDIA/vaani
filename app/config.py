@@ -70,6 +70,7 @@ class Settings(BaseSettings):
 
     # --- Observability ---
     sentry_dsn: str = ""
+    alerts_destination_url: str = ""
 
     # --- Ops ---
     audit_log_retention_days: int = 90

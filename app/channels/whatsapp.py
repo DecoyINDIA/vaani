@@ -190,11 +190,33 @@ async def _post(
                 {"operation_key": operation_key, "state": "sending"},
                 {"$set": {"state": "unknown", "last_error": type(e).__name__}},
             )
+            await audit.record(
+                tenant_id,
+                actor="system",
+                event_type="operational_alert",
+                payload={
+                    "kind": "unknown_delivery",
+                    "operation_key": operation_key,
+                    "error_type": type(e).__name__,
+                },
+                operation_key=f"unknown-delivery-alert:{operation_key}",
+            )
             raise AmbiguousDeliveryError("provider result is unknown") from e
         if resp.status_code != 200:
             await intents.update_one(
                 {"operation_key": operation_key, "state": "sending"},
                 {"$set": {"state": "failed", "last_error": f"HTTP {resp.status_code}"}},
+            )
+            await audit.record(
+                tenant_id,
+                actor="system",
+                event_type="operational_alert",
+                payload={
+                    "kind": "provider_failure",
+                    "provider": "meta_whatsapp",
+                    "status_code": resp.status_code,
+                },
+                operation_key=f"provider-failure-alert:{operation_key}",
             )
             raise RuntimeError(f"WhatsApp API error {resp.status_code}")
         data = resp.json()

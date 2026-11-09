@@ -691,6 +691,45 @@ async def _dead_letter(r: Any, msg_id: str, fields: dict[str, Any], reason: str)
     await Messages.mark_failed_unscoped(durable_id, reason=reason)
     await r.xadd(DEAD_LETTER, {**fields, "failed_msg_id": msg_id, "reason": reason})
     await r.xack(STREAM, GROUP, msg_id)
+    tenant_id = str(fields.get("tenant_id", "system"))
+    await audit.record(
+        tenant_id,
+        actor="system",
+        event_type="operational_alert",
+        payload={"kind": "dead_letter", "failed_msg_id": msg_id, "reason": reason},
+        operation_key=f"dlq-alert:{msg_id}",
+    )
+
+
+async def check_queue_age(
+    r: Any, *, max_age_seconds: float = 60.0, now_ts: float | None = None
+) -> float | None:
+    """Inspect oldest pending stream entry and alert if older than threshold."""
+    try:
+        pending = await r.xpending(STREAM, GROUP)
+        if not pending or not pending.get("pending") or not pending.get("min"):
+            return None
+        min_id = str(pending["min"])
+        min_ms = float(min_id.split("-")[0])
+        current_s = now_ts if now_ts is not None else datetime.now(UTC).timestamp()
+        age_seconds = current_s - (min_ms / 1000.0)
+        if age_seconds > max_age_seconds:
+            await audit.record(
+                "system",
+                actor="system",
+                event_type="operational_alert",
+                payload={
+                    "kind": "queue_age",
+                    "age_seconds": round(age_seconds, 2),
+                    "threshold_seconds": max_age_seconds,
+                    "pending_count": pending.get("pending", 0),
+                },
+                operation_key=f"queue-age-alert:{int(current_s // 60)}",
+            )
+        return age_seconds
+    except Exception as exc:
+        logger.debug("check_queue_age check skipped: %s", exc)
+        return None
 
 
 async def _handle(r: Any, msg_id: str, fields: dict[str, Any], deliveries: int) -> None:
@@ -763,6 +802,12 @@ async def run_scheduler_background() -> None:
             reconciled = await OutboundIntents.mark_stale_sending_unknown_unscoped()
             if reconciled:
                 logger.warning("Marked %d interrupted outbound sends unknown", reconciled)
+                await audit.record(
+                    "system",
+                    actor="system",
+                    event_type="operational_alert",
+                    payload={"kind": "unknown_delivery", "reconciled_count": reconciled},
+                )
         except Exception as e:
             logger.error("Background scheduler error in send reconciliation: %s", e)
 
