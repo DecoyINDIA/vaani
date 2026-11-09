@@ -337,15 +337,23 @@ async def test_reminders_worker():
 async def test_weekly_summaries():
     tenant_id = "tenant_weekly_test"
     db = get_db()
-    
+    instant = datetime(2026, 11, 8, 17, 30, tzinfo=UTC)  # Sunday 23:00 IST
+    now = instant.replace(tzinfo=None)
+
     await db["tenants"].insert_one({
         "_id": tenant_id,
         "name": "Sharma Clinic",
+        "timezone": "Asia/Kolkata",
         "status": "active"
     })
-    
+    await db["users"].insert_one({
+        "tenant_id": tenant_id,
+        "role": "owner",
+        "status": "active",
+        "wa_id": "919999999991",
+    })
+
     # Create conversations (some active, one escalated)
-    now = datetime.now(UTC).replace(tzinfo=None)
     await db["conversations"].insert_one({
         "tenant_id": tenant_id,
         "state": "bot",
@@ -357,19 +365,12 @@ async def test_weekly_summaries():
         "started_at": now - timedelta(days=3)
     })
     
-    # Create bookings (one after-hours, one voice, one standard)
-    # 1. After hours booking: most recent Sunday, guaranteed within the 7-day
-    # summary window (days_since_sunday is always 0-6; an open-ended backward
-    # walk from a fixed offset can land outside the window depending on the
-    # day the test runs).
-    days_since_sunday = (now.weekday() + 1) % 7
-    sunday_dt = now - timedelta(days=days_since_sunday)
-
+    # Create bookings (one after-hours, one voice, one standard).
     await db["bookings"].insert_one({
         "tenant_id": tenant_id,
         "status": "completed",
         "source": "wa",
-        "ts": sunday_dt
+        "ts": now - timedelta(hours=1)
     })
     
     # 2. Voice booking
@@ -381,11 +382,7 @@ async def test_weekly_summaries():
     })
     
     # 3. Regular booking (in hours, Monday-Saturday)
-    regular_dt = now - timedelta(days=2)
-    if regular_dt.weekday() == 6:
-        regular_dt -= timedelta(days=1)
-    # Ensure in business hours: set to 10:00 AM
-    regular_dt = regular_dt.replace(hour=10, minute=0)
+    regular_dt = (now - timedelta(days=2)).replace(hour=4, minute=30)
     
     await db["bookings"].insert_one({
         "tenant_id": tenant_id,
@@ -394,19 +391,50 @@ async def test_weekly_summaries():
         "ts": regular_dt
     })
     
-    # Run summaries
-    await run_weekly_summaries()
-    
-    summary_audit = await db["audit_log"].find_one({"tenant_id": tenant_id, "payload.template": "T_WEEKLY_SUMMARY"})
+    await run_weekly_summaries(now=instant)
+    await run_weekly_summaries(now=instant)
+
+    summary_audit = await db["audit_log"].find_one(
+        {"tenant_id": tenant_id, "payload.template": "weekly_summary_owner"}
+    )
     assert summary_audit is not None
     variables = summary_audit["payload"]["variables"]
-    
-    # variables: [owner_name, date_range_str, total_convs, confirmed_bookings, recovered_bookings, revenue]
-    assert variables[0] == "Sharma Clinic"
-    assert int(variables[2]) == 2 # total convs
-    assert int(variables[3]) == 3 # total confirmed
-    assert int(variables[4]) == 2 # recovered (1 Sunday, 1 Voice)
-    assert variables[5] == "Rs. 2000"
+
+    assert variables["owner_name"] == "Sharma Clinic"
+    assert int(variables["convs_count"]) == 2
+    assert int(variables["confirmed_count"]) == 3
+    assert int(variables["recovered_count"]) == 2
+    assert variables["revenue_str"] == "Rs. 2000"
+    assert await db["audit_log"].count_documents(
+        {"tenant_id": tenant_id, "operation_key": f"weekly-summary:{tenant_id}:2026-45"}
+    ) == 1
+
+
+async def test_weekly_summary_missing_owner_is_visible_without_false_send():
+    tenant_id = "tenant_weekly_no_owner"
+    db = get_db()
+    await db["tenants"].insert_one({
+        "_id": tenant_id,
+        "name": "No Owner Clinic",
+        "timezone": "Asia/Kolkata",
+        "status": "active",
+    })
+    instant = datetime(2026, 11, 8, 17, 30, tzinfo=UTC)
+
+    await run_weekly_summaries(now=instant)
+    await run_weekly_summaries(now=instant)
+
+    assert await db["outbound_intents"].count_documents({"tenant_id": tenant_id}) == 0
+    assert await db["audit_log"].count_documents(
+        {"tenant_id": tenant_id, "event_type": "outbound_template"}
+    ) == 0
+    alert = await db["audit_log"].find_one(
+        {"tenant_id": tenant_id, "event_type": "operational_alert"}
+    )
+    assert alert["payload"] == {
+        "kind": "weekly_summary_missing_recipient",
+        "week": "2026-45",
+    }
 
 
 async def test_exotel_missed_call_bridge(monkeypatch: pytest.MonkeyPatch):

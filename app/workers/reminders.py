@@ -175,6 +175,7 @@ async def run_reminders(*, now: datetime | None = None) -> None:
                     tenant_id,
                     actor="system",
                     event_type="outbound_template",
+                    operation_key=f"reminder-record:{booking_id}:{reminder}",
                     payload={
                         "template": f"T_REMINDER_{reminder.upper()}",
                         "patient_name": patient_name,
