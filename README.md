@@ -2,7 +2,7 @@
   <img src="assets/hero.svg" alt="Vaani: an AI front desk that books appointments on WhatsApp and voice" width="800">
 </p>
 
-<h3 align="center">Stop losing clients to missed calls and unanswered messages.</h3>
+<h1 align="center">Stop losing clients to missed calls and unanswered messages.</h1>
 
 Vaani is an AI front desk for businesses. It answers your clients on **WhatsApp and voice**, in the language they speak, and books the appointment while your team focuses on the work that matters.
 
