@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
+import httpx
 import pytest
+from app.agent.llm import query_llm
 from app.config import Settings, settings
 from app.gateway.middleware import verify_meta_signature
 from app.gateway.razorpay import verify_razorpay_signature
@@ -90,6 +92,33 @@ def test_unsafe_production_configuration_is_rejected() -> None:
     invalid_dimensions = valid.model_copy(update={"kb_embedding_dimensions": 0})
     with pytest.raises(ValueError, match="kb_embedding_dimensions"):
         invalid_dimensions.validate_runtime()
+
+
+@pytest.mark.asyncio
+async def test_llm_mock_requires_explicit_adapter(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "use_mock_adapters", False)
+    monkeypatch.setattr(settings, "openrouter_api_key", "")
+    with pytest.raises(RuntimeError, match="OPENROUTER_API_KEY"):
+        await query_llm("hello", "classifier")
+
+    monkeypatch.setattr(settings, "openrouter_api_key", "test-key")
+
+    class Client:
+        async def __aenter__(self) -> Client:
+            return self
+
+        async def __aexit__(self, *_args: object) -> None:
+            pass
+
+        async def post(self, *_args: object, **_kwargs: object) -> None:
+            raise httpx.ReadTimeout("synthetic outage")
+
+    monkeypatch.setattr("app.agent.llm.httpx.AsyncClient", Client)
+    with pytest.raises(httpx.ReadTimeout):
+        await query_llm("hello", "classifier")
+
+    monkeypatch.setattr(settings, "use_mock_adapters", True)
+    assert "greet" in await query_llm("User message: 'hello'", "classifier", "classify")
 
 def test_owner_api_jwt_access():
     client = TestClient(app)

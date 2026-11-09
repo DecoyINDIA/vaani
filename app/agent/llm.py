@@ -126,11 +126,12 @@ async def query_llm(
     temperature: float = 0.0,
     max_tokens: int = 500
 ) -> str:
-    """Query OpenRouter API. Fallback to mock responses if key is missing or offline."""
-    # Use fallback if key is not configured or in testing environment
-    if not settings.openrouter_api_key:
-        logger.debug(f"[LLM Mock] model={model} prompt={prompt[:100]}...")
+    """Query OpenRouter, using the rule-based adapter only when explicitly enabled."""
+    if settings.use_mock_adapters:
+        logger.debug("[LLM Mock] model=%s", model)
         return get_mock_response(prompt + " ---SYSTEM_PROMPT--- " + (system_prompt or ""), model)
+    if not settings.openrouter_api_key:
+        raise RuntimeError("OPENROUTER_API_KEY is required when mock adapters are disabled")
         
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
@@ -159,16 +160,14 @@ async def query_llm(
                 result = resp.json()
                 return str(result["choices"][0]["message"]["content"]).strip()
             else:
-                logger.error(f"OpenRouter API failed with status {resp.status_code}: {resp.text}")
+                logger.error("OpenRouter API failed with status %s", resp.status_code)
                 # Try fallback provider if configured
                 if settings.llm_model_fallback_provider:
                     data["model"] = settings.llm_model_fallback_provider
                     resp_fallback = await client.post(url, headers=headers, json=data, timeout=30.0)
                     if resp_fallback.status_code == 200:
                         return str(resp_fallback.json()["choices"][0]["message"]["content"]).strip()
-                raise RuntimeError(f"OpenRouter API error: {resp.text}")
+                raise RuntimeError(f"OpenRouter API error {resp.status_code}")
     except Exception as e:
-        logger.error(f"Error querying LLM: {e}")
-        if settings.app_env == "dev" or not settings.openrouter_api_key:
-            return get_mock_response(prompt + " ---SYSTEM_PROMPT--- " + (system_prompt or ""), model)
+        logger.error("Error querying LLM: %s", type(e).__name__)
         raise
