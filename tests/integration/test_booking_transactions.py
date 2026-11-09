@@ -94,7 +94,12 @@ async def test_generated_objectid_booking_transaction_lifecycle() -> None:
     tenant_id = "integration-oid-lifecycle"
     slot_id = ObjectId()
     contact_id = ObjectId()
-    await Slots(tenant_id).insert_one({"_id": slot_id, "status": "open"})
+    await Slots(tenant_id).insert_one({
+        "_id": slot_id,
+        "practitioner_id": "dr_oid",
+        "start": "2026-11-10T10:00:00",
+        "status": "open",
+    })
     await Contacts(tenant_id).insert_one({
         "_id": contact_id,
         "phone": "919876543210",
@@ -121,7 +126,12 @@ async def test_generated_objectid_booking_transaction_lifecycle() -> None:
 
     # Move booking to another generated ObjectId slot
     new_slot_id = ObjectId()
-    await Slots(tenant_id).insert_one({"_id": new_slot_id, "status": "open"})
+    await Slots(tenant_id).insert_one({
+        "_id": new_slot_id,
+        "practitioner_id": "dr_oid",
+        "start": "2026-11-10T11:00:00",
+        "status": "open",
+    })
     move_result = await move_booking(
         tenant_id,
         booking["_id"],
