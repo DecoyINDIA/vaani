@@ -12,8 +12,8 @@ import datetime
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import UTC, timedelta
 from datetime import datetime as dt
-from datetime import timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -356,6 +356,21 @@ async def confirm_booking(
                 },
             )
         raise
+
+    try:
+        from app.billing.meters import record_usage
+
+        occurred_instant = now if now.tzinfo else now.replace(tzinfo=UTC)
+        await record_usage(
+            tenant_id,
+            event_id=f"booking:{booking_id}:confirmed",
+            metric="confirmed_bookings",
+            quantity=1,
+            occurred_at=occurred_instant,
+        )
+    except Exception as usage_err:
+        logger.warning("Failed to meter confirmed booking %s: %s", booking_id, usage_err)
+
     return serialize_mongo({"tenant_id": tenant_id, **booking})
 
 
