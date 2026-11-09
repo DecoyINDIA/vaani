@@ -32,3 +32,4 @@ Thumbs.db
 *.log
 evals/voice_corpus/*.wav
 evals/voice_corpus/*.mp3
+artifacts/

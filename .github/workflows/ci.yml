@@ -241,6 +241,10 @@ jobs:
           done
           curl --fail --silent http://127.0.0.1:8000/health | grep -q '"status":"ok"'
           curl --fail --silent http://127.0.0.1:8000/ | grep -q '<div id="root"></div>'
+          curl --fail --silent 'http://127.0.0.1:8000/?token=smoke-invitation-token' | grep -q '<div id="root"></div>'
+          asset_path="$(curl --fail --silent http://127.0.0.1:8000/ | grep -o 'assets/index-[^"]*\.js' | head -n1)"
+          test -n "$asset_path"
+          curl --fail --silent "http://127.0.0.1:8000/${asset_path}" | grep -q "magic/consume"
 
           docker exec "$mongo" mongosh --quiet vaani --eval '
             db.tenants.insertOne({
