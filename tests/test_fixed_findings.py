@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock
 
 import httpx
 import pytest
+from app.agent.graph import build_graph
 from app.agent.llm import query_llm
 from app.config import Settings, settings
 from app.gateway.middleware import verify_meta_signature
@@ -122,6 +124,66 @@ async def test_llm_mock_requires_explicit_adapter(monkeypatch: pytest.MonkeyPatc
 
     monkeypatch.setattr(settings, "use_mock_llm", True)
     assert "greet" in await query_llm("User message: 'hello'", "classifier", "classify")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("failure_stage", ["classifier", "responder"])
+async def test_llm_failures_create_real_handoff(
+    monkeypatch: pytest.MonkeyPatch, failure_stage: str
+) -> None:
+    conversation_id = f"llm-{failure_stage}-failure"
+    await get_db()["conversations"].insert_one(
+        {
+            "_id": conversation_id,
+            "tenant_id": "t_test",
+            "state": "bot",
+            "contact_id": "llm-failure-contact",
+        }
+    )
+    if failure_stage == "classifier":
+        monkeypatch.setattr(
+            "app.agent.nodes.intent.query_llm",
+            AsyncMock(side_effect=RuntimeError("synthetic provider failure")),
+        )
+    else:
+        monkeypatch.setattr(
+            "app.agent.nodes.intent.query_llm",
+            AsyncMock(return_value='{"intent":"faq_hours","confidence":0.99}'),
+        )
+        monkeypatch.setattr(
+            "app.agent.nodes.tool_router.kb_search",
+            AsyncMock(
+                return_value=[
+                    {
+                        "question": "Hours?",
+                        "answer": "Nine to five.",
+                        "source_ref": "faq_hours",
+                    }
+                ]
+            ),
+        )
+        monkeypatch.setattr(
+            "app.agent.nodes.responder.query_llm",
+            AsyncMock(side_effect=RuntimeError("synthetic provider failure")),
+        )
+
+    result = await build_graph().ainvoke(
+        {
+            "tenant_id": "t_test",
+            "conversation_id": conversation_id,
+            "channel": "wa",
+            "text": "What are your hours?",
+        }
+    )
+
+    escalation = await get_db()["escalations"].find_one(
+        {"tenant_id": "t_test", "conversation_id": conversation_id}
+    )
+    assert result["escalate"] is True
+    assert "clinic staff" in result["response"]
+    assert escalation["reason"].endswith("llm_unavailable")
+    conversation = await get_db()["conversations"].find_one({"_id": conversation_id})
+    assert conversation["state"] == "human"
 
 def test_owner_api_jwt_access():
     client = TestClient(app)

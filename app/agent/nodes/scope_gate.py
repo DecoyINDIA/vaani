@@ -28,6 +28,12 @@ async def scope_gate(state: AgentState) -> dict[str, Any]:
     lang = state.get("lang", "en")
     tenant_id = state.get("tenant_id", "")
     conv_id = state.get("conversation_id")
+
+    if state.get("agent_error"):
+        return {
+            "escalate": True,
+            "response": get_template("handoff_ack", lang),
+        }
     
     # 1. Check for consecutive low confidence (< 0.70)
     if confidence < 0.70:

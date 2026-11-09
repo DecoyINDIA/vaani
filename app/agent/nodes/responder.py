@@ -13,6 +13,7 @@ from typing import Any
 
 from app.agent.llm import query_llm
 from app.agent.state import AgentState
+from app.agent.templates import get_template
 from app.config import settings
 from app.models.base import mongo_id_candidates
 from app.models.collections import Contacts, Conversations, Messages, Practitioners
@@ -150,6 +151,10 @@ async def responder(state: AgentState) -> dict[str, Any]:
         response_text = await query_llm(prompt, model, system_prompt=system_prompt, temperature=0.2)
         return {"response": response_text}
     except Exception as e:
-        logger.error(f"Responder LLM call failed: {e}")
-        return {"response": "I'm sorry, I'm having trouble processing that right now. I will notify the clinic staff to help you."}
+        logger.error("Responder LLM call failed: %s", type(e).__name__)
+        return {
+            "agent_error": "llm_unavailable",
+            "escalate": True,
+            "response": get_template("handoff_ack", lang),
+        }
 

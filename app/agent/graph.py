@@ -76,7 +76,11 @@ def build_graph() -> Any:
         lambda state: "handoff" if state.get("escalate") else "responder",
         {"handoff": "handoff", "responder": "responder"},
     )
-    workflow.add_edge("responder", "output_gate")
+    workflow.add_conditional_edges(
+        "responder",
+        lambda state: "handoff" if state.get("escalate") else "output_gate",
+        {"handoff": "handoff", "output_gate": "output_gate"},
+    )
     
     # 6. Conditional edge from output_gate for regeneration
     def route_output_gate(state: AgentState) -> str:

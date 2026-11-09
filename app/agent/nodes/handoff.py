@@ -25,6 +25,7 @@ async def handoff(state: AgentState) -> dict[str, Any]:
     tenant_id: str = state.get("tenant_id") or ""
     conv_id: str = state.get("conversation_id") or ""
     intent_val = state.get("intent", "low_confidence")
+    agent_error = state.get("agent_error")
 
     logger.info(f"Handoff node triggered for conversation {conv_id}")
     
@@ -32,7 +33,11 @@ async def handoff(state: AgentState) -> dict[str, Any]:
     result = await escalate(
         tenant_id,
         conv_id,
-        reason=f"Handoff triggered by intent: {intent_val}",
+        reason=(
+            f"Handoff triggered by system error: {agent_error}"
+            if agent_error
+            else f"Handoff triggered by intent: {intent_val}"
+        ),
         lang=str(state.get("lang", "en")),
     )
 
