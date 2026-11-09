@@ -34,7 +34,7 @@ async def _database() -> Any:
         or not settings.use_mock_adapters
     ):
         raise RuntimeError("recovery drill requires explicit synthetic dev/mock mode")
-    client = AsyncIOMotorClient(settings.mongodb_uri)
+    client: Any = AsyncIOMotorClient(settings.mongodb_uri)
     if client.get_default_database().name != DATABASE:
         client.close()
         raise RuntimeError(f"recovery drill database must be exactly {DATABASE}")
