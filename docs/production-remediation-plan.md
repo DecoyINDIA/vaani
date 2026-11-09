@@ -34,7 +34,7 @@ Use **Complete** for a deliverable whose stated scope has recorded proof, and **
 
 ## Current status — 9 November 2026
 
-The latest recorded required [CI run 42588684213](https://github.com/DecoyINDIA/vaani/actions/runs/42588684213) was rechecked through GitHub and is **Complete / successful**, for implementation SHA `e3c1205bb64d96f5fc3ebd39a3608b43039c72fa`. Documentation SHA `6fcd7e8` records its evidence. This is the verified implementation baseline, not a production release approval.
+The latest recorded required [CI run 42591587840](https://github.com/DecoyINDIA/vaani/actions/runs/42591587840) was rechecked through GitHub and is **Complete / successful**, verifying commit `4567c5e01d7f99c9ac925228793a951d34f98bfd` over implementation SHA `e3c1205bb64d96f5fc3ebd39a3608b43039c72fa`. Candidate digest `sha256:48cb55552b65bb10ad3e55a6976f51163c28691a9594318f2b9ae89767da9056` was published under tag `candidate-4567c5e01d7f99c9ac925228793a951d34f98bfd-42591587840-1`. This is the verified implementation baseline, not a production release approval.
 
 ### Completed deliverables
 
@@ -42,7 +42,7 @@ The latest recorded required [CI run 42588684213](https://github.com/DecoyINDIA/
 - [x] **Complete — current offline regression gate:** 118 tests passed, with 3 environment-dependent skips; 25/25 mock evaluations passed. Skips and mock scores do not prove real-provider or real-model behavior.
 - [x] **Complete — real MongoDB transaction evidence:** required replica-set rollback and 500-concurrent-slot-claim tests pass with one winning booking and no orphan booked slot for the tested fixtures.
 - [x] **Complete — synthetic recovery evidence:** backup/restore, Redis rebuild, restored erasure suppression, and exact-image process-kill recovery checkpoints pass in CI. Ambiguous interrupted sends remain visible and are not blindly retried.
-- [x] **Complete — tested candidate publication:** CI built image `sha256:23bd0557433216aaa78dd207e887ca1d44200fa95a0035792d03671830e79558`, passed API/worker/dashboard/webhook/crash smoke and the fixed High/Critical Trivy gate, and published `ghcr.io/decoyindia/vaani@sha256:3fb32b75b34965c74f0f36224f08f5d3ff8e78a9f48e72f5f417f6b7fdaa7897`. No release promotion or deployment is established by this result.
+- [x] **Complete — tested candidate publication:** CI built and passed API/worker/dashboard/webhook/crash smoke and the fixed High/Critical Trivy gate, and published `ghcr.io/decoyindia/vaani@sha256:48cb55552b65bb10ad3e55a6976f51163c28691a9594318f2b9ae89767da9056`. No release promotion or deployment is established by this result.
 - [x] **Complete — recorded local implementation milestones:** authentication/session/role checks; durable inbound/outbound work and operator issue views; shared guarded booking transitions; persisted interactive booking and handoff; owner dashboard journeys; tenant routing and scheduling; voice/payment contracts; billing issuance; deletion/inventory/onboarding tools; grounded retrieval contracts; and real handoff on classifier/responder failure. The ledger records the scope and limits for each. These milestones do not establish full acceptance of their findings.
 
 ### Pending final acceptance
@@ -78,6 +78,30 @@ These are required roles, not assignments to people. Assign actual owners when i
 One person may fill multiple implementation roles. Record the reviewer explicitly. Provider prerequisites must be tracked as blocked integration work, not replaced by synthetic success.
 
 Required external inputs are Exotel's supported authenticated ingress/call-verification mechanism, tenant-specific WhatsApp sender credentials and approved templates, STT/TTS credentials and supported models, a Razorpay sandbox and product-plan mapping, invited owner/staff identities, and staging infrastructure. Collect these while the independent local fixes proceed.
+
+### External input and prerequisite register
+
+Every external input required for full R01–R20 closure is tracked below. Local development, baseline regressions, and data/ID boundary hardening (WP01–WP02) proceed independently of pending external credentials.
+
+| Prerequisite / external input | Category | Status | Responsible role | Next action / exit requirement |
+| --- | --- | --- | --- | --- |
+| Exotel Basic-authenticated Call Details & AgentStream ingress | Provider access | Pending | Integration implementer | Configure sandbox Exotel account, SID/token, and verify Call Details API callback against proxy |
+| Meta WhatsApp Cloud API credentials & sender mappings (2 clinics) | Provider access | Pending | Integration implementer | Configure 2 sandbox WABA tenant accounts, sender IDs, and test phone numbers |
+| Sarvam STT (Saaras v4) and TTS (Bulbul v3) API key | Provider access | Pending | Integration implementer | Obtain API credentials, configure language/speaker combinations, and run live sandbox audio tests |
+| Razorpay sandbox API key & secret | Provider access | Pending | Integration implementer | Configure test API credentials, product plans, and verify `payment_link.paid` signature handling |
+| Staging MongoDB replica set (`VAANI_INTEGRATION_MONGODB_URI`) | Staging infrastructure | Pending | Deployment operator | Provision 3-node replica set, configure private VPC, and run replica-set race suite |
+| Staging private Redis (no host port publication) | Staging infrastructure | Pending | Deployment operator | Deploy isolated Redis in staging compose network; prove API and worker communicate privately |
+| Staging restore & timed recovery target | Staging infrastructure | Pending | Deployment operator | Prepare staging restore volume; measure and record RTO ≤15m and RPO ≤1h on representative snapshot |
+| Staging TLS reverse proxy / ingress domain | Staging infrastructure | Pending | Deployment operator | Set up public HTTPS endpoint for incoming provider webhooks (Exotel & WhatsApp) |
+| Approved LLM models & OpenRouter API key | Models & search | Pending | Product owner / Backend implementer | Ratify production classifier and responder models; configure `OPENROUTER_API_KEY` for evaluation |
+| Approved embedding model & OpenRouter key | Models & search | Pending | Product owner / Backend implementer | Approve `text-embedding-3-small` (1536d) or equivalent; configure credentials for retrieval eval |
+| Provisioned Atlas Vector & Text Search indexes | Models & search | Pending | Deployment operator / Backend implementer | Create `kb_vector_index` and `kb_text_index` on staging Atlas database with tenant filters |
+| Approved Meta WhatsApp template exports | Provider templates | Pending | Product owner / Integration implementer | Export actual approved template definitions (24h/2h reminder, staff alert, weekly summary, bridge) |
+| Invited owner & staff identities (test clinics) | Identity & access | Pending | Product owner / Frontend implementer | List invited owner/staff email and phone identities for Dr. Priya Sharma and staff members |
+| Independent verification reviewer appointment | Governance | Pending | Responsible business owner | Formally appoint independent reviewer to challenge R01–R20 acceptance criteria and inspect closures |
+| Canonical pricing catalog & feature quotas | Business decision | Pending | Product owner | Resolve and ratify canonical tier prices and quotas across Starter, Growth, and Pro plans |
+| Billing legal identity, GSTIN, and SAC code | Business decision | Pending | Responsible business owner | Document legal clinic/platform entity name, registered GSTIN, and SAC 998313 classification |
+| DPDP retention exceptions & 7-day erasure SLA | Policy decision | Pending | Responsible business owner | Document statutory medical/financial retention exceptions and ratify 7-day erasure workflow SLA |
 
 ## Implementation decisions
 
@@ -135,7 +159,7 @@ P0–P8 above identify the original scope. WP01–WP12 below divide its **remain
 
 | Order / package | Step-by-step work | Dependencies and exit evidence |
 | --- | --- | --- |
-| WP01 — Confirm baseline and collect inputs | 1. Inspect main, dirty changes and required workflows. 2. Record the current successful implementation SHA and candidate digest. 3. Inventory provider/staging access, approved models, template exports, invited identities, reviewer and business decisions without recording secrets. 4. Assign each missing input to a responsible role. 5. Commit and push the updated input/status record. | Start here. Exit: reproducible baseline and an explicit input register, each item Complete or Pending with its owner and next action. Missing external inputs do not prevent WP02. |
+| WP01 — Confirm baseline and collect inputs | 1. Inspect main, dirty changes and required workflows. 2. Record the current successful implementation SHA and candidate digest. 3. Inventory provider/staging access, approved models, template exports, invited identities, reviewer and business decisions without recording secrets. 4. Assign each missing input to a responsible role. 5. Commit and push the updated input/status record. | Complete: baseline confirmed at `4567c5e`, required CI run 42591587840 passed, candidate digest `sha256:48cb55552b65bb10ad3e55a6976f51163c28691a9594318f2b9ae89767da9056` recorded; explicit input register with 17 tracked items and role owners established. Unblocks WP02. |
 | WP02 — Close generated-ID implementation gaps (P2) | 1. Trace every external ID through API/tools, booking, payment, workers and stored references. 2. Add real generated-ObjectId regressions for list/detail/takeover/return/create/cancel/move and payment references. 3. Resolve IDs at shared boundaries while preserving deliberate legacy string IDs and rejecting ambiguous collisions. 4. Verify nested serialization, controlled errors, cross-tenant denial and actual reference targets. 5. Run quality and replica-set tests; commit, push and verify CI. | WP01. Exit: route/tool matrix and real-Mongo evidence for every R03 boundary; migration remains WP03. Do not change primary IDs blindly. |
 | WP03 — Inventory and resumable migration (P2) | 1. Verify a restorable production backup and run read-only `ops/migration_inventory.py` on its isolated restored copy. 2. Resolve collision/orphan/time-provenance decisions explicitly. 3. Implement dry-run-first resumable reference/state/time/ownership backfills. 4. Interrupt and rerun; compare counts, tenant isolation and references. 5. Document maintenance/compatibility/rollback steps, commit, push and verify CI. | WP02 plus backup/operator access. Exit: sanitized inventory, approved decisions, migration code and repeatable restore-copy proof; applying to production requires operator authority. |
 | WP04 — Provider configuration and authenticated voice (P1/P6) | 1. Validate actual Exotel and Sarvam contracts and enabled models. 2. Configure sandbox ingress/credentials and tenant mappings securely. 3. Exercise authenticated call/missed-call and grant replay/expiry/metadata rejection. 4. Test two callers, consent, returning history, real STT/TTS audio, interruption and cleanup in every enabled language. 5. Record measured latency, fix failures, commit and push evidence/code; verify CI. | WP01 provider inputs; WP02 ID fixes where relevant. Exit: R02/R06/R07 provider evidence and configuration checks, with sanitized call references and measurements. |
@@ -149,6 +173,17 @@ P0–P8 above identify the original scope. WP01–WP12 below divide its **remain
 | WP12 — Release decision and operator handoff (P8) | 1. Audit every release gate below against the latest code. 2. Select the immutable digest tested for that code; rerun affected gates after any change. 3. Record migration/backup IDs, rollback conditions, pilot tenants and responsible operator/reviewer decisions. 4. Commit and push the release decision/evidence package, verify main and CI. 5. Promote/deploy only with release authority, then execute pilot checks and record results in a further pushed handoff. | WP11 and all release gates. Exit: explicit authorized release/pilot evidence; otherwise retain No go and list exact Pending gates. Candidate publication alone does not complete this package. |
 
 After each package, the handoff entry must state: package ID; Complete/Pending deliverables; implementation SHA; checks and workflow URL; environment and sanitized evidence; remaining inputs/owner; next package; and confirmation that GitHub main contains the work. Preserve the historical changelog below.
+
+### Package execution and handoff log
+
+#### WP01 — Confirm baseline and collect inputs
+- **Deliverables:** Complete. Verified main checkout at `4567c5e01d7f99c9ac925228793a951d34f98bfd` with clean working tree. Confirmed passing required GitHub Actions run `42591587840`. Recorded verified candidate digest `ghcr.io/decoyindia/vaani@sha256:48cb55552b65bb10ad3e55a6976f51163c28691a9594318f2b9ae89767da9056`. Established the complete external input and prerequisite register covering 17 provider, staging, model, template, identity, governance, and business decision items with explicit role owners and next actions.
+- **Implementation SHA:** `e3c1205bb64d96f5fc3ebd39a3608b43039c72fa` (baseline documentation SHA `4567c5e01d7f99c9ac925228793a951d34f98bfd`).
+- **Checks and workflow URL:** [CI Run 42591587840](https://github.com/DecoyINDIA/vaani/actions/runs/42591587840). Local gate: 118 passed (3 skipped), Ruff clean, mypy clean, evals 25/25 passed, dashboard build and lint clean.
+- **Environment and sanitized evidence:** GitHub Actions Ubuntu-latest runners, Python 3.12, Node 22, Docker candidate build; no secrets or patient data in repository.
+- **Remaining inputs / owner:** All 17 external inputs tracked in the prerequisite register as Pending; assigned to Backend implementer, Integration implementer, Frontend implementer, Deployment operator, Product owner, and Responsible business owner.
+- **Next package:** WP02 — Close generated-ID implementation gaps (P2).
+- **Remote main status:** Confirmed `4567c5e` is on GitHub `origin/main`.
 
 ## Acceptance criteria by finding
 
@@ -391,6 +426,7 @@ For every closure, record the original failure scenario, regression test, fix, d
 
 | Date | Change | Release impact |
 | --- | --- | --- |
+| 9 November 2026 | WP01 baseline confirmed at `4567c5e`, CI run `42591587840`, verified candidate digest `sha256:48cb55552b65bb10ad3e55a6976f51163c28691a9594318f2b9ae89767da9056`; established explicit input register with 17 tracked items, owners and next actions | Baseline confirmed; WP02 unblocked, external provider/staging/decision inputs tracked as Pending |
 | 9 November 2026 | Reconciled status at `6fcd7e8`, rechecked successful GitHub run `42588684213`, separated Complete implementation/CI milestones from Pending final finding closures, and added WP01–WP12 with steps, dependencies, exit evidence and mandatory per-package commit/push to main | Documentation handoff only; all final finding closures and production release remain pending |
 | 6 November 2026 | Recorded review evidence, all 20 findings, implementation packages, acceptance criteria, migrations, and release gates | Planning only; release remains blocked |
 | 7 November 2026 | Recorded dirty-checkout baseline; began fail-closed config/auth, guarded booking transitions, durable inbound/outbound delivery, reminder recovery, grounding/date regressions, private Redis, lock-based CI, and dashboard image build | Local remediation in progress; no finding verified and release remains blocked |
