@@ -129,6 +129,31 @@ This decision separates implementation completion from external acceptance. Miss
   - Does a duplicate tap double-send? No; idempotent operation key and stage completion prevents double processing.
 - PENDING EXTERNAL GATES: none for W1-04
 
+## W1-10 Completion Report
+
+- Commit: `edc8ea8`
+- TASK: W1-10
+- FILES CHANGED:
+  - `app/workers/inbound.py` — added UNSUPPORTED_TYPES and UNSUPPORTED_REPLY, updated _store_inbound to accept message_type, updated _resolve_conversation to maintain last_msg_at, and handled unsupported media types in process_event
+  - `tests/test_unsupported_media.py` — 5 new tests covering audio replies, deduplication, human state silence, reaction ignoring, and last_msg_at maintenance
+- SUMMARY:
+  Added polite reply to unsupported non-text WhatsApp messages (audio, image, video, document, sticker, location, contacts) while keeping silence on human takeover. Updated inbound conversation resolution to always record last_msg_at.
+- TESTS RUN:
+  - `uv run pytest -q tests/test_unsupported_media.py tests/test_inbound_loop.py`
+  - `uv run ruff check .`
+  - `uv run mypy app`
+  - `uv run pytest -q`
+- RESULTS:
+  - Focused: 9 passed
+  - Full suite: 244 passed, 4 skipped
+  - Ruff & mypy: passed with 0 issues
+- DEVIATIONS FROM PACKET: none
+- REMAINING ISSUES: none
+- EVIDENCE:
+  - Tests: `test_audio_message_replies_once_with_unsupported_text`, `test_duplicate_audio_event_deduplicates_outbound`, `test_human_state_stores_media_without_outbound`, `test_reaction_is_ignored_and_not_stored`, `test_text_inbound_sets_last_msg_at`
+- PENDING EXTERNAL GATES: none for W1-10
+
+
 
 
 
