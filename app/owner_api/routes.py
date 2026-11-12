@@ -502,12 +502,28 @@ async def upsert_kb(payload: KbUpsert, tenant_id: str = Depends(require_tenant))
     return {"status": "success"}
 
 
+SETTINGS_FIELDS: tuple[str, ...] = (
+    "_id",
+    "name",
+    "timezone",
+    "plan",
+    "locale_default",
+    "wa_number",
+    "voice_number",
+    "landmark_line",
+    "location_pin",
+    "business_hours",
+    "holiday_calendar",
+)
+
+
 @router.get("/settings")
 async def get_settings_api(tenant_id: str = Depends(require_tenant)) -> dict[str, Any]:
     tenant = await Tenants.find_by_id(tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
-    return serialize_mongo(tenant)
+    filtered = {k: tenant[k] for k in SETTINGS_FIELDS if k in tenant}
+    return serialize_mongo(filtered)
 
 
 class SettingsUpdate(BaseModel):
