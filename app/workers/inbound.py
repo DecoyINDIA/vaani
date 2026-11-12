@@ -27,6 +27,7 @@ from app.channels.whatsapp import (
     send_booking_confirmation,
     send_cancel_confirmation,
     send_freeform,
+    send_menu,
     send_slot_picker,
 )
 from app.config import settings
@@ -48,6 +49,14 @@ UNSUPPORTED_TYPES: frozenset[str] = frozenset(
     {"audio", "image", "video", "document", "sticker", "location", "contacts"}
 )
 UNSUPPORTED_REPLY = t("media.unsupported", "en")
+
+MENU_UTTERANCES: dict[str, str] = {
+    "menu:book": "book appointment",
+    "menu:hours": "clinic timings",
+    "menu:location": "clinic address",
+    "menu:status": "appointment status",
+    "menu:human": "talk to staff",
+}
 
 
 def _render_slot_label(value: Any, tz: ZoneInfo, lang: str) -> str:
@@ -675,6 +684,22 @@ async def _process_event_inner(
         )
         return
 
+    action_id = str(parsed.get("action_id", ""))
+    is_menu_tap = False
+    lang_override: str | None = None
+    if action_id in MENU_UTTERANCES:
+        is_menu_tap = True
+        await _store_inbound(
+            tenant_id,
+            conversation_id,
+            text,
+            message_id,
+            action_id=action_id,
+        )
+        lang_override = await _conversation_lang(tenant_id, conversation_db_id, contact_id)
+        text = MENU_UTTERANCES[action_id]
+        action_id = ""
+
     if await _handle_cancel_action(
         tenant_id=tenant_id,
         wa_id=wa_id,
@@ -683,7 +708,7 @@ async def _process_event_inner(
         conversation_db_id=conversation_db_id,
         message_id=str(message_id) if message_id else None,
         text=text,
-        action_id=str(parsed.get("action_id", "")),
+        action_id=action_id,
     ):
         return
 
@@ -695,7 +720,7 @@ async def _process_event_inner(
         conversation_db_id=conversation_db_id,
         message_id=str(message_id) if message_id else None,
         text=text,
-        action_id=str(parsed.get("action_id", "")),
+        action_id=action_id,
     ):
         return
 
@@ -706,24 +731,29 @@ async def _process_event_inner(
         "channel": "wa",
         "text": text,
     }
+    if lang_override:
+        state["lang_override"] = lang_override
     result = await app.ainvoke(state)
     response = strip_citations(result.get("response", ""))
 
     detected = normalize_lang(result.get("lang"))
-    has_non_latin = bool(re.search(r"[^\x00-\x7F]", text))
-    has_min_words = len(text.split()) >= 3
-    if has_non_latin or has_min_words:
-        lang = detected
-        await Conversations(tenant_id).update_one(
-            {"_id": conversation_db_id},
-            {"$set": {"lang": lang}},
-        )
-        await Contacts(tenant_id).update_one(
-            {"_id": {"$in": mongo_id_candidates(contact_id)}},
-            {"$set": {"lang_pref": lang}},
-        )
+    if not is_menu_tap:
+        has_non_latin = bool(re.search(r"[^\x00-\x7F]", text))
+        has_min_words = len(text.split()) >= 3
+        if has_non_latin or has_min_words:
+            lang = detected
+            await Conversations(tenant_id).update_one(
+                {"_id": conversation_db_id},
+                {"$set": {"lang": lang}},
+            )
+            await Contacts(tenant_id).update_one(
+                {"_id": {"$in": mongo_id_candidates(contact_id)}},
+                {"$set": {"lang_pref": lang}},
+            )
+        else:
+            lang = await _conversation_lang(tenant_id, conversation_db_id, contact_id)
     else:
-        lang = await _conversation_lang(tenant_id, conversation_db_id, contact_id)
+        lang = lang_override or "en"
 
     intent = result.get("intent")
     if intent == "booking_status":
@@ -784,14 +814,15 @@ async def _process_event_inner(
                     }
                 },
             )
-            await _store_inbound(
-                tenant_id,
-                conversation_id,
-                text,
-                message_id,
-                intent="cancel",
-                confidence=result.get("confidence"),
-            )
+            if not is_menu_tap:
+                await _store_inbound(
+                    tenant_id,
+                    conversation_id,
+                    text,
+                    message_id,
+                    intent="cancel",
+                    confidence=result.get("confidence"),
+                )
             prompt = t("cancel.prompt", lang, when=when)
             operation_key = f"cancel-confirm:{message_id or conversation_id}"
             send_res = await send_cancel_confirmation(
@@ -859,14 +890,15 @@ async def _process_event_inner(
                 {"_id": conversation_db_id, "state": "bot"},
                 {"$set": {"booking_flow": flow}},
             )
-            await _store_inbound(
-                tenant_id,
-                conversation_id,
-                text,
-                str(message_id) if message_id else None,
-                intent=str(intent),
-                confidence=result.get("confidence"),
-            )
+            if not is_menu_tap:
+                await _store_inbound(
+                    tenant_id,
+                    conversation_id,
+                    text,
+                    str(message_id) if message_id else None,
+                    intent=str(intent),
+                    confidence=result.get("confidence"),
+                )
             picker_key = f"booking-picker:{message_id or conversation_id}"
             picker_prompt = t(
                 "booking.picker_prompt",
@@ -903,23 +935,24 @@ async def _process_event_inner(
                     pass
             response = t("booking.no_slots", lang, date=human_date or "that date")
 
-    document = {
-        "conversation_id": conversation_id,
-        "direction": "inbound",
-        "type": "text",
-        "text": text,
-        "intent": result.get("intent"),
-        "confidence": result.get("confidence"),
-        "ts": _now(),
-    }
-    if message_id:
-        await Messages.upsert_message_unscoped(
-            message_id=message_id,
-            tenant_id=tenant_id,
-            document=document,
-        )
-    else:
-        await messages.insert_one(document)
+    if not is_menu_tap:
+        document = {
+            "conversation_id": conversation_id,
+            "direction": "inbound",
+            "type": "text",
+            "text": text,
+            "intent": result.get("intent"),
+            "confidence": result.get("confidence"),
+            "ts": _now(),
+        }
+        if message_id:
+            await Messages.upsert_message_unscoped(
+                message_id=message_id,
+                tenant_id=tenant_id,
+                document=document,
+            )
+        else:
+            await messages.insert_one(document)
 
     if not response:
         logger.warning("Agent produced an empty response for %s; nothing to send", conversation_id)
@@ -971,6 +1004,43 @@ async def _process_event_inner(
         },
         upsert=True,
     )
+
+    # W2-09: Tappable capability menu on out_of_scope
+    if (
+        result.get("intent") == "out_of_scope"
+        and not result.get("escalate")
+        and conversation
+        and conversation.get("state") == "bot"
+    ):
+        menu_rows = [
+            {"id": "menu:book", "title": t("menu.book", lang)},
+            {"id": "menu:hours", "title": t("menu.hours", lang)},
+            {"id": "menu:location", "title": t("menu.location", lang)},
+            {"id": "menu:status", "title": t("menu.status", lang)},
+            {"id": "menu:human", "title": t("menu.human", lang)},
+        ]
+        menu_key = f"menu:{message_id or conversation_id}"
+        try:
+            menu_res = await send_menu(
+                tenant_id,
+                wa_id,
+                prompt=t("menu.prompt", lang),
+                button_label=t("menu.button", lang),
+                rows=menu_rows,
+                operation_key=menu_key,
+            )
+            await _record_flow_interactive(
+                tenant_id=tenant_id,
+                conversation_id=conversation_id,
+                operation_key=menu_key,
+                flow="menu",
+                result=menu_res,
+            )
+        except WindowClosedError:
+            logger.warning(
+                "24h window closed when sending capability menu to %s",
+                conversation_id,
+            )
 
 
 async def _ensure_group(r: Any) -> None:

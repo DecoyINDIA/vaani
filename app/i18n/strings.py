@@ -221,4 +221,46 @@ STRINGS: dict[str, dict[str, str]] = {
         "hi-Latn": "rescheduled",
         "or": "ରିସିଡ୍ୟୁଲ୍",
     },
+    "menu.prompt": {
+        "en": "Here is what I can help with:",
+        "hi": "मैं इन चीज़ों में आपकी मदद कर सकता हूँ:",
+        "hi-Latn": "Main in cheezon me aapki madad kar sakta hoon:",
+        "or": "ମୁଁ ଏହି ସବୁ ବିଷୟରେ ସାହାଯ୍ୟ କରିପାରିବି:",
+    },
+    "menu.button": {
+        "en": "Options",
+        "hi": "विकल्प",
+        "hi-Latn": "Options",
+        "or": "ବିକଳ୍ପ",
+    },
+    "menu.book": {
+        "en": "Book appointment",
+        "hi": "अपॉइंटमेंट बुक करें",
+        "hi-Latn": "Appointment book karein",
+        "or": "ଅପଏଣ୍ଟମେଣ୍ଟ ବୁକ୍ କରନ୍ତୁ",
+    },
+    "menu.hours": {
+        "en": "Clinic timings",
+        "hi": "खुलने का समय",
+        "hi-Latn": "Clinic timings",
+        "or": "କ୍ଲିନିକ୍ ସମୟ",
+    },
+    "menu.location": {
+        "en": "Location",
+        "hi": "स्थान / पता",
+        "hi-Latn": "Location",
+        "or": "ଠିକଣା",
+    },
+    "menu.status": {
+        "en": "My appointment",
+        "hi": "मेरा अपॉइंटमेंट",
+        "hi-Latn": "Mera appointment",
+        "or": "ମୋର ଅପଏଣ୍ଟମେଣ୍ଟ",
+    },
+    "menu.human": {
+        "en": "Talk to staff",
+        "hi": "स्टाफ से बात करें",
+        "hi-Latn": "Staff se baat karein",
+        "or": "ଷ୍ଟାଫ୍ ସହ କଥା ହୁଅନ୍ତୁ",
+    },
 }

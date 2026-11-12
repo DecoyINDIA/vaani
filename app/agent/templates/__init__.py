@@ -22,10 +22,10 @@ TEMPLATES = {
         "or": "କ୍ଷମା କରିବେ, ଏକ AI ସହାୟକ ଭାବରେ ମୁଁ ଏହି ବିଷୟରେ ପରାମର୍ଶ ଦେଇପାରିବି ନାହିଁ। ମୁଁ ଆପଣଙ୍କ ପ୍ରଶ୍ନ ଆମ ଟିମ୍‌କୁ ପଠାଉଛି; ସେମାନଙ୍କ ସହ ସିଧାସଳଖ କଥା ହେବା ପାଇଁ ଆପଣ ଅପଏଣ୍ଟମେଣ୍ଟ ମଧ୍ୟ ବୁକ୍ କରିପାରିବେ।",
     },
     "out_of_scope": {
-        "en": "I'm sorry, I can only help with our services, team details, hours, fees, and booking. Here is what I can do:\n1. Book an appointment\n2. Opening hours\n3. Fees & Location\n4. Cancel/Reschedule",
-        "hi": "क्षमा करें, मैं केवल हमारी सेवाओं, टीम की जानकारी, समय, शुल्क और बुकिंग में आपकी सहायता कर सकता हूँ। मैं यह कर सकता हूँ:\n1. अपॉइंटमेंट बुक करें\n2. खुलने का समय\n3. शुल्क और स्थान\n4. रद्द/पुनर्निर्धारित करें",
-        "hi-Latn": "Sorry, main sirf hamari services, team ki jaankari, timings, fees aur booking me aapki madad kar sakta hoon. Main ye sab kar sakta hoon:\n1. Appointment book karein\n2. Timings\n3. Fees aur Location\n4. Cancel/Reschedule",
-        "or": "ଦୟାକରି କ୍ଷମା କରିବେ, ମୁଁ କେବଳ ଆମର ସେବା, ଟିମ୍ ସୂଚନା, ସମୟ, ଶୁଳ୍କ ଏବଂ ବୁକିଂ ବିଷୟରେ ଆପଣଙ୍କୁ ସାହାଯ୍ୟ କରିପାରିବି। ମୁଁ ଏହି ସବୁ କରିପାରିବି:\n1. ଅପଏଣ୍ଟମେଣ୍ଟ ବୁକ୍ କରନ୍ତୁ\n2. ଖୋଲିବା ସମୟ\n3. ଶୁଳ୍କ ଏବଂ ସ୍ଥାନ\n4. ବାତିଲ୍/ପୁନଃନିର୍ଦ୍ଧାରଣ",
+        "en": "I'm sorry, I can only help with our services, team details, hours, fees, and booking.",
+        "hi": "क्षमा करें, मैं केवल हमारी सेवाओं, टीम की जानकारी, समय, शुल्क और बुकिंग में आपकी सहायता कर सकता हूँ।",
+        "hi-Latn": "Sorry, main sirf hamari services, team ki jaankari, timings, fees aur booking me aapki madad kar sakta hoon.",
+        "or": "ଦୟାକରି କ୍ଷମା କରିବେ, ମୁଁ କେବଳ ଆମର ସେବା, ଟିମ୍ ସୂଚନା, ସମୟ, ଶୁଳ୍କ ଏବଂ ବୁକିଂ ବିଷୟରେ ଆପଣଙ୍କୁ ସାହାଯ୍ୟ କରିପାରିବି।",
     },
     "de_escalation": {
         "en": "I understand your concern. Please remain polite so I can assist you better. If you prefer, I can connect you to our team.",
