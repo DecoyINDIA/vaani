@@ -79,6 +79,7 @@ class Settings(BaseSettings):
     alerts_destination_url: str = ""
 
     # --- Ops ---
+    worker_concurrency: int = 8
     audit_log_retention_days: int = 90
     media_purge_days: int = 30
 

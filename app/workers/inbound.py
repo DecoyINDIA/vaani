@@ -10,7 +10,10 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import re
+import socket
+from collections.abc import Awaitable, Callable
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -41,9 +44,102 @@ logger = logging.getLogger(__name__)
 STREAM = "vaani:inbound_stream"
 DEAD_LETTER = "vaani:inbound_dlq"
 GROUP = "vaani:workers"
-CONSUMER = "worker-1"
+
+
+def make_consumer_name(pid: int | None = None) -> str:
+    """Generate unique stream-consumer name for this worker process."""
+    active_pid = os.getpid() if pid is None else pid
+    return f"{socket.gethostname()}-{active_pid}"
+
+
+# Non-goal / Limitation: running more than one worker replica is still unsupported for ordering.
+# Strict per-contact ordering is only guaranteed within a single worker process.
+# A distributed per-contact lock is required for multi-replica deployments.
+CONSUMER = make_consumer_name()
 MAX_DELIVERIES = 3  # dead-letter after 3 failed attempts (kill-safe reprocessing)
 _IDLE_RECLAIM_MS = 60_000  # reclaim messages stalled longer than 60s
+
+_GRAPH: Any = None
+
+
+def get_graph() -> Any:
+    """Return the cached LangGraph application, compiling it once on first call."""
+    global _GRAPH
+    if _GRAPH is None:
+        _GRAPH = build_graph()
+    return _GRAPH
+
+
+def _contact_key(
+    tenant_id: str, payload: dict[str, Any], message_id: str | None = None
+) -> str:
+    """Group key ensuring messages from the same patient execute sequentially."""
+    sender = ""
+    msg_id = message_id or ""
+    try:
+        value = payload.get("entry", [{}])[0].get("changes", [{}])[0].get("value", {})
+        messages = value.get("messages") or []
+        if messages and isinstance(messages[0], dict):
+            sender = messages[0].get("from") or ""
+            if not msg_id:
+                msg_id = messages[0].get("id") or ""
+        if not sender:
+            contacts = value.get("contacts") or []
+            if contacts and isinstance(contacts[0], dict):
+                sender = contacts[0].get("wa_id") or ""
+    except Exception:
+        pass
+
+    if sender:
+        return f"{tenant_id}:{sender}"
+    if msg_id:
+        return f"{tenant_id}:{msg_id}"
+    return f"{tenant_id}:unknown"
+
+
+async def _run_grouped[T](
+    items: list[T],
+    key: Callable[[T], str],
+    handler: Callable[[T], Awaitable[None]],
+    limit: int,
+    on_group_done: Callable[[], Awaitable[None]] | None = None,
+) -> None:
+    """Group items by patient key; run groups concurrently while preserving order."""
+    groups: dict[str, list[T]] = {}  # insertion order preserved
+    for item in items:
+        groups.setdefault(key(item), []).append(item)
+    sem = asyncio.Semaphore(max(1, limit))
+
+    async def run_group(group: list[T]) -> None:
+        async with sem:
+            for item in group:  # sequential inside a patient
+                try:
+                    await handler(item)
+                except Exception:
+                    logger.exception("event handler failed")
+            if on_group_done:
+                try:
+                    await on_group_done()
+                except Exception:
+                    logger.exception("on_group_done callback failed")
+
+    await asyncio.gather(*(run_group(g) for g in groups.values()))
+
+
+def _stream_item_key(item: tuple[str, dict[str, Any]]) -> str:
+    msg_id, fields = item
+    tenant_id = fields.get("tenant_id", "")
+    raw_payload = fields.get("payload", {})
+    if isinstance(raw_payload, str):
+        try:
+            payload = json.loads(raw_payload)
+        except Exception:
+            payload = {}
+    elif isinstance(raw_payload, dict):
+        payload = raw_payload
+    else:
+        payload = {}
+    return _contact_key(tenant_id, payload, fields.get("message_id") or msg_id)
 
 UNSUPPORTED_TYPES: frozenset[str] = frozenset(
     {"audio", "image", "video", "document", "sticker", "location", "contacts"}
@@ -724,7 +820,7 @@ async def _process_event_inner(
     ):
         return
 
-    app = build_graph()
+    app = get_graph()
     state = {
         "tenant_id": tenant_id,
         "conversation_id": conversation_id,
@@ -1100,7 +1196,7 @@ async def check_queue_age(
 
 async def _handle(r: Any, msg_id: str, fields: dict[str, Any], deliveries: int) -> None:
     durable_id = fields.get("message_id", msg_id)
-    if not await Messages.acquire_work_unscoped(durable_id):
+    if not await Messages.acquire_work_unscoped(durable_id, lease_seconds=180):
         await r.xack(STREAM, GROUP, msg_id)
         return
     try:
@@ -1116,11 +1212,17 @@ async def _handle(r: Any, msg_id: str, fields: dict[str, Any], deliveries: int) 
             logger.warning("Processing %s failed (attempt %d): %s", msg_id, deliveries, e)
 
 
-async def _process_fallback_queue() -> None:
-    """Scan MongoDB for status='queued' messages and process them."""
+async def _process_fallback_queue(
+    heartbeat_cb: Callable[[], Awaitable[None]] | None = None,
+) -> None:
+    """Scan MongoDB for status='queued' messages and process them concurrently by patient."""
     try:
         queued_messages = await Messages.find_queued_unscoped()
-        for doc in queued_messages:
+        queued_messages = queued_messages[:50]
+        if not queued_messages:
+            return
+
+        async def _handle_fallback_doc(doc: dict[str, Any]) -> None:
             message_id = doc["_id"]
             tenant_id = doc["tenant_id"]
             retries = doc.get("attempts", 0)
@@ -1130,7 +1232,7 @@ async def _process_fallback_queue() -> None:
                     "Fallback message %s exceeded max retries, marking as failed", message_id
                 )
                 await Messages.mark_failed_unscoped(message_id, reason="Max retries reached")
-                continue
+                return
 
             logger.info(
                 "Processing fallback queue message %s (attempt %d) for tenant %s",
@@ -1140,15 +1242,34 @@ async def _process_fallback_queue() -> None:
                 "tenant_id": tenant_id,
                 "message_id": message_id,
                 "payload": json.dumps(doc["payload"])
+                if isinstance(doc["payload"], dict)
+                else doc["payload"],
             }
-            if not await Messages.acquire_work_unscoped(str(message_id)):
-                continue
+            if not await Messages.acquire_work_unscoped(str(message_id), lease_seconds=180):
+                return
             try:
                 await process_event(fields)
                 await Messages.mark_completed_unscoped(str(message_id))
             except Exception as e:
                 logger.warning("Processing fallback message %s failed: %s", message_id, e)
                 await Messages.release_work_unscoped(str(message_id), str(e))
+
+        def _fallback_key(doc: dict[str, Any]) -> str:
+            payload = doc.get("payload", {})
+            if isinstance(payload, str):
+                try:
+                    payload = json.loads(payload)
+                except Exception:
+                    payload = {}
+            return _contact_key(doc.get("tenant_id", ""), payload, str(doc.get("_id", "")))
+
+        await _run_grouped(
+            queued_messages,
+            key=_fallback_key,
+            handler=_handle_fallback_doc,
+            limit=settings.worker_concurrency,
+            on_group_done=heartbeat_cb,
+        )
     except Exception as e:
         logger.error("Failed to process fallback queue: %s", e, exc_info=True)
 
@@ -1221,20 +1342,26 @@ async def run(iterations: int | None = None) -> None:
 
     scheduler_task = asyncio.create_task(run_scheduler_background())
 
+    async def _refresh_heartbeat() -> None:
+        try:
+            await r.set("vaani:worker:heartbeat", str(_now().timestamp()), ex=60)
+        except Exception:
+            pass
+
     try:
         count = 0
         while iterations is None or count < iterations:
             count += 1
 
             # Process any fallback queue messages from MongoDB
-            await _process_fallback_queue()
+            await _process_fallback_queue(heartbeat_cb=_refresh_heartbeat)
 
             try:
                 if not group_ready:
                     await _ensure_group(r)
                     group_ready = True
                     logger.info("Inbound worker consuming %s as %s/%s", STREAM, GROUP, CONSUMER)
-                await r.set("vaani:worker:heartbeat", str(_now().timestamp()), ex=60)
+                await _refresh_heartbeat()
             except Exception as e:
                 logger.warning("Redis unavailable; continuing MongoDB recovery scan: %s", e)
                 await asyncio.sleep(1)
@@ -1245,16 +1372,32 @@ async def run(iterations: int | None = None) -> None:
                 _, claimed, _ = await r.xautoclaim(
                     STREAM, GROUP, CONSUMER, min_idle_time=_IDLE_RECLAIM_MS, start_id="0"
                 )
-                for msg_id, fields in claimed:
-                    pending = await r.xpending_range(STREAM, GROUP, msg_id, msg_id, 1)
-                    deliveries = int(pending[0]["times_delivered"]) if pending else MAX_DELIVERIES
-                    await _handle(r, msg_id, fields, deliveries)
+                if claimed:
+                    async def _handle_claimed(item: tuple[str, dict[str, Any]]) -> None:
+                        msg_id, fields = item
+                        try:
+                            pending = await r.xpending_range(STREAM, GROUP, msg_id, msg_id, 1)
+                            deliveries = (
+                                int(pending[0]["times_delivered"]) if pending else MAX_DELIVERIES
+                            )
+                        except Exception:
+                            deliveries = MAX_DELIVERIES
+                        await _handle(r, msg_id, fields, deliveries)
+
+                    await _run_grouped(
+                        claimed,
+                        key=_stream_item_key,
+                        handler=_handle_claimed,
+                        limit=settings.worker_concurrency,
+                        on_group_done=_refresh_heartbeat,
+                    )
             except Exception as e:
                 logger.debug("xautoclaim skipped: %s", e)
 
+            read_count = max(10, 2 * settings.worker_concurrency)
             try:
                 resp = await r.xreadgroup(
-                    GROUP, CONSUMER, {STREAM: ">"}, count=10, block=5000
+                    GROUP, CONSUMER, {STREAM: ">"}, count=read_count, block=5000
                 )
             except Exception as e:
                 # Transient network/timeout on the blocking read must not kill the
@@ -1264,9 +1407,22 @@ async def run(iterations: int | None = None) -> None:
 
             if not resp:
                 continue
+
+            all_entries: list[tuple[str, dict[str, Any]]] = []
             for _stream, entries in resp:
-                for msg_id, fields in entries:
-                    await _handle(r, msg_id, fields, deliveries=1)
+                all_entries.extend(entries)
+
+            if all_entries:
+                async def _handle_stream_entry(item: tuple[str, dict[str, Any]]) -> None:
+                    await _handle(r, item[0], item[1], deliveries=1)
+
+                await _run_grouped(
+                    all_entries,
+                    key=_stream_item_key,
+                    handler=_handle_stream_entry,
+                    limit=settings.worker_concurrency,
+                    on_group_done=_refresh_heartbeat,
+                )
     finally:
         scheduler_task.cancel()
 
