@@ -15,7 +15,7 @@ from typing import Any
 from fastapi import FastAPI, Response
 from fastapi.staticfiles import StaticFiles
 
-from app.config import settings
+from app.config import Settings, settings
 
 _DASHBOARD_DIST = Path(__file__).parent.parent / "dashboard" / "dist"
 
@@ -32,7 +32,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield
 
 
-def create_app() -> FastAPI:
+def create_app(app_settings: Settings | None = None) -> FastAPI:
+    active_settings = app_settings or settings
     app = FastAPI(title="Vaani", version="0.1.0", lifespan=lifespan)
 
     @app.get("/health", tags=["ops"])
@@ -58,14 +59,14 @@ def create_app() -> FastAPI:
         except Exception as e:
             mongo_status = f"error: {str(e)}"
             
-        redis_ok = redis_status == "ok" or settings.app_env == "dev"
+        redis_ok = redis_status == "ok" or active_settings.app_env == "dev"
         status = "ok" if redis_ok and mongo_status == "ok" else "error"
         if status == "error":
             response.status_code = 503
             
         return {
             "status": status,
-            "env": settings.app_env,
+            "env": active_settings.app_env,
             "checks": {
                 "redis": redis_status,
                 "mongodb": mongo_status
@@ -73,10 +74,14 @@ def create_app() -> FastAPI:
         }
 
     # Inbound webhooks — Meta (P0), Razorpay (P3), Exotel (P2). TRD §5.1.
-    from app.gateway import exotel, meta, razorpay
+    from app.gateway import meta
     app.include_router(meta.router, prefix="/webhooks")
-    app.include_router(razorpay.router, prefix="/webhooks")
-    app.include_router(exotel.router, prefix="/webhooks")
+    if active_settings.enable_payments or active_settings.enable_billing:
+        from app.gateway import razorpay
+        app.include_router(razorpay.router, prefix="/webhooks")
+    if active_settings.enable_voice:
+        from app.gateway import exotel
+        app.include_router(exotel.router, prefix="/webhooks")
 
     # Owner dashboard REST — JWT auth, all tenant-scoped. TRD §5.2.
     from app.owner_api import routes as owner_routes

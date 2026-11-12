@@ -68,6 +68,9 @@ def test_unsafe_production_configuration_is_rejected() -> None:
     valid = Settings(
         app_env="prod",
         jwt_secret="x" * 32,
+        enable_voice=True,
+        enable_payments=True,
+        enable_billing=True,
         meta_app_secret="x",
         meta_webhook_verify_token="x",
         bsp_access_token="x",

@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     jwt_refresh_ttl_days: int = 30
     use_mock_adapters: bool = False
     use_mock_llm: bool = False
+    enable_voice: bool = False
+    enable_payments: bool = False
+    enable_billing: bool = False
 
     # --- Datastore (ADR-03: MongoDB Atlas ap-south-1 + Redis) ---
     mongodb_uri: str = "mongodb://localhost:27017/vaani"
@@ -90,39 +93,51 @@ class Settings(BaseSettings):
         if self.use_mock_llm:
             errors.append("use_mock_llm must be false")
 
-        required = (
+        always_required = (
             "meta_app_secret",
             "meta_webhook_verify_token",
-            "bsp_access_token",
-            "bsp_waba_id",
-            "bsp_phone_number_id",
             "openrouter_api_key",
             "llm_model_classifier",
             "llm_model_responder",
             "llm_model_embedding",
-            "exotel_sid",
-            "exotel_api_key",
-            "exotel_api_token",
-            "exotel_subdomain",
-            "razorpay_key_id",
-            "razorpay_key_secret",
-            "razorpay_webhook_secret",
-            "razorpay_plan_starter_id",
-            "razorpay_plan_pro_id",
-            "xolver_gstin",
         )
-        missing = [name for name in required if not getattr(self, name)]
+        missing = [name for name in always_required if not getattr(self, name)]
+
+        if self.enable_voice:
+            voice_required = (
+                "exotel_sid",
+                "exotel_api_key",
+                "exotel_api_token",
+                "exotel_subdomain",
+            )
+            missing.extend(name for name in voice_required if not getattr(self, name))
+            if self.stt_provider == "sarvam" and not self.sarvam_api_key:
+                errors.append("sarvam_api_key is required by stt_provider")
+            if self.stt_provider == "deepgram" and not self.deepgram_api_key:
+                errors.append("deepgram_api_key is required by stt_provider")
+            if self.tts_provider == "sarvam" and not self.sarvam_api_key:
+                errors.append("sarvam_api_key is required by tts_provider")
+            if self.tts_provider == "elevenlabs" and not self.elevenlabs_api_key:
+                errors.append("elevenlabs_api_key is required by tts_provider")
+
+        if self.enable_payments or self.enable_billing:
+            payments_required = (
+                "razorpay_key_id",
+                "razorpay_key_secret",
+                "razorpay_webhook_secret",
+            )
+            missing.extend(name for name in payments_required if not getattr(self, name))
+
+        if self.enable_billing:
+            billing_required = (
+                "razorpay_plan_starter_id",
+                "razorpay_plan_pro_id",
+                "xolver_gstin",
+            )
+            missing.extend(name for name in billing_required if not getattr(self, name))
+
         if missing:
             errors.append(f"missing required settings: {', '.join(missing)}")
-
-        if self.stt_provider == "sarvam" and not self.sarvam_api_key:
-            errors.append("sarvam_api_key is required by stt_provider")
-        if self.stt_provider == "deepgram" and not self.deepgram_api_key:
-            errors.append("deepgram_api_key is required by stt_provider")
-        if self.tts_provider == "sarvam" and not self.sarvam_api_key:
-            errors.append("sarvam_api_key is required by tts_provider")
-        if self.tts_provider == "elevenlabs" and not self.elevenlabs_api_key:
-            errors.append("elevenlabs_api_key is required by tts_provider")
         if self.kb_embedding_dimensions < 1:
             errors.append("kb_embedding_dimensions must be positive")
 
