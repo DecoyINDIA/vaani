@@ -1,0 +1,42 @@
+{
+  "lang": "or",
+  "tenant": {
+    "name": "Apex Clinic",
+    "locale_default": "or"
+  },
+  "setup": {
+    "seed_booking": true
+  },
+  "steps": [
+    {
+      "send": {
+        "text": "ଅପଏଣ୍ଟମେଣ୍ଟ ବାତିଲ କରିବି"
+      },
+      "expect": [
+        {
+          "kind": "buttons",
+          "ids": [
+            "cancel:confirm",
+            "cancel:keep"
+          ],
+          "body_key": "cancel.prompt"
+        }
+      ]
+    },
+    {
+      "send": {
+        "tap": "cancel:confirm"
+      },
+      "expect": [
+        {
+          "kind": "text",
+          "key": "cancel.done"
+        }
+      ]
+    }
+  ],
+  "final": {
+    "bookings_confirmed": 0,
+    "bookings_cancelled": 1
+  }
+}

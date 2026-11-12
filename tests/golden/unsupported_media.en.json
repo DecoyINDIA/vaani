@@ -1,0 +1,23 @@
+{
+  "lang": "en",
+  "tenant": {
+    "name": "Apex Clinic",
+    "locale_default": "en"
+  },
+  "steps": [
+    {
+      "send": {
+        "media": "audio"
+      },
+      "expect": [
+        {
+          "kind": "text",
+          "key": "media.unsupported"
+        }
+      ]
+    }
+  ],
+  "final": {
+    "bookings_confirmed": 0
+  }
+}

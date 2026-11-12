@@ -1,0 +1,53 @@
+{
+  "lang": "or",
+  "tenant": {
+    "name": "Apex Clinic",
+    "locale_default": "or"
+  },
+  "steps": [
+    {
+      "send": {
+        "text": "କାଲି ଡାକ୍ତରଙ୍କ ସହ ଦେଖା କରିବି"
+      },
+      "expect": [
+        {
+          "kind": "list",
+          "button_key": "ui.choose_time",
+          "body_key": "booking.picker_prompt",
+          "min_rows": 1
+        }
+      ]
+    },
+    {
+      "send": {
+        "tap": "slot:first"
+      },
+      "expect": [
+        {
+          "kind": "buttons",
+          "ids": [
+            "booking:confirm",
+            "booking:cancel"
+          ],
+          "body_key": "booking.confirm_prompt"
+        }
+      ]
+    },
+    {
+      "send": {
+        "tap": "booking:cancel"
+      },
+      "expect": [
+        {
+          "kind": "list",
+          "button_key": "ui.choose_time",
+          "body_key": "booking.repick_prompt",
+          "min_rows": 1
+        }
+      ]
+    }
+  ],
+  "final": {
+    "bookings_confirmed": 0
+  }
+}
