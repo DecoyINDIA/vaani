@@ -39,6 +39,7 @@ from app.models.collections import (
     Tenants,
 )
 from app.owner_api.auth import require_owner_tenant, require_tenant
+from app.owner_api.views import enrich_bookings, enrich_conversations
 
 router = APIRouter(tags=["owner"])
 
@@ -57,7 +58,8 @@ async def list_conversations(
         .limit(limit)
     )
     results: list[dict[str, Any]] = await cursor.to_list(length=limit)
-    return serialize_mongo(results)
+    serialized = serialize_mongo(results)
+    return await enrich_conversations(tenant_id, serialized)
 
 
 @router.get("/conversations/{id}")
@@ -291,7 +293,8 @@ async def list_bookings(
         .limit(limit)
     )
     results: list[dict[str, Any]] = await cursor.to_list(length=limit)
-    return serialize_mongo(results)
+    serialized = serialize_mongo(results)
+    return await enrich_bookings(tenant_id, serialized)
 
 
 @router.get("/bookings/{id}")
