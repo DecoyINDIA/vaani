@@ -464,6 +464,44 @@ This decision separates implementation completion from external acceptance. Miss
 - PENDING EXTERNAL GATES:
   - Sentry event reception verification against live SENTRY_DSN on staging/production environment.
 
+## W2-02 Completion Report
+
+- Commit: `9f44d04`
+- TASK: W2-02
+- FILES CHANGED:
+  - `app/agent/nodes/intent.py`: extracted pure `build_intent_prompts(text, lang, business_type, profile)` and `parse_intent_response(raw)` functions; updated `intent()` node to call them.
+  - `app/agent/nodes/responder.py`: extracted pure `build_responder_prompts(tenant_name, lang, grounded_facts, history, text, extra_context, customer_term)` retaining exact `Grounded Facts:\n` and `\n\nStrict Citation Rule` prompt markers; updated `responder()` node to call it.
+  - `app/booking/relative_date.py`: added colloquial Hinglish weekday spelling variants ("somwar", "mangalwar", "budhwar", "guruwar", "shukrawar", "shaniwar", "raviwar") to `weekdays_map`.
+  - `evals/dataset/real_eval.jsonl`: generated 320 synthetic labelled evaluation utterances (80 each in `en`, `hi`, `hi-Latn`, `or`; 48 safety, 48 date, 72 faq with numeric facts, 152 intent rows; zero real PII/clinic names; all marked `"reviewed": false`).
+  - `evals/dataset/README.md`: documented dataset schema, distribution, and mandatory native-speaker review requirement for Hindi and Odia rows before clinical deployment.
+  - `evals/run_real_eval.py`: evaluation harness refusing mock adapters/LLM; supporting injectable `model_fn`; evaluating language accuracy, classifier F1, date resolution, and responder grounding; tracking p50/p95 latency and token usage; enforcing CI quality thresholds (`overall_macro_f1 >= 0.90`, `safety_recall == 1.0`, `date_accuracy >= 0.95`, `grounding_violations == 0`); producing JSON reports containing failing row IDs with no utterance text leakage.
+  - `.github/workflows/real-model-eval.yml`: GitHub Actions workflow with `workflow_dispatch` and nightly cron schedule (`30 20 * * *`) executing `evals/run_real_eval.py --ci`.
+  - `tests/test_real_eval_harness.py`: unit tests verifying dataset schema and distribution counts, mock mode refusal, perfect fake model evaluation, per-language failure detection on Odia misclassification, grounding violation detection on hallucinated numbers, and absence of utterance text in reports.
+- SUMMARY:
+  Implemented the real-model evaluation harness, created a 320-utterance 4-language benchmark dataset, authored the nightly GitHub Actions workflow, refactored intent and responder nodes into pure testable prompt builders without altering existing mock behavior, and verified the entire harness with fake model tests.
+- TESTS RUN:
+  - `uv run pytest -q tests/test_real_eval_harness.py tests/test_no_tenant_literals.py` (9 passed)
+  - `uv run ruff check .` (0 errors)
+  - `uv run mypy app` (0 errors across 71 source files)
+  - `uv run pytest -q` (308 passed, 4 skipped)
+  - `git grep -nE 'db\[[^]]+\]\.(find|insert|update|delete)' app/ ':!app/models/'` (exit code 1, 0 matches)
+  - `uv run python evals/run_evals.py --ci --report artifacts/mock-eval-report.json` (25/25 passed, 100% accuracy)
+- RESULTS:
+  - All 6 real-eval harness tests passed.
+  - Full pytest suite: 308 passed, 4 skipped.
+  - Mock evals: 25/25 passed across EN, HI, HI-Latn, OR (Macro F1 1.0000, 0 hallucinations, 0 ungrounded).
+  - Zero hardcoded tenant literals in `app/agent`.
+  - Zero tenant-isolation violations.
+- DEVIATIONS FROM PACKET: none
+- REMAINING ISSUES: none
+- EVIDENCE:
+  - `tests/test_real_eval_harness.py` validating dataset counts, gate thresholds, and report sanitization.
+  - `evals/dataset/real_eval.jsonl` with 320 rows.
+- PENDING EXTERNAL GATES:
+  - Credentialed model evaluation run against live OpenRouter API keys in CI / staging.
+  - Native speaker human review of Hindi and Odia rows in `evals/dataset/real_eval.jsonl`.
+
+
 
 
 
