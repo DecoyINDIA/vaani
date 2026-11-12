@@ -1,4 +1,4 @@
-"""Clinic-local handoff SLA calculation and owner-breach notification."""
+"""Tenant-local handoff SLA calculation and owner-breach notification."""
 
 from __future__ import annotations
 
@@ -66,7 +66,7 @@ def escalation_variables(
     profile = contact.get("profile", {}) if contact else {}
     base_url = str(tenant.get("dashboard_url", "")).rstrip("/")
     return {
-        "patient_name": str((contact or {}).get("name") or profile.get("name") or "Patient"),
+        "patient_name": str((contact or {}).get("name") or profile.get("name") or "Customer"),
         "patient_phone": str(
             (contact or {}).get("wa_id")
             or (contact or {}).get("phone")

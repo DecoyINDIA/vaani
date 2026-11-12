@@ -72,7 +72,7 @@ async def tool_router(state: AgentState) -> dict[str, Any]:
         
         if practitioner:
             practitioner_id = str(practitioner["_id"])
-            practitioner_name = practitioner.get("name", "Doctor")
+            practitioner_name = practitioner.get("name") or "our team"
             
             # Fetch slots
             slots = await slots_get(tenant_id, practitioner_id, date_str)

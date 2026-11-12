@@ -2,7 +2,7 @@
 
 Frontier model, KB/tool-grounded generation. Every factual claim (fee/time/
 service/address) MUST carry a source_ref (citation requirement, Week 4 task 4.5).
-Unreachable for out_of_scope / medical_question by graph topology — never invoked
+Unreachable for out_of_scope / restricted_advice by graph topology — never invoked
 for those intents.
 """
 
@@ -12,6 +12,7 @@ import logging
 from typing import Any
 
 from app.agent.llm import query_llm
+from app.agent.profile import load_profile
 from app.agent.state import AgentState
 from app.agent.templates import get_template
 from app.config import settings
@@ -32,6 +33,8 @@ async def responder(state: AgentState) -> dict[str, Any]:
     text = state.get("text", "")
     lang = state.get("lang", "en")
     tool_results = state.get("tool_results", [])
+    business = await load_profile(tenant_id)
+    customer = business.customer_term
     
     # 1. Load context history (last 10 messages)
     messages_acc = Messages(tenant_id)
@@ -45,7 +48,7 @@ async def responder(state: AgentState) -> dict[str, Any]:
         
         history_lines = []
         for m in messages:
-            role = "Patient" if m.get("direction") == "inbound" else "Clinic AI"
+            role = "Customer" if m.get("direction") == "inbound" else "Assistant"
             content = m.get("text", "")
             history_lines.append(f"{role}: {content}")
         history_str = "\n".join(history_lines)
@@ -78,16 +81,16 @@ async def responder(state: AgentState) -> dict[str, Any]:
         elif tool_name == "slots_get":
             slots = tr.get("result", [])
             date_str = tr.get("date", "")
-            doc_name = tr.get("practitioner_name", "Doctor")
+            staff_name = tr.get("practitioner_name") or "our team"
             slots_str = ", ".join(s.get("start", "")[11:16] for s in slots[:8]) if slots else "No slots available"
             grounded_facts.append(
-                f"Available Slots for {doc_name} on {date_str}: {slots_str}\n"
+                f"Available Slots for {staff_name} on {date_str}: {slots_str}\n"
                 f"Source Reference: [source_ref: slots_list]"
             )
 
     grounded_facts_str = "\n\n".join(grounded_facts) if grounded_facts else "No grounded facts found."
 
-    # Load contact profile for patient memory lookup
+    # Load contact profile for returning-customer memory lookup
     contact = None
     try:
         conv = await Conversations(tenant_id).find_one(
@@ -100,18 +103,18 @@ async def responder(state: AgentState) -> dict[str, Any]:
 
     # 4. Construct Prompt
     system_prompt = (
-        "You are an empathetic, professional AI receptionist at Sharma Dental Clinic.\n"
-        f"Answer the patient's query in their detected language ({lang}) using ONLY the provided Grounded Facts.\n\n"
+        f"You are an empathetic, professional AI receptionist at {business.name}, a {business.business_type}.\n"
+        f"Answer the {customer}'s query in their detected language ({lang}) using ONLY the provided Grounded Facts.\n\n"
         "Grounded Facts:\n"
         f"{grounded_facts_str}\n\n"
         "Strict Citation Rule:\n"
-        "Any factual claim you make (such as fees, timings, address, services, doctor names) MUST be directly followed by its source reference from the Grounded Facts in brackets, e.g. [source_ref: hours_faq] or [source_ref: slots_list]. If no facts are provided, state that you don't know and will connect the patient to the clinic staff. Do not make up any facts.\n\n"
+        f"Any factual claim you make (such as fees, timings, address, services, staff names) MUST be directly followed by its source reference from the Grounded Facts in brackets, e.g. [source_ref: hours_faq] or [source_ref: slots_list]. If no facts are provided, state that you don't know and will connect the {customer} to our team. Do not make up any facts.\n\n"
         "Tone and register:\n"
         "Always default to a respectful register (using 'आप' / 'ଆପଣ', never informal 'tum'/'tu'). Keep answers short and direct for chat interfaces."
     )
 
     if contact:
-        patient_name = contact.get("name")
+        customer_name = contact.get("name")
         profile = contact.get("profile", {})
         pref_prac_id = profile.get("preferred_practitioner_id") or profile.get("preferred_practitioner")
         last_service = profile.get("last_service")
@@ -127,22 +130,22 @@ async def responder(state: AgentState) -> dict[str, Any]:
                 
         # Check intent to offer one-tap rebook
         if state.get("intent") == "book" and last_service and pref_prac_name:
-            greeting_name = f" {patient_name} Ji" if patient_name else ""
+            greeting_name = f" {customer_name} Ji" if customer_name else ""
             system_prompt += (
-                f"\n\nPatient Memory Event: This is a returning patient{greeting_name}. "
-                f"Their preferred practitioner is {pref_prac_name} and last service was {last_service}. "
-                f"Offer the patient a one-tap rebook: ask if they want to book the same {last_service} with {pref_prac_name}."
+                f"\n\nReturning Customer Event: This is a returning {customer}{greeting_name}. "
+                f"Their preferred {business.staff_term} is {pref_prac_name} and last service was {last_service}. "
+                f"Offer the {customer} a one-tap rebook: ask if they want to book the same {last_service} with {pref_prac_name}."
             )
-        elif patient_name:
-            system_prompt += f"\n\nPersonalization: Greet the patient by their name '{patient_name} Ji' politely."
+        elif customer_name:
+            system_prompt += f"\n\nPersonalization: Greet the {customer} by their name '{customer_name} Ji' politely."
 
     if resolution_summary:
         system_prompt += (
             f"\n\nAdditional Context: Staff has just returned the conversation. "
-            f"Resolution summary: {resolution_summary}. Acknowledge this resolution context gracefully if the patient follows up."
+            f"Resolution summary: {resolution_summary}. Acknowledge this resolution context gracefully if the {customer} follows up."
         )
 
-    prompt = f"Conversation History:\n{history_str}\n\nPatient latest message: '{text}'"
+    prompt = f"Conversation History:\n{history_str}\n\nCustomer latest message: '{text}'"
 
     # Use settings configuration or default to gemini-2.5-flash
     model = settings.llm_model_responder or "google/gemini-2.5-flash"

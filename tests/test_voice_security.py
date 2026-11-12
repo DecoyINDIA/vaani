@@ -9,6 +9,7 @@ from app.config import settings
 from app.gateway.exotel import (
     consume_stream_grant,
     issue_stream_grant,
+    start_outbound_call,
     verify_exotel_call,
 )
 from app.main import app
@@ -163,6 +164,61 @@ async def test_stream_grant_is_bound_short_lived_and_one_use() -> None:
     assert not await consume_stream_grant(
         "voice-tenant", "call-expired", "919876543210", expired
     )
+
+
+async def test_outbound_call_uses_authenticated_bidirectional_stream(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tenant_id = "outbound-voice-tenant"
+    await get_db()["tenants"].update_one(
+        {"_id": tenant_id},
+        {"$set": {"voice_number": "08040000000"}},
+        upsert=True,
+    )
+    captured: dict[str, Any] = {}
+
+    class Response:
+        status_code = 200
+
+        def json(self) -> dict[str, object]:
+            return {"Call": {"Sid": "outbound-call-sid", "Status": "queued"}}
+
+    class Client:
+        async def __aenter__(self) -> Client:
+            return self
+
+        async def __aexit__(self, *args: object) -> None:
+            return None
+
+        async def post(self, url: str, **kwargs: Any) -> Response:
+            captured.update({"url": url, **kwargs})
+            return Response()
+
+    monkeypatch.setattr(settings, "exotel_sid", "account-sid")
+    monkeypatch.setattr(settings, "exotel_api_key", "api-key")
+    monkeypatch.setattr(settings, "exotel_api_token", "api-token")
+    monkeypatch.setattr(settings, "exotel_subdomain", "api.in.exotel.com")
+    monkeypatch.setattr(settings, "voice_public_base_url", "https://voice.example.com")
+    monkeypatch.setattr("app.gateway.exotel.httpx.AsyncClient", Client)
+
+    result = await start_outbound_call(tenant_id, "+919876543210")
+
+    assert result == {"call_sid": "outbound-call-sid", "status": "queued"}
+    assert captured["url"] == (
+        "https://api.in.exotel.com/v1/Accounts/account-sid/Calls/connect"
+    )
+    assert captured["auth"] == ("api-key", "api-token")
+    assert captured["data"]["StreamType"] == "bidirectional"
+    assert captured["data"]["Record"] == "false"
+    assert captured["data"]["StreamUrl"].startswith(
+        "wss://voice.example.com/webhooks/stream/outbound-voice-tenant/out_"
+    )
+    assert captured["data"]["StatusCallback"] == (
+        "https://voice.example.com/webhooks/exotel/status"
+    )
+    grant = await get_db()["voice_grants"].find_one({"tenant_id": tenant_id})
+    assert grant is not None
+    assert grant["caller_phone"] == "+919876543210"
 
 
 async def test_caller_consent_and_contacts_are_isolated() -> None:

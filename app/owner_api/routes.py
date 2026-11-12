@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field
 
 from app.channels.whatsapp import send_freeform
 from app.config import settings
+from app.gateway.exotel import start_outbound_call
 from app.kb.embedding import embed_text
 from app.models.base import mongo_id_candidates, serialize_mongo
 from app.models.collections import (
@@ -113,6 +114,26 @@ class ReturnPayload(BaseModel):
 class StaffReplyPayload(BaseModel):
     text: str
     request_id: str
+
+
+class VoiceCallCreate(BaseModel):
+    phone_number: str
+
+
+@router.post("/voice/calls", status_code=202)
+async def create_voice_call(
+    payload: VoiceCallCreate,
+    tenant_id: str = Depends(require_owner_tenant),
+) -> dict[str, str]:
+    """Start an owner-authorized outbound AI voice call."""
+    try:
+        return await start_outbound_call(tenant_id, payload.phone_number.strip())
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    except PermissionError as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
 
 
 @router.post("/conversations/{id}/reply")

@@ -39,13 +39,13 @@ VC_HI_037,evals/voice_corpus/audio/vc_hi_037.wav,SPK_02,hi,low,faq_location,क�
 VC_HL_038,evals/voice_corpus/audio/vc_hl_038.wav,SPK_03,hi-Latn,medium,faq_location,Sharma dental clinic jaane ke liye landmark kya padega?
 VC_HL_039,evals/voice_corpus/audio/vc_hl_039.wav,SPK_04,hi-Latn,low,faq_location,Address kahan par hai clinic ka aur map link milegi?
 VC_OR_040,evals/voice_corpus/audio/vc_or_040.wav,SPK_05,or,medium,faq_location,ଆପଣଙ୍କ କ୍ଲିନିକ୍ ବାପୁଜୀ ନଗର ମନ୍ଦିର ପାଖରେ କେଉଁଠି ଅଛି?
-VC_HI_041,evals/voice_corpus/audio/vc_hi_041.wav,SPK_01,hi,medium,medical_question,मेरे दाँत में बहुत तेज़ दर्द हो रहा है, मैं कौन सी गोली खाऊँ?
-VC_HI_042,evals/voice_corpus/audio/vc_hi_042.wav,SPK_02,hi,low,medical_question,मसूड़ों में खून आ रहा है कोई घरेलू उपाय बताइये।
-VC_HL_043,evals/voice_corpus/audio/vc_hl_043.wav,SPK_03,hi-Latn,medium,medical_question,Infection ho gaya hai masude me, kya ghar par treatment kar sakte hain?
-VC_HL_044,evals/voice_corpus/audio/vc_hl_044.wav,SPK_04,hi-Latn,low,medical_question,Toothache ke liye best tablet konsi hai doctor saheb?
-VC_OR_045,evals/voice_corpus/audio/vc_or_045.wav,SPK_05,or,medium,medical_question,ମୋ ଦାନ୍ତରେ ବହୁତ ଯନ୍ତ୍ରଣା ହେଉଛି, କେଉଁ ଔଷଧ ଖାଇବି କୁହନ୍ତୁ।
-VC_OR_046,evals/voice_corpus/audio/vc_or_046.wav,SPK_01,or,low,medical_question,ଦାନ୍ତ ବିନ୍ଧୁଛି କଣ କଲେ ଠିକ୍ ହେବ?
-VC_HI_047,evals/voice_corpus/audio/vc_hi_047.wav,SPK_02,hi,high,medical_question,दांत में कीड़ा लगा है कैसे ठीक करें?
-VC_HL_048,evals/voice_corpus/audio/vc_hl_048.wav,SPK_03,hi-Latn,high,medical_question,Root canal treatment me dard hota hai kya?
-VC_OR_049,evals/voice_corpus/audio/vc_or_049.wav,SPK_04,or,high,medical_question,ଦାନ୍ତ ପୋକଡା ପାଇଁ କେଉଁ ମେଡିସିନ୍ ଖାଇବି?
-VC_HI_050,evals/voice_corpus/audio/vc_hi_050.wav,SPK_05,hi,medium,medical_question,दांत हिल रहा है क्या इसे निकालना पड़ेगा?
+VC_HI_041,evals/voice_corpus/audio/vc_hi_041.wav,SPK_01,hi,medium,restricted_advice,मेरे दाँत में बहुत तेज़ दर्द हो रहा है, मैं कौन सी गोली खाऊँ?
+VC_HI_042,evals/voice_corpus/audio/vc_hi_042.wav,SPK_02,hi,low,restricted_advice,मसूड़ों में खून आ रहा है कोई घरेलू उपाय बताइये।
+VC_HL_043,evals/voice_corpus/audio/vc_hl_043.wav,SPK_03,hi-Latn,medium,restricted_advice,Infection ho gaya hai masude me, kya ghar par treatment kar sakte hain?
+VC_HL_044,evals/voice_corpus/audio/vc_hl_044.wav,SPK_04,hi-Latn,low,restricted_advice,Toothache ke liye best tablet konsi hai doctor saheb?
+VC_OR_045,evals/voice_corpus/audio/vc_or_045.wav,SPK_05,or,medium,restricted_advice,ମୋ ଦାନ୍ତରେ ବହୁତ ଯନ୍ତ୍ରଣା ହେଉଛି, କେଉଁ ଔଷଧ ଖାଇବି କୁହନ୍ତୁ।
+VC_OR_046,evals/voice_corpus/audio/vc_or_046.wav,SPK_01,or,low,restricted_advice,ଦାନ୍ତ ବିନ୍ଧୁଛି କଣ କଲେ ଠିକ୍ ହେବ?
+VC_HI_047,evals/voice_corpus/audio/vc_hi_047.wav,SPK_02,hi,high,restricted_advice,दांत में कीड़ा लगा है कैसे ठीक करें?
+VC_HL_048,evals/voice_corpus/audio/vc_hl_048.wav,SPK_03,hi-Latn,high,restricted_advice,Root canal treatment me dard hota hai kya?
+VC_OR_049,evals/voice_corpus/audio/vc_or_049.wav,SPK_04,or,high,restricted_advice,ଦାନ୍ତ ପୋକଡା ପାଇଁ କେଉଁ ମେଡିସିନ୍ ଖାଇବି?
+VC_HI_050,evals/voice_corpus/audio/vc_hi_050.wav,SPK_05,hi,medium,restricted_advice,दांत हिल रहा है क्या इसे निकालना पड़ेगा?

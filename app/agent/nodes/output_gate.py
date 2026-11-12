@@ -32,7 +32,7 @@ async def output_gate(state: AgentState) -> dict[str, Any]:
     retry_count = state.get("retry_count", 0)
 
     # 1. Skip checks for static template intents
-    if intent_val in ("out_of_scope", "medical_question", "abuse", "complaint"):
+    if intent_val in ("out_of_scope", "restricted_advice", "abuse", "complaint"):
         return {"regenerate": False}
 
     # 2. Check if the response contains numbers, prices, timings, or location words

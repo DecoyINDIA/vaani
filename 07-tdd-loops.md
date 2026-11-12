@@ -41,7 +41,7 @@
 **Done means:** "a message is never dropped" is a passing test, not a slogan.
 
 ### L3 — Data layer & tenant isolation *(M1.1; task 3.4)*
-**Red:** every collection accessor rejects calls without explicit `tenant_id` (lint rule test: raw `db[...]` outside `models/` fails CI); cross-tenant read/write probes on every accessor → denied; unique index on `(tenant_id, practitioner_id, start)` enforced (duplicate insert test); `seed_tenant.py` creates a demo clinic in <1 min (timed test).
+**Red:** every collection accessor rejects calls without explicit `tenant_id` (lint rule test: raw `db[...]` outside `models/` fails CI); cross-tenant read/write probes on every accessor → denied; unique index on `(tenant_id, practitioner_id, start)` enforced (duplicate insert test); `seed_tenant.py` creates a demo business in <1 min (timed test).
 **Green:** isolation probe suite 100% denied; seed idempotent (run twice → one tenant).
 **Done means:** cross-tenant leakage is impossible by construction — proven by probes, not review.
 
@@ -53,7 +53,7 @@
 ### L5 — Booking engine *(M1.2; tasks 4.1–4.3)*
 **Red:** 500-concurrent race test → 0 double-bookings (the test exists and fails against a naive implementation first); hold expires at 120s → slot reopens; holiday calendar: no slots generated on Raja/Rath Yatra/custom closure (fixture calendar); relative-date resolver table tests: "kal"→tomorrow, "parso"→+2d, "agle somvar"→next Monday, Indic numerals, "shaam ko 4 baje"→16:00; **booking tool rejects any call without `date_confirmed=true`**; 20 relative-date eval utterances → 100% confirmed-before-booked.
 **Green:** race test green in CI (nightly job); all resolver tables pass.
-**Done means:** the only component that can cost a clinic money (double-booking, wrong day) is the most-tested component in the repo.
+**Done means:** the only component that can cost a business money (double-booking, wrong day) is the most-tested component in the repo.
 
 ### L6 — Interactive booking UX *(M1.2; task 4.7 + TRD §9 menu mode)*
 **Red:** scripted conversation test: intent→list picker→button confirm completes a booking in ≤3 taps (driven at the API level with recorded interactive-message payloads); free-text fallback books without the picker; stale button tap (slot gone) → next-best offered, never a false confirm; **menu-mode test: with the LLM client mocked to raise, a booking still completes end-to-end via picker + deterministic tools**.
@@ -61,14 +61,14 @@
 **Done means:** bookings work when the AI is down — resilience and conversion fell out of the same test.
 
 ### L7 — KB & grounded responder *(M1.2 gate; tasks 4.4–4.6)*
-**Red (all written before the responder exists):** retrieval eval — 50 seeded Q→entry pairs, top-3 hit ≥90%; **hallucination eval — 30 trap questions where the KB lacks the answer → 0 fabricated facts** (correct behavior: "I'll check with the clinic" + escalate); output-gate tests: uncited fee/time/service/address claim → rejected → one regenerate → fallback template; **graph-topology test: `out_of_scope` and `medical_question` inputs can never reach the LLM responder node** (asserted on the compiled graph, not on prompts); template completeness test: every static template exists in all 4 languages, respectful register (no तू/tum in system copy — grep test).
+**Red (all written before the responder exists):** retrieval eval — 50 seeded Q→entry pairs, top-3 hit ≥90%; **hallucination eval — 30 trap questions where the KB lacks the answer → 0 fabricated facts** (correct behavior: "I'll check with the business" + escalate); output-gate tests: uncited fee/time/service/address claim → rejected → one regenerate → fallback template; **graph-topology test: `out_of_scope` and `restricted_advice` inputs can never reach the LLM responder node** (asserted on the compiled graph, not on prompts); template completeness test: every static template exists in all 4 languages, respectful register (no तू/tum in system copy — grep test).
 **Green:** all evals ≥ thresholds; hallucination = 0.
 **Done means:** **M1.2** — end-to-end booking in Hindi + Hinglish in ≤3 taps; the anti-hallucination guarantee is a CI gate.
 
 ### L8 — Handoff *(M1.3; tasks 5.1–5.2)*
-**Red:** each trigger (human_request, 2× low-confidence, medical/complaint, abuse) → `state=human` and bot silenced (post-trigger inbound gets no bot reply — tested); staff alert dispatched ≤30s (clock-controlled test); resolve&return → `state=bot` with context summary injected (post-return reply references the human resolution — eval case); SLA timers written to `escalations`.
+**Red:** each trigger (human_request, 2× low-confidence, restricted advice/complaint, abuse) → `state=human` and bot silenced (post-trigger inbound gets no bot reply — tested); staff alert dispatched ≤30s (clock-controlled test); resolve&return → `state=bot` with context summary injected (post-return reply references the human resolution — eval case); SLA timers written to `escalations`.
 **Green:** all triggers covered; one manual device test: alert on a real staff phone <30s, filed in `ops/`.
-**Done means:** "a patient is never stranded" has a test per trigger.
+**Done means:** "a customer is never stranded" has a test per trigger.
 
 ### L9 — Owner API & dashboard *(M1.3; tasks 5.3, 5.7)*
 **Red:** JWT tests (expired access token → 401, refresh flow, tampered token); **every owner_api route probed cross-tenant → 100% denied** (extends L3's suite to the HTTP layer); route contract tests for TRD §5.2.
@@ -91,8 +91,8 @@
 **Done means:** **M1.3** — full P0 UAT passes; eval set at 300 utterances, F1 ≥90%, hallucination = 0; every failure mode has been caused on purpose once.
 
 ### L13 — Production & onboarding *(M1.4 gate; tasks 6.1–6.5)*
-**Red (proofs, mostly human-executed with filed artifacts):** prod smoke suite (health, webhook echo, send path) runs post-deploy automatically; **restore drill: Atlas restore to staging, timed — RTO ≤15 min asserted**; KB auto-draft test on 3 real clinic websites → draft KB with ≥80% of structured fields filled; onboarding checklist per clinic; transcript-review digest generates from day-1 data.
-**Green:** 5 clinics live; clinic #5 onboarded ≤1h via auto-draft; first organic booking with zero human help.
+**Red (proofs, mostly human-executed with filed artifacts):** prod smoke suite (health, webhook echo, send path) runs post-deploy automatically; **restore drill: Atlas restore to staging, timed — RTO ≤15 min asserted**; KB auto-draft test on 3 real business websites → draft KB with ≥80% of structured fields filled; onboarding checklist per business; transcript-review digest generates from day-1 data.
+**Green:** 5 businesses live; business #5 onboarded ≤1h via auto-draft; first organic booking with zero human help.
 **Done means:** **M1.4.** Pilot begins — and the pilot itself is now the outermost test loop (rule #5), measured against gate G1.
 
 ---
@@ -118,7 +118,7 @@
 
 ## Phase 3 — Monetization loops (pattern, applied per feature)
 
-Every Phase-3 feature (ROI summary, billing/GST, reminders, payments, backfill, Flows A/B, patient memory, fine-tune) runs the same micro-loop — no exceptions for "small" features:
+Every Phase-3 feature (ROI summary, billing/GST, reminders, payments, backfill, Flows A/B, customer memory, fine-tune) runs the same micro-loop — no exceptions for "small" features:
 
 1. **Red:** correctness tests from fixtures first — e.g. ROI summary: recovered-booking attribution computed from a fixture audit log matches hand-calculated truth (this number goes in front of paying customers and ASCI applies — it gets the L5 treatment); GST invoice: totals, SAC, GSTIN fields validated against CA-approved samples; backfill: cancel event → offer to waitlist ≤60s, first-tap-wins race test (reuses L5's race harness); classifier fine-tune: must beat the incumbent on the full eval suite per language or it doesn't deploy.
 2. **Green:** feature tests + full cumulative regression + shadow replay (if it touches prompts/taxonomy).
@@ -133,7 +133,7 @@ Every Phase-3 feature (ROI summary, billing/GST, reminders, payments, backfill, 
 | L0–L4 | M1.1 echo-with-intent, F1 ≥85% | — |
 | L5–L7 | M1.2 booking end-to-end, race-safe, hallucination 0 | — |
 | L8–L12 | M1.3 full P0 UAT, F1 ≥90% | — |
-| L13 | M1.4 five clinics live | **G1** (measured wks 6–8) |
+| L13 | M1.4 five businesses live | **G1** (measured wks 6–8) |
 | L14–L16 | M2.1–M2.3 | **G2** |
 | Phase-3 micro-loops | M3.1, M3.2 | **G3** |
 

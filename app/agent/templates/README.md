@@ -8,7 +8,7 @@ One file per template per language: `<template>.<lang>.md`, lang ∈ `hi | en | 
 
 Required set (TRD §4.1, §5.3):
 - `out_of_scope` — static refusal + capability menu
-- `medical_refusal` — templated refusal + booking offer + escalate flag
+- `restricted_advice_refusal` — templated refusal + booking offer + escalate flag
 - `de_escalation` — one attempt before escalate (complaint/abuse)
 - `location_landmark` — location pin + landmark-based directions
 

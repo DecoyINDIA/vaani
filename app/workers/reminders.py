@@ -66,12 +66,12 @@ async def _scan_reminders(tenants: list[dict[str, Any]], now: datetime) -> None:
                     or contact.get("profile", {}).get("messaging_opt_out")
                 ):
                     continue
-                patient_name = contact.get("name", "Patient") if contact else "Patient"
+                patient_name = contact.get("name", "Customer") if contact else "Customer"
                 if contact:
                     patient_name = str(
                         contact.get("name")
                         or contact.get("profile", {}).get("name")
-                        or "Patient"
+                        or "Customer"
                     )
                 booking_id = str(booking["_id"])
                 local_start = start_time.replace(tzinfo=UTC).astimezone(timezone)
@@ -84,7 +84,7 @@ async def _scan_reminders(tenants: list[dict[str, Any]], now: datetime) -> None:
                     (practitioner or {}).get("name")
                     or booking.get("practitioner_name")
                     or tenant.get("name")
-                    or "Clinic team"
+                    or "Our team"
                 )
                 date_text = local_start.strftime("%A, %d %B %Y")
                 time_text = local_start.strftime("%I:%M %p")

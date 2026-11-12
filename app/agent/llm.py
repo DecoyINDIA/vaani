@@ -24,7 +24,7 @@ def get_mock_response(prompt: str, model: str) -> str:
     # wraps it — otherwise boilerplate like "Language detected: hi" pollutes
     # keyword checks (e.g. "hi" matching the greet branch).
     msg_match = re.search(
-        r"(?:user message|patient latest message): '(.*)'", user_prompt_lower, re.DOTALL
+        r"(?:user message|customer latest message): '(.*)'", user_prompt_lower, re.DOTALL
     )
     if msg_match:
         user_prompt_lower = msg_match.group(1)
@@ -37,7 +37,7 @@ def get_mock_response(prompt: str, model: str) -> str:
             "medical", "sar dard", "dard", "pain", "hurt", "treatment", "medic", "tablet",
             "dawai", "दर्द", "दवा", "ଯନ୍ତ୍ରଣା", "ଔଷଧ"
         ]):
-            return '{"intent": "medical_question", "confidence": 0.98}'
+            return '{"intent": "restricted_advice", "confidence": 0.98}'
         if any(w in user_prompt_lower for w in ["abuse", "stupid", "idiot", "nonsense"]):
             return '{"intent": "abuse", "confidence": 0.95}'
         if "complaint" in user_prompt_lower:
@@ -68,7 +68,7 @@ def get_mock_response(prompt: str, model: str) -> str:
         if any(w in user_prompt_lower for w in ["location", "address", "rasta", "kahan", "map", "पता", "ଠିକଣା"]):
             return '{"intent": "faq_location", "confidence": 0.95}'
         if any(w in user_prompt_lower for w in ["doctor", "practitioner", "sharma"]):
-            return '{"intent": "faq_doctor", "confidence": 0.90}'
+            return '{"intent": "faq_staff", "confidence": 0.90}'
 
         # Greetings (use split to avoid matching substrings like "hi" inside "hai")
         user_words = [w.strip("'\"!?.,") for w in user_prompt_lower.split()]
@@ -95,8 +95,8 @@ def get_mock_response(prompt: str, model: str) -> str:
 
     faq_responses = {
         "faq_fees": "The consultation fee is Rs 500. [source_ref: faq_fees]",
-        "faq_hours": "Sharma Dental Clinic is open from 9:00 AM to 6:00 PM Monday through Saturday. [source_ref: faq_hours]",
-        "faq_location": "Sharma Dental Clinic is located near Main Market, Bhubaneswar, opposite HDFC Bank. [source_ref: faq_location]",
+        "faq_hours": "We are open from 9:00 AM to 6:00 PM Monday through Saturday. [source_ref: faq_hours]",
+        "faq_location": "We are located near Main Market, Bhubaneswar, opposite HDFC Bank. [source_ref: faq_location]",
     }
     faq_keywords = {
         "faq_fees": ["fee", "fees", "charge", "consultation", "शुल्क", "फीस", "ଫିସ୍"],
@@ -114,9 +114,9 @@ def get_mock_response(prompt: str, model: str) -> str:
 
     user_words = [w.strip("'\"!?.,") for w in user_prompt_lower.split()]
     if any(w in user_words for w in ["hello", "hi", "namaste", "hey"]):
-        return "Namaste! Welcome to Sharma Dental Clinic. How can I help you today?"
+        return "Namaste! How can I help you today?"
 
-    return "I'm sorry, I couldn't find information about that. I will escalate this to the clinic staff to help you. [source_ref: fallback]"
+    return "I'm sorry, I couldn't find information about that. I will escalate this to our team to help you. [source_ref: fallback]"
 
 
 async def query_llm(

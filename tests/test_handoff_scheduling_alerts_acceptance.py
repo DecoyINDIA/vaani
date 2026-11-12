@@ -224,7 +224,7 @@ async def test_human_request_medical_safety_and_llm_failure_handoff(
     )
     assert med_reply is not None
     # Medical refusal template must be communicated
-    assert "medical advice" in med_reply["text"].lower() or "diagnose" in med_reply["text"].lower()
+    assert "can't give advice" in med_reply["text"].lower()
 
     # C) LLM provider outage injection
     wa_id_llm = "919888880003"

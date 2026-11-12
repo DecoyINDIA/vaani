@@ -55,18 +55,18 @@ def _payload(message_id: str, text: str) -> str:
     )
 
 
-async def test_handoff_preserves_medical_refusal_after_hours(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_handoff_preserves_restricted_advice_refusal_after_hours(monkeypatch: pytest.MonkeyPatch) -> None:
     async def after_hours_escalation(*args: object, **kwargs: object) -> dict[str, str]:
         return {"patient_message": get_template("handoff_after_hours", "en")}
 
     monkeypatch.setattr("app.agent.nodes.handoff.escalate", after_hours_escalation)
-    refusal = get_template("medical_refusal", "en")
+    refusal = get_template("restricted_advice_refusal", "en")
 
     result = await handoff(
         {
             "tenant_id": "medical-safety",
             "conversation_id": "medical-safety-conversation",
-            "intent": "medical_question",
+            "intent": "restricted_advice",
             "lang": "en",
             "response": refusal,
         }

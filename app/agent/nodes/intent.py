@@ -2,9 +2,12 @@
 
 Small model, temperature 0, few-shot per language. MUST emit a label from the
 closed taxonomy with confidence >= threshold; below threshold twice -> handoff.
-Closed set: greet, faq_hours, faq_location, faq_services, faq_fees, faq_doctor,
+Closed set: greet, faq_hours, faq_location, faq_services, faq_fees, faq_staff,
 book, reschedule, cancel, booking_status, payment_query, reminder_response,
-human_request, complaint, medical_question, smalltalk_min, out_of_scope, abuse.
+human_request, complaint, restricted_advice, smalltalk_min, out_of_scope, abuse.
+
+The labels are industry-neutral. What counts as ``restricted_advice`` and how
+the business is described come from the tenant's business profile.
 """
 
 from __future__ import annotations
@@ -14,16 +17,69 @@ import logging
 from typing import Any
 
 from app.agent.llm import query_llm
+from app.agent.profile import BusinessProfile, load_profile
 from app.agent.state import AgentState
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
 TAXONOMY = {
-    "greet", "faq_hours", "faq_location", "faq_services", "faq_fees", "faq_doctor",
+    "greet", "faq_hours", "faq_location", "faq_services", "faq_fees", "faq_staff",
     "book", "reschedule", "cancel", "booking_status", "payment_query", "reminder_response",
-    "human_request", "complaint", "medical_question", "smalltalk_min", "out_of_scope", "abuse"
+    "human_request", "complaint", "restricted_advice", "smalltalk_min", "out_of_scope", "abuse"
 }
+
+# Labels used before the taxonomy became industry-neutral. A model that still
+# emits one is mapped rather than dropped to out_of_scope, so the safety gate holds.
+LEGACY_INTENT_ALIASES = {
+    "medical_question": "restricted_advice",
+    "faq_doctor": "faq_staff",
+}
+
+
+def build_system_prompt(profile: BusinessProfile) -> str:
+    """Classifier instructions worded for this tenant's kind of business."""
+    restricted = "; ".join(profile.restricted_topics)
+    examples = "".join(
+        f"{i}. Text: '{example}' -> "
+        '{"intent": "restricted_advice", "confidence": 0.98}\n'
+        for i, example in enumerate(profile.restricted_examples, start=7)
+    )
+    return (
+        f"You are an expert intent classifier for the AI front-desk agent of {profile.name}, "
+        f"a {profile.business_type}. "
+        "Analyze the user's message and output a JSON object containing the keys \"intent\" and \"confidence\".\n"
+        f"The \"intent\" key MUST be exactly one of the following labels:\n{', '.join(sorted(TAXONOMY))}\n\n"
+        "The \"confidence\" key must be a float between 0.0 and 1.0 representing your certainty.\n\n"
+        "Intent Guidance:\n"
+        "- greet: Greeting or saying hello (e.g. 'hi', 'namaste', 'hello')\n"
+        "- faq_hours: Opening hours/timings (e.g. 'timings kya hai', 'when does it open')\n"
+        "- faq_location: Address, location, map link, directions\n"
+        "- faq_services: What services or products are offered\n"
+        "- faq_fees: Prices, fees, charges, costs\n"
+        f"- faq_staff: Questions about the {profile.staff_term} or team (who they are, their experience)\n"
+        "- book: Booking a new appointment (e.g. 'appointment book karna hai')\n"
+        "- reschedule: Changing/moving an appointment\n"
+        "- cancel: Cancelling an appointment\n"
+        "- booking_status: Checking existing booking status\n"
+        "- payment_query: Queries about payment links, deposit, Razorpay\n"
+        "- reminder_response: User responding to a reminder (e.g. 'yes I will come')\n"
+        "- human_request: Explicit request for staff/human/receptionist\n"
+        "- complaint: Dissatisfaction or complaint about service\n"
+        "- restricted_advice: Requests for advice this business must not give over chat "
+        f"({restricted})\n"
+        "- smalltalk_min: Canned pleasantry (e.g. 'how are you', 'thank you')\n"
+        "- abuse: Bad language, threats, abuse\n"
+        "- out_of_scope: General questions not related to this business\n\n"
+        "Few-shot Examples:\n"
+        "1. Text: 'hi' -> {\"intent\": \"greet\", \"confidence\": 1.0}\n"
+        "2. Text: 'appointment mil sakta hai?' -> {\"intent\": \"book\", \"confidence\": 0.95}\n"
+        "3. Text: 'charge kitna hai?' -> {\"intent\": \"faq_fees\", \"confidence\": 0.95}\n"
+        "4. Text: 'mujhe kal milna hai, time milega?' -> {\"intent\": \"book\", \"confidence\": 0.90}\n"
+        "5. Text: 'weather in bhubaneswar' -> {\"intent\": \"out_of_scope\", \"confidence\": 1.0}\n"
+        "6. Text: 'staff se baat karayein' -> {\"intent\": \"human_request\", \"confidence\": 0.95}\n"
+        f"{examples}"
+    )
 
 
 async def intent(state: AgentState) -> dict[str, Any]:
@@ -34,46 +90,14 @@ async def intent(state: AgentState) -> dict[str, Any]:
     """
     text = state.get("text", "").strip()
     lang = state.get("lang", "en")
-    
+
     if not text:
         return {"intent": "out_of_scope", "confidence": 0.0}
 
     # Setup model (use settings configuration or default to gemini-2.5-flash-lite)
     model = settings.llm_model_classifier or "google/gemini-2.5-flash-lite"
 
-    system_prompt = (
-        "You are an expert intent classifier for a dental clinic AI front-desk agent. "
-        "Analyze the user's message and output a JSON object containing the keys \"intent\" and \"confidence\".\n"
-        f"The \"intent\" key MUST be exactly one of the following labels:\n{', '.join(sorted(TAXONOMY))}\n\n"
-        "The \"confidence\" key must be a float between 0.0 and 1.0 representing your certainty.\n\n"
-        "Intent Guidance:\n"
-        "- greet: Greeting or saying hello (e.g. 'hi', 'namaste', 'hello')\n"
-        "- faq_hours: Clinic timings/hours (e.g. 'timings kya hai', 'when does it open')\n"
-        "- faq_location: Clinic address, location, map link, directions\n"
-        "- faq_services: Available services, treatments (e.g. 'root canal', 'cleaning')\n"
-        "- faq_fees: Consultation fee, price, costs\n"
-        "- faq_doctor: Doctor details, who is the doctor (e.g. 'Dr. Sharma')\n"
-        "- book: Booking a new appointment (e.g. 'appointment book karna hai')\n"
-        "- reschedule: Changing/moving an appointment\n"
-        "- cancel: Cancelling an appointment\n"
-        "- booking_status: Checking existing booking status\n"
-        "- payment_query: Queries about payment links, deposit, Razorpay\n"
-        "- reminder_response: User responding to a reminder (e.g. 'yes I will come')\n"
-        "- human_request: Explicit request for staff/human/receptionist\n"
-        "- complaint: Dissatisfaction or complaint about service\n"
-        "- medical_question: Medical questions/advice (e.g. 'my tooth hurts what medicine to take')\n"
-        "- smalltalk_min: Canned pleasantry (e.g. 'how are you', 'thank you')\n"
-        "- abuse: Bad language, threats, abuse\n"
-        "- out_of_scope: General questions not related to the dental clinic\n\n"
-        "Few-shot Examples:\n"
-        "1. Text: 'hi' -> {\"intent\": \"greet\", \"confidence\": 1.0}\n"
-        "2. Text: 'appointment mil sakta hai?' -> {\"intent\": \"book\", \"confidence\": 0.95}\n"
-        "3. Text: 'consultation charge kitna hai?' -> {\"intent\": \"faq_fees\", \"confidence\": 0.95}\n"
-        "4. Text: 'mujhe dr sharma se milna hai' -> {\"intent\": \"book\", \"confidence\": 0.90}\n"
-        "5. Text: 'mere daant me dard hai kaunsi dawai lu?' -> {\"intent\": \"medical_question\", \"confidence\": 0.98}\n"
-        "6. Text: 'weather in bhubaneswar' -> {\"intent\": \"out_of_scope\", \"confidence\": 1.0}\n"
-        "7. Text: 'staff se baat karayein' -> {\"intent\": \"human_request\", \"confidence\": 0.95}\n"
-    )
+    system_prompt = build_system_prompt(await load_profile(state.get("tenant_id") or ""))
 
     prompt = f"Language detected: {lang}\nUser message: '{text}'"
 
@@ -90,6 +114,7 @@ async def intent(state: AgentState) -> dict[str, Any]:
 
         data = json.loads(cleaned)
         detected_intent = data.get("intent", "").strip()
+        detected_intent = LEGACY_INTENT_ALIASES.get(detected_intent, detected_intent)
         confidence = float(data.get("confidence", 0.0))
 
         if detected_intent not in TAXONOMY:

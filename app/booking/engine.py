@@ -132,7 +132,7 @@ async def expand_schedule(
 async def run_schedule_expansion(
     *, now: dt | None = None, horizon_days: int = 30, tenant_limit: int = 100
 ) -> dict[str, int]:
-    """Extend each tenant once per clinic-local day; duplicate workers safely skip."""
+    """Extend each tenant once per tenant-local day; duplicate workers safely skip."""
     now = now or dt.now(datetime.UTC)
     if now.tzinfo is None:
         now = now.replace(tzinfo=datetime.UTC)
@@ -524,7 +524,7 @@ async def move_booking(
 
 
 async def claim_waitlist_slot(tenant_id: str, slot_id: str, contact_id: str, service: str) -> bool:
-    """Attempt to atomically hold and confirm a waitlist slot for a patient.
+    """Attempt to atomically hold and confirm a waitlist slot for a customer.
     First tap wins: returns True if successful, False if slot is already booked or held.
     """
     # 1. Try to hold slot

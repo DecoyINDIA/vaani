@@ -29,7 +29,7 @@ vaani/
 │   │   ├── tools/            # kb_search, slots_get, booking_create/move/cancel,
 │   │   │                     # payment_link_create, escalate — every side-effect
 │   │   ├── prompts/          # versioned, model-portable; one file per node per lang
-│   │   └── templates/        # static replies: out_of_scope, medical_refusal,
+│   │   └── templates/        # static replies: out_of_scope, restricted_advice_refusal,
 │   │                         # de_escalation × {hi, en, hi-Latn, or}
 │   ├── booking/              # slot engine: schedule expansion, holiday calendar,
 │   │                         # atomic hold/confirm, relative-date resolver
@@ -42,7 +42,7 @@ vaani/
 │   ├── models/               # pydantic + mongo collection accessors (tenant_id
 │   │                         # REQUIRED positional arg on every accessor — no default)
 │   ├── audit.py              # append-only writer; single choke point
-│   └── workers/              # Redis Streams consumers: inbound, reminders, weekly_summary
+│   └── workers/              # Redis Streams consumers: inbound, reminders, daily_brief, weekly_summary
 ├── dashboard/                # Vite + React + shadcn SPA → built into app static
 ├── evals/
 │   ├── dataset/              # utterances.jsonl (lang, text, expected_intent, expected_facts)
@@ -58,7 +58,7 @@ vaani/
 **Non-negotiable code rules (enforced in review + CI):**
 1. `tenant_id` is an explicit parameter on every DB accessor; a lint rule greps for raw `db[collection].find` outside `models/`.
 2. Every outbound message and tool call goes through `audit.py` — no direct sends.
-3. No LLM call outside `agent/nodes/` and `agent/tools/kb_search`. The responder is unreachable for `out_of_scope`/`medical_question` intents *by graph topology*, not by prompt.
+3. No LLM call outside `agent/nodes/` and `agent/tools/kb_search`. The responder is unreachable for `out_of_scope`/`restricted_advice` intents *by graph topology*, not by prompt.
 4. Prompt/template/taxonomy changes fail CI unless `evals/` passes (intent F1 ≥ threshold, hallucination = 0).
 
 ---
@@ -74,7 +74,7 @@ Ordering principle: **walking skeleton first** — a message travels the full pi
 | 3.1 | Repo, CI, Docker Compose, dev/prod env split, secrets via env | `docker compose up` gives working API locally; CI green on empty test suite |
 | 3.2 | Meta webhook: signature verify, <5s ack, message_id idempotency (Redis SETNX, 24h TTL), tenant resolution by `wa_number` | Duplicate webhook delivery produces exactly one processed message (test) |
 | 3.3 | Redis Streams queue + inbound worker with consumer group, dead-letter after 3 retries | Kill worker mid-message → message reprocessed, not lost |
-| 3.4 | Mongo collections + indexes from TRD §3 (incl. `holiday_calendar`, `gstin`, `landmark_line`, `location_pin` on tenants); `seed_tenant.py` v0 | Seed script creates a demo clinic in <1 min |
+| 3.4 | Mongo collections + indexes from TRD §3 (incl. `holiday_calendar`, `gstin`, `landmark_line`, `location_pin` on tenants); `seed_tenant.py` v0 | Seed script creates a demo business (with a `business_profile`) in <1 min |
 | 3.5 | LangGraph skeleton: lang_detect (lingua + script heuristic) → intent_classifier (small model, few-shot per lang, temp 0) → scope_gate → responder **stub** (echoes intent) → output_gate **stub** | Live on test number: reply names detected language + intent |
 | 3.6 | Eval harness v0 + 150-utterance seed set (write 40/lang from interview transcripts + synthetic) | `python evals/run_evals.py` prints per-lang F1; CI gate wired at ≥85% |
 | 3.7 | WhatsApp send wrapper + 24h-window tracker (last inbound ts per contact; free-form only inside window); mark-as-read + typing indicator fired on every inbound (perceived-latency budget ≤1s) | Attempted out-of-window free-form send raises, forces template path; typing indicator visible ≤1s in manual device test |
@@ -85,12 +85,12 @@ Ordering principle: **walking skeleton first** — a message travels the full pi
 
 | # | Task | Definition of done |
 |---|------|--------------------|
-| 4.1 | Schedule expansion: practitioner `schedule_template` → concrete `slots` rows, nightly job, **holiday calendar blocks generation**; owner-editable closures | Slots never generated on Raja/Rath Yatra/custom closure days (test) |
+| 4.1 | Schedule expansion: staff member `schedule_template` → concrete `slots` rows, nightly job, **holiday calendar blocks generation**; owner-editable closures | Slots never generated on Raja/Rath Yatra/custom closure days (test) |
 | 4.2 | Atomic booking: `findOneAndUpdate(status:"open"→"held")` + 120s hold expiry + confirm; `booking_create/move/cancel` tools | 500-concurrent race test: 0 double-bookings (CI, runs nightly not per-commit) |
 | 4.3 | Relative-date resolver: "kal/parso/agle X" → future date; booking tool **rejects** calls without `date_confirmed=true`; agent echoes weekday + date in user's language before confirming | Eval cases: 20 relative-date utterances, 100% confirmed-before-booked |
 | 4.4 | KB: structured fields + FAQ entries, embedding on write, Atlas Search hybrid (BM25 + vector) retrieval tool | Retrieval eval: top-3 hit rate ≥90% on 50 seeded Q→entry pairs |
 | 4.5 | Real responder: KB/tool-grounded generation with **citation requirement** (every factual claim carries `source_ref`); output_gate v1: reject uncited fee/time/service/address claims → regenerate once → fallback template | Hallucination eval (30 trap questions where KB lacks the answer): 0 fabricated facts |
-| 4.6 | Static template flows: medical refusal, out-of-scope + capability menu, de-escalation, location pin + landmark reply — ×4 languages, respectful register | Graph test: `medical_question` and `out_of_scope` paths never touch the LLM responder node |
+| 4.6 | Static template flows: restricted-advice refusal, out-of-scope + capability menu, de-escalation, location pin + landmark reply — ×4 languages, respectful register | Graph test: `restricted_advice` and `out_of_scope` paths never touch the LLM responder node |
 | 4.7 | Interactive booking UX (F-18): list-message slot picker (top 8 + "more"), reply-button Confirm/Change/Cancel, free-text fallback path; per-step conversion counters | Booking completable in ≤3 taps after intent on a real device; picker→confirm conversion visible in daily report |
 
 **Exit:** M1.2 — end-to-end booking in Hindi + Hinglish on test number; race test green.
@@ -99,7 +99,7 @@ Ordering principle: **walking skeleton first** — a message travels the full pi
 
 | # | Task | Definition of done |
 |---|------|--------------------|
-| 5.1 | Handoff state machine: triggers (human_request, 2× low-confidence, medical/complaint, abuse) → `state=human`, bot silenced, staff WhatsApp template alert ≤30s, SLA timers in `escalations` | Simulated trigger → alert received on staff test phone <30s |
+| 5.1 | Handoff state machine: triggers (human_request, 2× low-confidence, restricted advice/complaint, abuse) → `state=human`, bot silenced, staff WhatsApp template alert ≤30s, SLA timers in `escalations` | Simulated trigger → alert received on staff test phone <30s |
 | 5.2 | "Resolve & return": staff action flips `state=bot`, context summary injected into thread memory | Post-return message answered by bot with awareness of human resolution |
 | 5.3 | Dashboard v1 (Xolver-facing acceptable): conversations + transcripts, bookings calendar, escalation inbox, settings (hours/services/fees/holidays), KB editor, daily counters | 2 non-technical testers complete UAT checklist unaided |
 | 5.4 | Audit log at the choke point: message, intent, gate decisions, tool calls, handoffs; export endpoint | Random transcript reconstructable end-to-end from audit alone |
@@ -118,11 +118,11 @@ Ordering principle: **walking skeleton first** — a message travels the full pi
 |---|------|--------------------|
 | 6.1 | Prod deploy: VPS + Docker Compose, Caddy TLS, Atlas M10 ap-south-1, Upstash Redis; Sentry; UptimeRobot on health endpoint | Deploy runbook = `git pull && docker compose up -d --build`; documented |
 | 6.2 | Backup/restore drill: Atlas continuous backup verified, restore to staging executed once, timed | RTO ≤15 min demonstrated, logged in `ops/restore_runbook.md` |
-| 6.3 | Onboard 5 LOI clinics through a validated production configuration workflow (the demo seeder is prohibited): KB, schedules, holiday calendar, timezone, location pin + landmark, staff training | Each onboarding ≤1 day wall clock; checklist per clinic |
+| 6.3 | Onboard 5 LOI businesses through a validated production configuration workflow (the demo seeder is prohibited): KB, schedules, holiday calendar, timezone, location pin + landmark, staff training | Each onboarding ≤1 day wall clock; checklist per business |
 | 6.4 | Transcript review tooling: daily digest of 100% pilot conversations, one-tap "add to eval set" flagging | Taxonomy/KB misses fixed same-day during pilot week 1 |
-| 6.5 | KB auto-draft (F-23) v0: Google Business Profile + website scrape (+ OCR of price-list photo) → draft KB YAML → owner approves line-by-line during onboarding | Clinic #5 onboarded in ≤1 hour using the auto-draft |
+| 6.5 | KB auto-draft (F-23) v0: Google Business Profile + website scrape (+ OCR of price-list photo) → draft KB YAML → owner approves line-by-line during onboarding | Business #5 onboarded in ≤1 hour using the auto-draft |
 
-**Exit:** M1.4 — 5 clinics live; first organic booking with zero human help.
+**Exit:** M1.4 — 5 businesses live; first organic booking with zero human help.
 
 ---
 
@@ -142,7 +142,7 @@ Architecture rule: voice is **a new channel adapter, not a new agent**. `channel
 - **DoD:** 20 scripted calls with native Hindi + Odia speakers on real phones with ambient noise → task success ≥80%, wrong-fact utterances = 0.
 
 **Weeks 11–12 (M2.3):**
-- Enable for 2 pilot clinics as **forward-on-busy/no-answer** only (lower risk than full takeover).
+- Enable for 2 pilot businesses as **forward-on-busy/no-answer** only (lower risk than full takeover).
 - Per-minute COGS telemetry per tenant wired into the daily cost report; margin check vs Pro plan.
 - **DoD:** 100 real calls, containment ≥50%, COGS ≤₹4/min actual — else park voice per gate G2.
 
@@ -153,14 +153,14 @@ Architecture rule: voice is **a new channel adapter, not a new agent**. `channel
 Build order is deliberate: **the thing that sells the renewal ships first.**
 
 1. **Weekly ROI summary (F-13):** worker computes recovered bookings (after-hours + busy-line + previously-missed numbers), revenue estimate, containment; sends owner WhatsApp template. *Ships before any billing code — it is the retention product.*
-2. **Billing:** Razorpay subscriptions + UPI Autopay mandate lifecycle (create on pilot start, activate on day 30, dunning on failure); GST tax invoice generation (F-17: Xolver GSTIN, SAC, 18%, clinic GSTIN) auto-delivered monthly. Live before the first paid invoice.
+2. **Billing:** Razorpay subscriptions + UPI Autopay mandate lifecycle (create on pilot start, activate on day 30, dunning on failure); GST tax invoice generation (F-17: Xolver GSTIN, SAC, 18%, business GSTIN) auto-delivered monthly. Live before the first paid invoice.
 3. **Reminders (F-11)** if not shipped in pilot; reschedule-from-reminder deep flow.
 4. **Payments (F-12):** `payment_link_create` tool + Razorpay webhook reconciliation + max-2 nudge sequence (opt-in gated).
 5. **Missed-call bridge (F-16):** Exotel missed-call number → `missed_call_bridge` utility template → conversation opens. Doubles as the demo closer for city-2 sales.
-6. **No-show recovery + waitlist + cancellation auto-backfill (F-15/F-22):** cancel event → instant slot offer to waitlisted patients, first tap wins; cancelled slots refill themselves.
-7. **Onboarding efficiency:** KB import sheet + self-serve-ish KB editor for owners (US-9) → white-glove ≤3h/clinic.
+6. **No-show recovery + waitlist + cancellation auto-backfill (F-15/F-22):** cancel event → instant slot offer to waitlisted customers, first tap wins; cancelled slots refill themselves.
+7. **Onboarding efficiency:** KB import sheet + self-serve-ish KB editor for owners (US-9) → white-glove ≤3h/business.
 8. **Hardening:** on-call basics (Sentry alert → phone), quarterly restore + DPDP drills, monthly Meta scope self-audit tooling (random 50-transcript sampler with taxonomy diff report — automate the compliance calendar).
-9. **Experience pack (runs alongside 3–6, not after):** WhatsApp Flows booking form (F-19) A/B'd against the list picker per language cohort; patient memory + one-tap rebook (F-20, `contacts.profile`); classifier fine-tune once the labeled corpus passes 10K utterances (TRD §10) — cost per classification drops as quality rises.
+9. **Experience pack (runs alongside 3–6, not after):** WhatsApp Flows booking form (F-19) A/B'd against the list picker per language cohort; customer memory + one-tap rebook (F-20, `contacts.profile`); classifier fine-tune once the labeled corpus passes 10K utterances (TRD §10) — cost per classification drops as quality rises.
 
 **Scale posture check at 25 tenants:** still one VPS (peak <5 req/s). Only permitted infra change: split worker container from API container if reminder bursts delay inbound p95. No k8s, no microservices, no vector DB.
 

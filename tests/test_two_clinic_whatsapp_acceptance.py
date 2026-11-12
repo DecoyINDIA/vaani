@@ -218,7 +218,7 @@ async def test_two_clinic_routing_across_all_templates(monkeypatch: pytest.Monke
         {
             "patient_name": "Patient Beta",
             "patient_phone": "919000000002",
-            "reason": "medical_question",
+            "reason": "restricted_advice",
             "dashboard_url": "https://dashboard.vaani.app/c/clinic-beta",
         },
         operation_key="beta-staff-alert",

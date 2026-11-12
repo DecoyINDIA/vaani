@@ -6,7 +6,7 @@
 
 <p align="center"><em>Never calls in sick, never misses a message, never makes up an answer.</em></p>
 
-Vaani is an AI front desk for businesses. It answers your clients on **WhatsApp and voice**, in the language they speak, and books the appointment while your team focuses on the work that matters.
+Vaani is an AI front office for small and medium businesses: clinics, salons, coaching centres, studios, service shops and more. It answers your customers on **WhatsApp and voice**, in the language they speak, books the appointment, and follows up, while your team focuses on the work that matters. Each business is set up with its own details, so nothing is built for one trade only.
 
 ## What your business gets
 
@@ -15,6 +15,8 @@ Vaani is an AI front desk for businesses. It answers your clients on **WhatsApp 
 - **Fewer no-shows.** Clients get confirmations and reminders automatically, and cancelled slots can be offered to others.
 - **Clients feel at home.** Natural conversation in their own language, booking in a couple of taps instead of typing back and forth.
 - **Answers you can trust.** Vaani replies only from the facts your business approves. If it isn't sure, it hands the chat to your team rather than guessing.
+- **Follow-ups that don't depend on you remembering.** Reminders, no-show recovery and offers of cancelled slots. Recalling past customers is *in development*.
+- **A morning brief.** A short WhatsApp summary of yesterday: bookings, missed contacts and what needs your decision. *Built and being prepared for launch; it needs a WhatsApp message template approved first.*
 - **Privacy by design.** Each business's data stays separate, and Vaani is built around India's DPDP rules.
 
 ## How it works

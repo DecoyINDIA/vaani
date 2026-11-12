@@ -51,6 +51,7 @@ class Settings(BaseSettings):
     exotel_api_key: str = ""
     exotel_api_token: str = ""
     exotel_subdomain: str = ""
+    voice_public_base_url: str = ""
     stt_provider: Literal["sarvam", "deepgram", "google"] = "sarvam"
     tts_provider: Literal["sarvam", "elevenlabs"] = "sarvam"
     sarvam_api_key: str = ""

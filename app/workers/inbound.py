@@ -239,7 +239,7 @@ async def _handle_booking_action(
             wa_id,
             prompt=(
                 f"Confirm {flow.get('service', 'Consultation')} with "
-                f"{flow.get('practitioner_name', 'Doctor')} on {selected}?"
+                f"{flow.get('practitioner_name') or 'our team'} on {selected}?"
             ),
             operation_key=confirmation_key,
         )
@@ -546,7 +546,7 @@ async def process_event(fields: dict[str, Any]) -> None:
             response = (
                 "Your appointment has been cancelled."
                 if cancellation.get("status") == "success"
-                else "I could not cancel that appointment. Please contact the clinic."
+                else "I could not cancel that appointment. Please contact us directly."
             )
         else:
             response = "I could not find an active appointment for this WhatsApp number."
@@ -801,11 +801,12 @@ async def _process_fallback_queue() -> None:
 
 
 async def run_scheduler_background() -> None:
-    """Background task to run reminders and weekly summaries on schedule."""
+    """Background task to run reminders, daily briefs and weekly summaries on schedule."""
     logger.info("Starting background scheduler...")
     from app.booking.engine import run_schedule_expansion
     from app.models.collections import OutboundIntents
     from app.workers.billing import run_monthly_invoices
+    from app.workers.daily_brief import run_daily_briefs
     from app.workers.escalations import run_escalation_slas
     from app.workers.reminders import run_reminders
     from app.workers.weekly_summary import run_weekly_summaries
@@ -845,6 +846,11 @@ async def run_scheduler_background() -> None:
             await run_monthly_invoices()
         except Exception as e:
             logger.error("Background scheduler error in billing: %s", e, exc_info=True)
+
+        try:
+            await run_daily_briefs()
+        except Exception as e:
+            logger.error("Background scheduler error in daily briefs: %s", e, exc_info=True)
 
         try:
             await run_weekly_summaries()

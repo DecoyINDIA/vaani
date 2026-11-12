@@ -76,9 +76,9 @@ async def payment_link_create(
         "amount": amount,
         "currency": currency,
         "reference_id": reference_id,
-        "description": f"Appointment payment for {tenant.get('name', 'clinic')}",
+        "description": f"Appointment payment for {tenant.get('name', 'our business')}",
         "customer": {
-            "name": contact.get("name", "Patient"),
+            "name": contact.get("name", "Customer"),
             "contact": contact.get("phone") or contact.get("wa_id"),
         },
         "notify": {"sms": False, "email": False},

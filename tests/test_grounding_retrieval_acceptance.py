@@ -289,4 +289,4 @@ async def test_missing_kb_facts_route_to_human_handoff(monkeypatch: pytest.Monke
     escalate_mock.assert_awaited_once()
     responder_mock.assert_not_awaited()
     assert result["escalate"] is True
-    assert "clinic staff" in result["response"]
+    assert "our team" in result["response"]

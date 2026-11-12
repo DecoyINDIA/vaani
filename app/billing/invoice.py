@@ -119,7 +119,7 @@ def render_invoice_text(invoice: dict[str, Any]) -> str:
         "  Name:         Xolver Technologies Private Limited",
         f"  GSTIN:        {invoice['xolver_gstin']}",
         "RECIPIENT / BILLED TO:",
-        f"  Clinic Name:  {invoice['tenant_name']}",
+        f"  Business:     {invoice['tenant_name']}",
         f"  GSTIN:        {invoice['tenant_gstin']}",
         "------------------------------------------------------------",
         f"SUBSCRIPTION PLAN: {invoice['plan'].upper()}",

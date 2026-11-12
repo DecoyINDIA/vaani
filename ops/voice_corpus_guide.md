@@ -30,7 +30,7 @@ Create a CSV file `evals/voice_corpus/metadata.csv` to track the recording metri
 | `speaker_id` | Unique ID of the speaker | `SPK_01` |
 | `language` | Speaking language/dialect | `hi`, `hi-Latn`, `or` |
 | `noise_level` | Classification of background noise | `low`, `medium`, `high` |
-| `intent` | The patient's intent behind the speech | `book`, `faq_hours`, `medical_question`, etc. |
+| `intent` | The patient's intent behind the speech | `book`, `faq_hours`, `restricted_advice`, etc. |
 | `transcript` | The exact literal transcript (ground truth) | "kal sham ko appointment mil sakta hai kya" |
 
 ---
