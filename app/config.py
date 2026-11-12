@@ -45,6 +45,8 @@ class Settings(BaseSettings):
     llm_model_responder: str = ""        # frontier model
     llm_model_embedding: str = ""        # OpenRouter embedding model
     llm_model_fallback_provider: str = ""
+    llm_timeout_seconds: float = 8.0
+    llm_json_mode: bool = True
     kb_text_index: str = "kb_text"
     kb_vector_index: str = "kb_vector"
     kb_embedding_dimensions: int = 1536

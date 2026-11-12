@@ -155,7 +155,14 @@ async def responder(state: AgentState) -> dict[str, Any]:
     model = settings.llm_model_responder or "google/gemini-2.5-flash"
     
     try:
-        response_text = await query_llm(prompt, model, system_prompt=system_prompt, temperature=0.2)
+        response_text = await query_llm(
+            prompt,
+            model,
+            system_prompt=system_prompt,
+            temperature=0.2,
+            node="responder",
+            tenant_id=tenant_id,
+        )
         return {"response": response_text}
     except Exception as e:
         logger.error("Responder LLM call failed: %s", type(e).__name__)

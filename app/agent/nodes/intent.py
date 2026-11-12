@@ -102,7 +102,15 @@ async def intent(state: AgentState) -> dict[str, Any]:
     prompt = f"Language detected: {lang}\nUser message: '{text}'"
 
     try:
-        response_text = await query_llm(prompt, model, system_prompt=system_prompt, temperature=0.0)
+        response_text = await query_llm(
+            prompt,
+            model,
+            system_prompt=system_prompt,
+            temperature=0.0,
+            json_mode=True,
+            node="intent",
+            tenant_id=state.get("tenant_id") or "",
+        )
         
         # Clean up JSON delimiters if LLM wrapped in markdown codeblock
         cleaned = response_text.strip()
