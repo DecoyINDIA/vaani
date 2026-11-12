@@ -185,7 +185,8 @@ async def test_conversation_generated_objectid_lifecycle() -> None:
 async def test_booking_generated_objectid_lifecycle() -> None:
     slot_id = ObjectId()
     contact_id = ObjectId()
-    await Slots(TENANT_A).insert_one({"_id": slot_id, "status": "open"})
+    future = datetime.now(UTC).replace(tzinfo=None) + timedelta(days=1)
+    await Slots(TENANT_A).insert_one({"_id": slot_id, "start": future, "status": "open"})
     await Contacts(TENANT_A).insert_one({
         "_id": contact_id,
         "phone": "919876543210",
@@ -234,7 +235,7 @@ async def test_booking_generated_objectid_lifecycle() -> None:
 
     # 4. Reschedule to new generated ObjectId slot
     new_slot_id = ObjectId()
-    await Slots(TENANT_A).insert_one({"_id": new_slot_id, "status": "open"})
+    await Slots(TENANT_A).insert_one({"_id": new_slot_id, "start": future + timedelta(hours=1), "status": "open"})
 
     # Cross-tenant reschedule denied
     resp_move_cross = client.patch(
@@ -341,8 +342,10 @@ async def test_legacy_string_ids_continue_to_work() -> None:
         "contact_id": legacy_contact_id,
         "state": "bot",
     })
+    future = datetime.now(UTC).replace(tzinfo=None) + timedelta(days=1)
     await Slots(TENANT_A).insert_one({
         "_id": legacy_slot_id,
+        "start": future,
         "status": "open",
     })
 
@@ -373,7 +376,8 @@ async def test_legacy_string_ids_continue_to_work() -> None:
 async def test_payment_and_razorpay_reconciliation_with_generated_objectids() -> None:
     slot_id = ObjectId()
     contact_id = ObjectId()
-    await Slots(TENANT_A).insert_one({"_id": slot_id, "status": "open"})
+    future = datetime.now(UTC).replace(tzinfo=None) + timedelta(days=1)
+    await Slots(TENANT_A).insert_one({"_id": slot_id, "start": future, "status": "open"})
     await Contacts(TENANT_A).insert_one({
         "_id": contact_id,
         "phone": "919876543210",

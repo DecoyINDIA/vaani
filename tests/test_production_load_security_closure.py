@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
@@ -197,6 +198,7 @@ async def test_500_concurrent_slot_claims_zero_double_bookings() -> None:
     await db["slots"].insert_one({
         "_id": slot_id,
         "tenant_id": tenant_id,
+        "start": datetime.now(UTC).replace(tzinfo=None) + timedelta(days=1),
         "status": "open",
     })
 

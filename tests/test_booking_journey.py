@@ -61,7 +61,7 @@ async def test_interactive_booking_is_committed_before_success_and_patient_scope
         {"_id": "journey-doctor", "tenant_id": "journey-tenant", "name": "Dr Journey"}
     )
     local_now = datetime.now(UTC).astimezone(ZoneInfo("Asia/Kolkata"))
-    start_local = local_now.replace(hour=10, minute=0, second=0, microsecond=0)
+    start_local = (local_now + timedelta(days=1)).replace(hour=10, minute=0, second=0, microsecond=0)
     start = start_local.astimezone(UTC).replace(tzinfo=None)
     await db["slots"].insert_one(
         {
@@ -78,7 +78,7 @@ async def test_interactive_booking_is_committed_before_success_and_patient_scope
     await _process(
         "journey-message-1",
         patient,
-        {"type": "text", "text": {"body": "I want to book an appointment today"}},
+        {"type": "text", "text": {"body": "I want to book an appointment tomorrow"}},
     )
     conversation = await db["conversations"].find_one(
         {"tenant_id": "journey-tenant"}
@@ -141,7 +141,7 @@ async def test_interactive_booking_is_committed_before_success_and_patient_scope
     await _process(
         "journey-reschedule-1",
         patient,
-        {"type": "text", "text": {"body": "reschedule my appointment today"}},
+        {"type": "text", "text": {"body": "reschedule my appointment tomorrow"}},
     )
     await _process(
         "journey-reschedule-2",
@@ -197,7 +197,7 @@ async def test_taken_slot_returns_to_a_fresh_picker_without_false_success() -> N
         {"_id": "journey-doctor", "tenant_id": tenant_id, "name": "Dr Journey"}
     )
     local_now = datetime.now(UTC).astimezone(ZoneInfo("Asia/Kolkata"))
-    start = local_now.replace(hour=10, minute=0, second=0, microsecond=0).astimezone(
+    start = (local_now + timedelta(days=1)).replace(hour=10, minute=0, second=0, microsecond=0).astimezone(
         UTC
     ).replace(tzinfo=None)
     for index in (1, 2):
@@ -215,7 +215,7 @@ async def test_taken_slot_returns_to_a_fresh_picker_without_false_success() -> N
     await _process(
         "recovery-message-1",
         patient,
-        {"type": "text", "text": {"body": "book an appointment today"}},
+        {"type": "text", "text": {"body": "book an appointment tomorrow"}},
     )
     await _process(
         "recovery-message-2",
@@ -271,7 +271,7 @@ async def test_confirmation_send_retry_reuses_the_same_operation_key() -> None:
         {"_id": "journey-doctor", "tenant_id": tenant_id, "name": "Dr Journey"}
     )
     local_now = datetime.now(UTC).astimezone(ZoneInfo("Asia/Kolkata"))
-    start = local_now.replace(hour=10, minute=0, second=0, microsecond=0).astimezone(
+    start = (local_now + timedelta(days=1)).replace(hour=10, minute=0, second=0, microsecond=0).astimezone(
         UTC
     ).replace(tzinfo=None)
     await db["slots"].insert_one(
@@ -288,7 +288,7 @@ async def test_confirmation_send_retry_reuses_the_same_operation_key() -> None:
     await _process(
         "retry-message-1",
         patient,
-        {"type": "text", "text": {"body": "book an appointment today"}},
+        {"type": "text", "text": {"body": "book an appointment tomorrow"}},
     )
     await _process(
         "retry-message-2",

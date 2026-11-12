@@ -305,8 +305,8 @@ async def test_booking_calendar_cancellation_and_rescheduling() -> None:
     staff_token = create_access_token("tenant-alpha", "staff-tenant-alpha")
     headers = {"Authorization": f"Bearer {staff_token}"}
 
-    slot_time = datetime(2026, 11, 10, 10, 0, tzinfo=UTC).replace(tzinfo=None)
-    slot_time_2 = datetime(2026, 11, 10, 11, 0, tzinfo=UTC).replace(tzinfo=None)
+    slot_time = (datetime.now(UTC) + timedelta(days=1, hours=1)).replace(tzinfo=None)
+    slot_time_2 = (datetime.now(UTC) + timedelta(days=1, hours=2)).replace(tzinfo=None)
 
     for s in [
         {
