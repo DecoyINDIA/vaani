@@ -84,13 +84,34 @@ def resolve(phrase: str, *, today: date, lang: str) -> date:
 
     # 3. Weekdays
     weekdays_map = {
-        0: ["somvar", "somvara", "somabara", "monday", "mon", "ସୋମବାର", "सोमवार"],
-        1: ["mangalvar", "mangalvara", "mangalabara", "tuesday", "tue", "ମଙ୍ଗଳବାର", "मंगलवार"],
-        2: ["budhvar", "budhvara", "budhabara", "wednesday", "wed", "ବୁଧବାର", "बुधवार"],
-        3: ["guruvar", "guruvara", "gurubara", "veervar", "thursday", "thu", "ଗୁରୁବାର", "गुरुवार"],
-        4: ["shukravar", "shukravara", "sukrabara", "friday", "fri", "ଶୁକ୍ରବାର", "शुक्रवार"],
-        5: ["shanivar", "shanivara", "sanibara", "saturday", "sat", "ଶନିବାର", "शनिवार"],
-        6: ["ravivar", "ravivara", "rabibara", "itvar", "sunday", "sun", "ରବିବାର", "रविवार"],
+        0: [
+            "somvar", "somvara", "somwar", "somwara", "somabara",
+            "monday", "mon", "ସୋମବାର", "सोमवार",
+        ],
+        1: [
+            "mangalvar", "mangalvara", "mangalwar", "mangalwara", "mangalabara",
+            "tuesday", "tue", "ମଙ୍ଗଳବାର", "मंगलवार",
+        ],
+        2: [
+            "budhvar", "budhvara", "budhwar", "budhwara", "budhabara",
+            "wednesday", "wed", "ବୁଧବାର", "बुधवार",
+        ],
+        3: [
+            "guruvar", "guruvara", "guruwar", "guruwara", "gurubara",
+            "veervar", "veerwar", "thursday", "thu", "ଗୁରୁବାର", "गुरुवार",
+        ],
+        4: [
+            "shukravar", "shukravara", "shukrawar", "shukrawara", "sukrabara",
+            "friday", "fri", "ଶୁକ୍ରବାର", "शुक्रवार",
+        ],
+        5: [
+            "shanivar", "shanivara", "shaniwar", "shaniwara", "sanibara",
+            "saturday", "sat", "ଶନିବାର", "शनिवार",
+        ],
+        6: [
+            "ravivar", "ravivara", "raviwar", "raviwara", "rabibara",
+            "itvar", "itwar", "sunday", "sun", "ରବିବାର", "रविवार",
+        ],
     }
 
     target_weekday = None

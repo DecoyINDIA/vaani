@@ -1,0 +1,36 @@
+name: real-model-eval
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 20 * * *"
+
+jobs:
+  eval:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v10.3.3
+      - run: uv sync --frozen --extra dev
+      - name: Run real OpenRouter model evaluation gate
+        env:
+          APP_ENV: dev
+          USE_MOCK_ADAPTERS: "false"
+          USE_MOCK_LLM: "false"
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          LLM_MODEL_CLASSIFIER: ${{ vars.LLM_MODEL_CLASSIFIER }}
+          LLM_MODEL_RESPONDER: ${{ vars.LLM_MODEL_RESPONDER }}
+        run: >-
+          uv run python evals/run_real_eval.py --ci
+          --report artifacts/real-eval.json
+      - name: Store sanitized real model eval report
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: real-eval-report-${{ github.sha }}
+          path: artifacts/real-eval.json
+          if-no-files-found: ignore
+          retention-days: 30
