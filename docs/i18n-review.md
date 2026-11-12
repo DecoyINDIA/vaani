@@ -174,3 +174,18 @@ This document catalogs all Hindi (`hi`, Devanagari) and Odia (`or`, Odia script)
 - `6`: `ରବି`
 
 *Note: In Odia format, numeric month is used (`<weekday> DD/MM, hh:mm AM/PM`), ensuring all strings strictly remain under 24 characters.*
+
+---
+
+### 7. Interactive Capability Menu Elements (W2-09)
+
+| Key | Max Chars | English | Hindi (`hi`) | Hinglish (`hi-Latn`) | Odia (`or`) |
+|---|---|---|---|---|---|
+| `menu.prompt` | - | `Here is what I can help with:` | `मैं इन चीज़ों में आपकी मदद कर सकता हूँ:` | `Main in cheezon me aapki madad kar sakta hoon:` | `ମୁଁ ଏହି ସବୁ ବିଷୟରେ ସାହାଯ୍ୟ କରିପାରିବି:` |
+| `menu.button` | 20 | `Options` | `विकल्प` (6) | `Options` (7) | `ବିକଳ୍ପ` (6) |
+| `menu.book` | 24 | `Book appointment` | `अपॉइंटमेंट बुक करें` (19) | `Appointment book karein` (23) | `ଅପଏଣ୍ଟମେଣ୍ଟ ବୁକ୍ କରନ୍ତୁ` (23) |
+| `menu.hours` | 24 | `Clinic timings` | `खुलने का समय` (12) | `Clinic timings` (14) | `କ୍ଲିନିକ୍ ସମୟ` (12) |
+| `menu.location` | 24 | `Location` | `स्थान / पता` (11) | `Location` (8) | `ଠିକଣା` (5) |
+| `menu.status` | 24 | `My appointment` | `मेरा अपॉइंटमेंट` (16) | `Mera appointment` (16) | `ମୋର ଅପଏଣ୍ଟମେଣ୍ଟ` (16) |
+| `menu.human` | 24 | `Talk to staff` | `स्टाफ से बात करें` (18) | `Staff se baat karein` (20) | `ଷ୍ଟାଫ୍ ସହ କଥା ହୁଅନ୍ତୁ` (21) |
+

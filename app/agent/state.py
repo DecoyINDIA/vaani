@@ -29,3 +29,4 @@ class AgentState(TypedDict, total=False):
     req_time: str          # HH:MM
     practitioner_hint: str
     service_hint: str
+    lang_override: str

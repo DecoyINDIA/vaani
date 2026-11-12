@@ -25,6 +25,10 @@ async def lang_detect(state: AgentState) -> dict[str, Any]:
     hi-Latn. Voice notes transcribed by the same STT (Phase 2); STT confidence <0.75
     -> ask to type or escalate.
     """
+    override = state.get("lang_override")
+    if override and override in ("en", "hi", "hi-Latn", "or"):
+        return {"lang": override}
+
     text = state.get("text", "").strip()
     if not text:
         return {"lang": "en"}

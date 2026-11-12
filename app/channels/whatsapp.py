@@ -382,6 +382,51 @@ async def send_slot_picker(
     return result
 
 
+async def send_menu(
+    tenant_id: str,
+    wa_id: str,
+    *,
+    prompt: str,
+    button_label: str = "Options",
+    rows: list[dict[str, str]],
+    operation_key: str,
+) -> dict[str, Any]:
+    """Send an in-window interactive capability menu list."""
+    if not await _window_open(tenant_id, wa_id):
+        raise WindowClosedError("24h window closed; interactive menu is not permitted")
+    if not rows:
+        raise ValueError("menu requires at least one row")
+    body = {
+        "messaging_product": "whatsapp",
+        "to": wa_id,
+        "type": "interactive",
+        "interactive": {
+            "type": "list",
+            "body": {"text": prompt},
+            "action": {
+                "button": button_label[:20],
+                "sections": [
+                    {
+                        "rows": [
+                            {"id": r["id"], "title": r["title"][:24]}
+                            for r in rows[:10]
+                        ]
+                    }
+                ],
+            },
+        },
+    }
+    result = await _post(tenant_id, wa_id, body, operation_key)
+    await audit.record(
+        tenant_id,
+        actor="agent",
+        event_type="outbound_interactive",
+        operation_key=operation_key,
+        payload={"wa_id": wa_id, "kind": "menu", "wamid": _wamid(result)},
+    )
+    return result
+
+
 async def send_booking_confirmation(
     tenant_id: str,
     wa_id: str,
