@@ -335,6 +335,27 @@ This decision separates implementation completion from external acceptance. Miss
   - Tests: `test_feature_flags.py`, `test_fixed_findings.py`, `test_production_load_security_closure.py`
 - PENDING EXTERNAL GATES: none for W1-08
 
+## W1-09 Completion Report
+
+- Commit: `76ceb5f`
+- TASK: W1-09
+- FILES CHANGED:
+  - `Dockerfile` — added `COPY ops ./ops` before non-root chown
+- SUMMARY:
+  Copied `ops/` operator directory into the container image immediately following dashboard dist copy and preceding user ownership assignment (`chown -R appuser:appgroup /srv`). This makes operational CLI utilities (tenant onboarding, DPDP erasure, secret rotation, migration) runnable in production container environments.
+- TESTS RUN:
+  - `uv run python -m ops.onboard_tenant --help` (exited 0, usage text printed)
+  - `docker info` / `docker build -t vaani:w1-09 .`
+- RESULTS:
+  - Local module check: passed (exit 0)
+  - Docker build & container run: not verified — Docker unavailable (Docker Desktop daemon not running)
+- DEVIATIONS FROM PACKET: none
+- REMAINING ISSUES: none
+- EVIDENCE:
+  - Dockerfile diff: line 37 `COPY ops ./ops`
+- PENDING EXTERNAL GATES:
+  - Container build verification on Docker-enabled runner / CI
+
 
 
 
