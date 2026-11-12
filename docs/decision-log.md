@@ -180,6 +180,31 @@ This decision separates implementation completion from external acceptance. Miss
   - Tests: `test_staff_reply_error_mapping` covering `window_closed` (409), `suppressed` (409), `delivery_unknown` (409), and `provider_error` (502).
 - PENDING EXTERNAL GATES: none for W1-06
 
+## W1-07 Completion Report
+
+- Commit: `2da8542`
+- TASK: W1-07
+- FILES CHANGED:
+  - `app/owner_api/routes.py` — defined SETTINGS_FIELDS and filtered get_settings_api to return only allow-listed fields
+  - `tests/test_settings_allow_list.py` — test verifying sensitive keys (whatsapp, gstin, razorpay_account_id, secrets) are excluded and returned keys are a subset of SETTINGS_FIELDS
+- SUMMARY:
+  Restricted GET /api/settings to return only clinic-facing fields defined in SETTINGS_FIELDS (_id, name, timezone, plan, locale_default, wa_number, voice_number, landmark_line, location_pin, business_hours, holiday_calendar). Internal secrets and billing identifiers no longer reach the browser.
+- TESTS RUN:
+  - `uv run pytest -q tests/test_settings_allow_list.py`
+  - `uv run ruff check .`
+  - `uv run mypy app`
+  - `uv run pytest -q`
+- RESULTS:
+  - Focused: 1 passed
+  - Full suite: 249 passed, 4 skipped
+  - Ruff & mypy: passed with 0 issues
+- DEVIATIONS FROM PACKET: none (Settings in dashboard/src/App.tsx reads only name, landmark_line, location_pin, and _id, which are all present in SETTINGS_FIELDS)
+- REMAINING ISSUES: none
+- EVIDENCE:
+  - Tests: `test_get_settings_allow_list_filters_sensitive_fields`
+- PENDING EXTERNAL GATES: none for W1-07
+
+
 
 
 
