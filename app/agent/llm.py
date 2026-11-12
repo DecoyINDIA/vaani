@@ -52,7 +52,7 @@ def get_mock_response(prompt: str, model: str) -> str:
         # "cancel my appointment" contain booking keywords too.
         if any(w in user_prompt_lower for w in ["reschedule", "change", "badal"]):
             return '{"intent": "reschedule", "confidence": 0.95}'
-        if any(w in user_prompt_lower for w in ["cancel", "radd"]):
+        if any(w in user_prompt_lower for w in ["cancel", "radd", "रद्द", "ବାତିଲ"]):
             return '{"intent": "cancel", "confidence": 0.95}'
         if "status" in user_prompt_lower:
             return '{"intent": "booking_status", "confidence": 0.95}'

@@ -346,6 +346,8 @@ async def send_slot_picker(
     prompt: str,
     slots: list[dict[str, str]],
     operation_key: str,
+    button_label: str = "Choose a time",
+    section_title: str = "Available appointments",
 ) -> dict[str, Any]:
     """Send an in-window WhatsApp list whose row IDs carry slot identity."""
     if not await _window_open(tenant_id, wa_id):
@@ -364,8 +366,8 @@ async def send_slot_picker(
             "type": "list",
             "body": {"text": prompt},
             "action": {
-                "button": "Choose a time",
-                "sections": [{"title": "Available appointments", "rows": rows}],
+                "button": button_label[:20],
+                "sections": [{"title": section_title[:24], "rows": rows}],
             },
         },
     }
@@ -386,6 +388,8 @@ async def send_booking_confirmation(
     *,
     prompt: str,
     operation_key: str,
+    confirm_title: str = "Confirm",
+    again_title: str = "Choose again",
 ) -> dict[str, Any]:
     """Send explicit confirm/cancel buttons after echoing the selected date."""
     if not await _window_open(tenant_id, wa_id):
@@ -401,11 +405,11 @@ async def send_booking_confirmation(
                 "buttons": [
                     {
                         "type": "reply",
-                        "reply": {"id": "booking:confirm", "title": "Confirm"},
+                        "reply": {"id": "booking:confirm", "title": confirm_title[:20]},
                     },
                     {
                         "type": "reply",
-                        "reply": {"id": "booking:cancel", "title": "Choose again"},
+                        "reply": {"id": "booking:cancel", "title": again_title[:20]},
                     },
                 ]
             },
@@ -428,6 +432,8 @@ async def send_cancel_confirmation(
     *,
     prompt: str,
     operation_key: str,
+    yes_title: str = "Yes, cancel",
+    keep_title: str = "Keep appointment",
 ) -> dict[str, Any]:
     """Send explicit confirm/keep buttons for appointment cancellation."""
     if not await _window_open(tenant_id, wa_id):
@@ -443,11 +449,11 @@ async def send_cancel_confirmation(
                 "buttons": [
                     {
                         "type": "reply",
-                        "reply": {"id": "cancel:confirm", "title": "Yes, cancel"},
+                        "reply": {"id": "cancel:confirm", "title": yes_title[:20]},
                     },
                     {
                         "type": "reply",
-                        "reply": {"id": "cancel:keep", "title": "Keep appointment"},
+                        "reply": {"id": "cancel:keep", "title": keep_title[:20]},
                     },
                 ]
             },
