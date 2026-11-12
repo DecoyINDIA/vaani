@@ -39,3 +39,30 @@ This decision separates implementation completion from external acceptance. Miss
   - `git grep -n "strip_citations" app/`: found in `app/agent/render.py`, `app/workers/inbound.py`, and `app/channels/voice/session.py`
 - PENDING EXTERNAL GATES: none for W1-01
 
+## W1-05 Completion Report
+
+- Commit: `6affe7c`
+- TASK: W1-05
+- FILES CHANGED:
+  - `app/booking/timefmt.py` — created tenant_timezone and format_local
+  - `app/workers/inbound.py` — used format_local in booking_status branch instead of raw isoformat()
+  - `tests/test_timefmt.py` — 6 unit tests covering local time formatting and timezone fallbacks
+- SUMMARY:
+  Created app/booking/timefmt.py providing format_local and tenant_timezone. Updated inbound.py booking_status branch to load the tenant and render appointments in local timezone formatted as '%a %d %b, %I:%M %p'.
+- TESTS RUN:
+  - `uv run pytest -q tests/test_timefmt.py`
+  - `uv run ruff check .`
+  - `uv run mypy app`
+  - `uv run pytest -q`
+- RESULTS:
+  - Focused: 6 passed
+  - Full suite: 230 passed, 4 skipped
+  - Ruff & mypy: passed with 0 issues
+- DEVIATIONS FROM PACKET: none
+- REMAINING ISSUES: none
+- EVIDENCE:
+  - Tests: `test_format_local_morning_ist`, `test_format_local_date_rollover_ist`, `test_format_local_timezone_aware`, `test_tenant_timezone_default_when_none_or_missing`, `test_tenant_timezone_invalid_falls_back`, `test_tenant_timezone_valid`
+  - `git grep -n "isoformat()" app/workers/inbound.py`: 0 matches
+- PENDING EXTERNAL GATES: none for W1-05
+
+
