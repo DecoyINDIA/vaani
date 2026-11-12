@@ -11,7 +11,7 @@ import asyncio
 import json
 import logging
 import re
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -813,14 +813,6 @@ async def _process_event_inner(
         else:
             response = t("status.none", lang)
     elif intent in {"book", "reschedule"}:
-        slot_result = next(
-            (
-                item
-                for item in result.get("tool_results", [])
-                if item.get("tool") == "slots_get" and item.get("result")
-            ),
-            None,
-        )
         existing_booking = None
         if intent == "reschedule":
             existing_booking = await Bookings(tenant_id).find_one(
@@ -831,12 +823,23 @@ async def _process_event_inner(
             )
             if not existing_booking:
                 response = t("reschedule.none", lang)
-        if slot_result and (intent == "book" or existing_booking):
+
+        slots_tool_res = next(
+            (
+                item
+                for item in result.get("tool_results", [])
+                if item.get("tool") == "slots_get"
+            ),
+            None,
+        )
+        has_slots = bool(slots_tool_res and slots_tool_res.get("result"))
+
+        if slots_tool_res and has_slots and (intent == "book" or existing_booking):
             tenant = await Tenants.find_by_id(tenant_id)
             tenant_tz = tenant_timezone(tenant)
             picker_slots = []
             stored_slots: dict[str, str] = {}
-            for slot in slot_result["result"][:10]:
+            for slot in slots_tool_res["result"][:10]:
                 slot_id = str(slot["slot_id"])
                 start_raw = str(slot["start"])
                 stored_slots[slot_id] = start_raw
@@ -846,10 +849,10 @@ async def _process_event_inner(
                 "stage": "choose_slot",
                 "kind": "move" if intent == "reschedule" else "create",
                 "booking_id": str(existing_booking["_id"]) if existing_booking else None,
-                "practitioner_id": slot_result["practitioner_id"],
-                "practitioner_name": slot_result["practitioner_name"],
+                "practitioner_id": slots_tool_res["practitioner_id"],
+                "practitioner_name": slots_tool_res["practitioner_name"],
                 "service": "Consultation",
-                "date": slot_result["date"],
+                "date": slots_tool_res["date"],
                 "slots": stored_slots,
             }
             await Conversations(tenant_id).update_one(
@@ -889,6 +892,16 @@ async def _process_event_inner(
                 picker,
             )
             return
+        elif not has_slots and (intent == "book" or existing_booking):
+            raw_date = slots_tool_res.get("date") if slots_tool_res else ""
+            human_date = raw_date
+            if raw_date:
+                try:
+                    d_parsed = date.fromisoformat(raw_date)
+                    human_date = d_parsed.strftime("%d %b %Y")
+                except Exception:
+                    pass
+            response = t("booking.no_slots", lang, date=human_date or "that date")
 
     document = {
         "conversation_id": conversation_id,

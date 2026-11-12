@@ -57,8 +57,8 @@ MONTHS = {
 }
 
 
-def resolve(phrase: str, *, today: date, lang: str) -> date:
-    """Resolve a relative date phrase into an absolute date (always future/today)."""
+def resolve_or_none(phrase: str, *, today: date, lang: str = "en") -> date | None:
+    """Resolve a relative date phrase into an absolute date, or None if no date was found."""
     phrase = normalize_numerals(phrase).lower().strip()
 
     # 1. Explicit today check
@@ -202,7 +202,13 @@ def resolve(phrase: str, *, today: date, lang: str) -> date:
         except ValueError:
             pass
 
-    return today
+    return None
+
+
+def resolve(phrase: str, *, today: date, lang: str = "en") -> date:
+    """Resolve a relative date phrase into an absolute date (always future/today)."""
+    res = resolve_or_none(phrase, today=today, lang=lang)
+    return res if res is not None else today
 
 
 def parse_colloquial_time(phrase: str) -> str | None:

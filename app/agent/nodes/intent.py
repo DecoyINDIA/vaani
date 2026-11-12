@@ -14,12 +14,17 @@ from __future__ import annotations
 
 import json
 import logging
+import re
+from datetime import date, datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from app.agent.llm import query_llm
 from app.agent.profile import BusinessProfile, load_profile
 from app.agent.state import AgentState
+from app.booking.timefmt import DEFAULT_TIMEZONE, tenant_timezone
 from app.config import settings
+from app.models.collections import Messages, Tenants
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +42,12 @@ LEGACY_INTENT_ALIASES = {
 }
 
 
-def build_system_prompt(profile: BusinessProfile) -> str:
+def build_system_prompt(
+    profile: BusinessProfile,
+    *,
+    today_iso: str = "",
+    weekday: str = "",
+) -> str:
     """Classifier instructions worded for this tenant's kind of business."""
     restricted = "; ".join(profile.restricted_topics)
     examples = "".join(
@@ -45,12 +55,22 @@ def build_system_prompt(profile: BusinessProfile) -> str:
         '{"intent": "restricted_advice", "confidence": 0.98}\n'
         for i, example in enumerate(profile.restricted_examples, start=7)
     )
+    today_context = f"Today is {weekday}, {today_iso}.\n" if today_iso and weekday else ""
+
     return (
         f"You are an expert intent classifier for the AI front-desk agent of {profile.name}, "
-        f"a {profile.business_type}. "
-        "Analyze the user's message and output a JSON object containing the keys \"intent\" and \"confidence\".\n"
+        f"a {profile.business_type}.\n"
+        f"{today_context}"
+        "Analyze the user's message and output a JSON object with the following schema:\n"
+        "- \"intent\": exactly one of the closed taxonomy labels\n"
+        "- \"confidence\": float between 0.0 and 1.0\n"
+        "- \"date\": requested date in YYYY-MM-DD format (or null). "
+        "Rules: resolve relative dates against today; ambiguous 'kal' means tomorrow; "
+        "never output a past date; null if user gave none.\n"
+        "- \"time\": requested time in 24-hour HH:MM format (or null)\n"
+        f"- \"practitioner_hint\": requested {profile.staff_term} name (string or null)\n"
+        "- \"service_hint\": requested service or reason (string or null)\n\n"
         f"The \"intent\" key MUST be exactly one of the following labels:\n{', '.join(sorted(TAXONOMY))}\n\n"
-        "The \"confidence\" key must be a float between 0.0 and 1.0 representing your certainty.\n\n"
         "Intent Guidance:\n"
         "- greet: Greeting or saying hello (e.g. 'hi', 'namaste', 'hello')\n"
         "- faq_hours: Opening hours/timings (e.g. 'timings kya hai', 'when does it open')\n"
@@ -88,21 +108,29 @@ def build_intent_prompts(
     business_type: str = "clinic",
     *,
     profile: BusinessProfile | None = None,
+    today_iso: str = "",
+    weekday: str = "",
+    history: str = "",
 ) -> tuple[str, str]:
-    """Pure prompt builder for intent classification."""
+    """Pure prompt builder for structured understanding."""
     if profile is None:
         profile = BusinessProfile(name="our business", business_type=business_type)
-    system_prompt = build_system_prompt(profile)
-    user_prompt = f"Language detected: {lang}\nUser message: '{text}'"
+    system_prompt = build_system_prompt(profile, today_iso=today_iso, weekday=weekday)
+    hist_text = history.strip() if history and history.strip() else "(none)"
+    user_prompt = (
+        f"Language detected: {lang}\n"
+        f"Recent conversation (oldest first):\n"
+        f"{hist_text}\n"
+        f"User message: '{text}'"
+    )
     return system_prompt, user_prompt
 
 
-def parse_intent_response(raw: str) -> tuple[str, float]:
-    """Parse raw LLM response into (intent, confidence).
+def parse_understanding(raw: str, *, today: date) -> dict[str, Any]:
+    """Parse raw LLM response into intent and optional structured fields.
 
     Strips code fences, parses JSON, and validates against TAXONOMY.
-    Returns ("out_of_scope", 0.0) for unknown labels.
-    Raises ValueError on malformed / unparseable output.
+    Validates date within [today, today + 90 days], time as HH:MM, and trims hints.
     """
     cleaned = raw.strip()
     if cleaned.startswith("```json"):
@@ -129,29 +157,107 @@ def parse_intent_response(raw: str) -> tuple[str, float]:
         confidence = 0.0
 
     if detected_intent not in TAXONOMY:
-        return "out_of_scope", 0.0
+        return {"intent": "out_of_scope", "confidence": 0.0}
 
-    return detected_intent, confidence
+    result: dict[str, Any] = {
+        "intent": detected_intent,
+        "confidence": confidence,
+    }
+
+    raw_date = data.get("date")
+    if isinstance(raw_date, str) and raw_date.strip():
+        try:
+            parsed_d = date.fromisoformat(raw_date.strip())
+            if today <= parsed_d <= today + timedelta(days=90):
+                result["req_date"] = parsed_d.isoformat()
+        except ValueError:
+            pass
+
+    raw_time = data.get("time")
+    if isinstance(raw_time, str) and raw_time.strip():
+        time_str = raw_time.strip()
+        if re.match(r"^([01]\d|2[0-3]):[0-5]\d$", time_str):
+            result["req_time"] = time_str
+
+    raw_practitioner = data.get("practitioner_hint")
+    if isinstance(raw_practitioner, str) and raw_practitioner.strip():
+        result["practitioner_hint"] = raw_practitioner.strip()[:60]
+
+    raw_service = data.get("service_hint")
+    if isinstance(raw_service, str) and raw_service.strip():
+        result["service_hint"] = raw_service.strip()[:60]
+
+    return result
+
+
+def parse_intent_response(raw: str) -> tuple[str, float]:
+    """Parse raw LLM response into (intent, confidence)."""
+    parsed = parse_understanding(raw, today=date.today())
+    return parsed["intent"], parsed["confidence"]
 
 
 async def intent(state: AgentState) -> dict[str, Any]:
-    """Node 2 — intent classifier (TRD §4.1/§4.2 input gate).
+    """Node 2 — intent classifier & structured understand (TRD §4.1/§4.2 input gate).
 
-    Small model, temperature 0, few-shot per language. MUST emit a label from the
-    closed taxonomy with confidence >= threshold; below threshold twice -> handoff.
+    Small model, temperature 0, JSON mode. Emits closed-set intent + optional date/time/hints.
     """
     text = state.get("text", "").strip()
     lang = state.get("lang", "en")
+    tenant_id = state.get("tenant_id") or ""
+    conversation_id = state.get("conversation_id") or ""
 
     if not text:
         return {"intent": "out_of_scope", "confidence": 0.0}
 
-    # Setup model (use settings configuration or default to gemini-2.5-flash-lite)
+    # Timezone & current date for tenant
+    try:
+        tenant = await Tenants.find_by_id(tenant_id) if tenant_id else None
+        tz = tenant_timezone(tenant)
+    except Exception:
+        tz = ZoneInfo(DEFAULT_TIMEZONE)
+
+    today = datetime.now(tz).date()
+    today_iso = today.isoformat()
+    weekday = today.strftime("%A")
+
+    # Fetch last 6 messages from Messages(tenant_id)
+    history = ""
+    try:
+        if conversation_id and tenant_id:
+            cursor = (
+                Messages(tenant_id)
+                .find({"conversation_id": conversation_id})
+                .sort("ts", -1)
+                .limit(6)
+            )
+            docs = await cursor.to_list(length=6)
+            docs.reverse()
+            lines: list[str] = []
+            for m in docs:
+                direction = m.get("direction")
+                sender = "Patient" if direction == "inbound" else "Clinic"
+                body = m.get("text") or ""
+                if not body and m.get("type") == "interactive":
+                    body = "(interactive option)"
+                sanitized = body[:200].replace("'", "’")
+                lines.append(f"{sender}: {sanitized}")
+            history = "\n".join(lines)
+    except Exception as hist_err:
+        logger.warning("Could not fetch conversation history: %s", hist_err)
+        history = ""
+
+    # Setup model
     model = settings.llm_model_classifier or "google/gemini-2.5-flash-lite"
 
-    profile = await load_profile(state.get("tenant_id") or "")
+    profile = await load_profile(tenant_id)
     system_prompt, prompt = build_intent_prompts(
-        text, lang, profile.business_type, profile=profile
+        text,
+        lang,
+        profile.business_type,
+        profile=profile,
+        today_iso=today_iso,
+        weekday=weekday,
+        history=history,
     )
 
     try:
@@ -162,10 +268,9 @@ async def intent(state: AgentState) -> dict[str, Any]:
             temperature=0.0,
             json_mode=True,
             node="intent",
-            tenant_id=state.get("tenant_id") or "",
+            tenant_id=tenant_id,
         )
-        detected_intent, confidence = parse_intent_response(response_text)
-        return {"intent": detected_intent, "confidence": confidence}
+        return parse_understanding(response_text, today=today)
     except Exception as e:
         logger.error("Intent classification failed: %s", type(e).__name__)
         return {
@@ -173,4 +278,5 @@ async def intent(state: AgentState) -> dict[str, Any]:
             "confidence": 0.0,
             "agent_error": "llm_unavailable",
         }
+
 

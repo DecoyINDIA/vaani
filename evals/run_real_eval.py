@@ -20,7 +20,10 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from app.agent.nodes.intent import build_intent_prompts, parse_intent_response
+from app.agent.nodes.intent import (
+    build_intent_prompts,
+    parse_understanding,
+)
 from app.agent.nodes.lang_detect import lang_detect
 from app.agent.nodes.output_gate import output_gate
 from app.agent.nodes.responder import build_responder_prompts
@@ -155,13 +158,20 @@ async def evaluate_dataset(
             lang_ok = (predicted_lang == expected_lang)
 
             # 2. Classifier invocation
-            sys_prompt, user_prompt = build_intent_prompts(text, predicted_lang, "clinic")
+            sys_prompt, user_prompt = build_intent_prompts(
+                text,
+                predicted_lang,
+                "clinic",
+                today_iso=today.isoformat(),
+                weekday=today.strftime("%A"),
+            )
             messages = [
                 {"role": "system", "content": sys_prompt},
                 {"role": "user", "content": user_prompt},
             ]
             parse_failure = False
             predicted_intent = "out_of_scope"
+            model_date: str | None = None
             t0 = time.perf_counter()
             cls_latency = 0
             cls_tokens: dict[str, int] = {"prompt_tokens": 0, "completion_tokens": 0}
@@ -175,7 +185,9 @@ async def evaluate_dataset(
                     json_mode=True,
                 )
                 cls_latency = int((time.perf_counter() - t0) * 1000)
-                predicted_intent, _ = parse_intent_response(raw_resp)
+                understanding = parse_understanding(raw_resp, today=today)
+                predicted_intent = understanding["intent"]
+                model_date = understanding.get("req_date")
             except ValueError:
                 cls_latency = int((time.perf_counter() - t0) * 1000)
                 parse_failure = True
@@ -188,12 +200,14 @@ async def evaluate_dataset(
 
             # 3. Date evaluation (if date category)
             date_ok = True
+            model_date_ok = True
             if category == "date":
                 expected_offset = row.get("expected_date_offset_days")
                 if expected_offset is not None:
                     expected_date = today + timedelta(days=expected_offset)
                     resolved_date = resolve(text, today=today, lang=expected_lang)
                     date_ok = (resolved_date == expected_date)
+                    model_date_ok = (model_date == expected_date.isoformat())
 
             # 4. FAQ Grounding evaluation (if faq category)
             grounding_violation = False
@@ -263,6 +277,7 @@ async def evaluate_dataset(
                 "intent_ok": intent_ok,
                 "lang_ok": lang_ok,
                 "date_ok": date_ok,
+                "model_date_ok": model_date_ok,
                 "safety_ok": safety_ok,
                 "grounding_violation": grounding_violation,
                 "parse_failure": parse_failure,
@@ -301,6 +316,10 @@ async def evaluate_dataset(
     date_rows = [r for r in results if r["category"] == "date"]
     date_accuracy = (
         round(sum(1 for r in date_rows if r["date_ok"]) / len(date_rows), 4)
+        if date_rows else 1.0
+    )
+    model_date_accuracy = (
+        round(sum(1 for r in date_rows if r.get("model_date_ok")) / len(date_rows), 4)
         if date_rows else 1.0
     )
 
@@ -354,6 +373,7 @@ async def evaluate_dataset(
             "per_language_f1": per_language_f1,
             "safety_recall": safety_recall,
             "date_accuracy": date_accuracy,
+            "model_date_accuracy": model_date_accuracy,
             "grounding_violations": grounding_violations,
             "parse_failures": parse_failures,
             "language_accuracy": lang_accuracy,
@@ -417,6 +437,7 @@ def main() -> None:
         print(f"  [{lang}] Macro F1: {score:.4f}")
     print(f"Safety Recall:    {report['metrics']['safety_recall']:.4f} (Threshold: {MIN_SAFETY_RECALL})")
     print(f"Date Accuracy:    {report['metrics']['date_accuracy']:.4f} (Threshold: {MIN_DATE_ACCURACY})")
+    print(f"Model Date Accuracy: {report['metrics']['model_date_accuracy']:.4f}")
     print(f"Grounding Violations: {report['metrics']['grounding_violations']} (Threshold: {MAX_GROUNDING_VIOLATIONS})")
     print(f"Parse Failures:   {report['metrics']['parse_failures']}")
     print(f"Language Accuracy:{report['metrics']['language_accuracy']:.4f}")

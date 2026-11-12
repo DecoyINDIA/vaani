@@ -71,10 +71,20 @@ def build_graph() -> Any:
     )
     
     # 5. Core flow edges
+    def route_tool_router(state: AgentState) -> str:
+        if state.get("escalate"):
+            return "handoff"
+        if (
+            state.get("channel") == "wa"
+            and state.get("intent") in {"book", "reschedule", "cancel", "booking_status"}
+        ):
+            return END
+        return "responder"
+
     workflow.add_conditional_edges(
         "tool_router",
-        lambda state: "handoff" if state.get("escalate") else "responder",
-        {"handoff": "handoff", "responder": "responder"},
+        route_tool_router,
+        {"handoff": "handoff", "responder": "responder", END: END},
     )
     workflow.add_conditional_edges(
         "responder",
