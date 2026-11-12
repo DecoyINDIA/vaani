@@ -643,6 +643,42 @@ This decision separates implementation completion from external acceptance. Miss
   - Native-speaker human review and sign-off on Hindi and Odia strings in `docs/i18n-review.md`.
   - Credentialed model evaluation on OpenRouter (`evals/run_real_eval.py`).
 
+## 2026-11-12 — W2-06: Worker concurrency & patient message ordering
+- STATUS: Completed
+- COMMIT: bfdd1ee
+- PACKET: vaani-master-plan/06-AGENT_TASKS/W2-06-worker-concurrency.md
+- SUBSYSTEMS TOUCHED:
+  - `app/config.py` & `.env.example` — added `worker_concurrency: int = 8` setting
+  - `app/models/collections.py` — added `lease_seconds: int = 60` parameter to `acquire_work_unscoped` and sorted scan by `[("accepted_at", 1), ("_id", 1)]` to `find_queued_unscoped`
+  - `app/workers/inbound.py` — compiled LangGraph app once via `_GRAPH` & `get_graph()`; assigned unique host-pid stream-consumer name `CONSUMER = make_consumer_name()`; added patient grouping key `_contact_key`; implemented `_run_grouped` concurrency batch runner; updated MongoDB fallback scan (cap 50, lease 180), `xautoclaim`, and `xreadgroup` (`count = max(10, 2 * settings.worker_concurrency)`) with group-done heartbeat refresh
+  - `tests/test_worker_concurrency.py` — 8 tests covering concurrent execution across patients (max_concurrent >= 4), strictly serial in-order execution within a patient (max_concurrent == 1), isolated failure resilience, duplicate delivery deduplication, unique consumer generation across PIDs, graph caching singleton, rollback switch (`WORKER_CONCURRENCY=1`), and contact key resolution
+- SUMMARY:
+  Enabled concurrent processing of inbound messages across different patients up to `WORKER_CONCURRENCY` (default 8) while strictly maintaining serial arrival-order processing for messages from the same patient within a worker process. Multiple worker replicas remain unsupported for patient ordering (documented as non-goal). LangGraph application is compiled once on worker startup.
+- TESTS RUN:
+  - `uv run pytest -q tests/test_worker_concurrency.py tests/test_durable_ingress.py tests/test_inbound_loop.py` (21 passed in 1.34s)
+  - `powershell -Command "$env:WORKER_CONCURRENCY = '1'; uv run pytest -q; $env:WORKER_CONCURRENCY = ''"` (377 passed, 4 skipped in 14.45s)
+  - `uv run pytest -q` (377 passed, 4 skipped in 14.63s)
+  - `uv run ruff check .` (0 errors)
+  - `uv run mypy app` (0 errors across 73 source files)
+  - `git grep -nE 'db\[[^]]+\]\.(find|insert|update|delete)' app/ ':!app/models/'` (exit code 1, 0 matches)
+  - `uv run python evals/run_evals.py --ci --report artifacts/mock-eval-report.json` (25/25 passed, 100% accuracy)
+- RESULTS:
+  - 8 new concurrency tests passed.
+  - Concurrency across patients verified (max concurrent >= 4).
+  - In-order arrival sequence preserved for single patient (max concurrent == 1).
+  - Full pytest suite: 377 passed, 4 skipped (8 new tests added).
+  - Rollback switch (`WORKER_CONCURRENCY=1`) fully verified on full test suite.
+  - Mock evals: 25/25 passed.
+  - Zero tenant-isolation violations.
+- DEVIATIONS FROM PACKET: none
+- REMAINING ISSUES: none
+- EVIDENCE:
+  - `tests/test_worker_concurrency.py` validating concurrency, sequential per-patient ordering, deduplication, and single-graph caching.
+- PENDING EXTERNAL GATES:
+  - Native-speaker human review and sign-off on Hindi and Odia strings in `docs/i18n-review.md`.
+  - Credentialed model evaluation on OpenRouter (`evals/run_real_eval.py`).
+
+
 
 
 
