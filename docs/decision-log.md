@@ -607,6 +607,42 @@ This decision separates implementation completion from external acceptance. Miss
   - Native-speaker human review and sign-off on Hindi and Odia strings in `docs/i18n-review.md`.
   - Credentialed model evaluation on OpenRouter (`evals/run_real_eval.py`).
 
+## 2026-11-12 — W2-09: Replace numbered text menu with tappable capability menu
+- STATUS: Completed
+- COMMIT: 6bf67a7
+- PACKET: vaani-master-plan/06-AGENT_TASKS/W2-09-interactive-menu.md
+- SUBSYSTEMS TOUCHED:
+  - `app/i18n/strings.py` — added 7 keys (menu.prompt, menu.button, menu.book, menu.hours, menu.location, menu.status, menu.human) across en, hi, hi-Latn, and or
+  - `docs/i18n-review.md` — documented Section 7 for interactive capability menu strings with length audits
+  - `app/channels/whatsapp.py` — implemented `send_menu` for interactive list messages with 24h-window verification, character limits, and outbound audit
+  - `app/agent/templates/__init__.py` — shortened `out_of_scope` across all 4 languages to single apology sentence (removed numbered list)
+  - `app/agent/state.py` & `app/agent/nodes/lang_detect.py` — added and supported `lang_override` in AgentState to preserve conversation language on synthetic menu actions
+  - `app/workers/inbound.py` — sent capability menu on out_of_scope bot replies; mapped `menu:*` action IDs to synthetic English utterances while maintaining conversation language and single inbound persistence
+  - `tests/test_menu.py` — 10 tests verifying apology, menu shape, language preservation, tap dispatch, and single inbound persistence
+- SUMMARY:
+  Replaced the legacy numbered capability text with a WhatsApp interactive list menu (Book, Timings, Location, My appointment, Talk to staff) dispatched whenever a message is out of scope. Menu taps are processed deterministically via standard pipeline intents without corrupting stored conversation language or duplicating database inbound records.
+- TESTS RUN:
+  - `uv run pytest -q tests/test_menu.py tests/test_golden_transcripts.py` (42 passed in 1.62s)
+  - `uv run ruff check .` (0 errors)
+  - `uv run mypy app` (0 errors across 73 source files)
+  - `uv run pytest -q` (369 passed, 4 skipped in 15.64s)
+  - `git grep -nE 'db\[[^]]+\]\.(find|insert|update|delete)' app/ ':!app/models/'` (exit code 1, 0 matches)
+  - `uv run python evals/run_evals.py --ci --report artifacts/mock-eval-report.json` (25/25 passed, 100% accuracy)
+- RESULTS:
+  - All 10 menu tests passed.
+  - Numbered list pattern `1\. ` completely removed from templates.
+  - Full pytest suite: 369 passed, 4 skipped (10 new tests added).
+  - Mock evals: 25/25 passed.
+  - Zero tenant-isolation violations.
+- DEVIATIONS FROM PACKET: none
+- REMAINING ISSUES: none
+- EVIDENCE:
+  - `tests/test_menu.py` validating out_of_scope apology, menu dispatch, tap execution, and language retention.
+  - `docs/i18n-review.md` Section 7 detailing menu translations.
+- PENDING EXTERNAL GATES:
+  - Native-speaker human review and sign-off on Hindi and Odia strings in `docs/i18n-review.md`.
+  - Credentialed model evaluation on OpenRouter (`evals/run_real_eval.py`).
+
 
 
 
