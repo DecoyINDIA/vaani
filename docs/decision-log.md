@@ -717,6 +717,41 @@ This decision separates implementation completion from external acceptance. Miss
   - Native-speaker human review and sign-off on Hindi and Odia strings in `docs/i18n-review.md`.
   - Credentialed model evaluation on OpenRouter (`evals/run_real_eval.py`).
 
+## 2026-11-12 — INT-2 Checkpoint: Wave 2 Integration & Concurrency Soak
+- STATUS: Checkpoint Passed (All Locally Executable Checks Succeeded)
+- COMMIT: 3f66e51
+- PACKET: vaani-master-plan/08-EXECUTION_ORCHESTRATOR.md §5 (INT-2)
+- SUBSYSTEMS VERIFIED:
+  - Full codebase across app, workers, agents, channels, i18n, models, observability, and dashboard
+  - All Wave 1 packets: W1-01 through W1-13, INT-1 Checkpoint
+  - All Wave 2 packets: W2-04 (LLM resilience & telemetry), W2-05 (Sentry & structured JSON logging), W2-02 (real eval harness & 320-utterance dataset), W2-01 (localization in 4 languages), W2-03 (structured understand & context), W2-08 (golden transcript tests in 4 languages), W2-09 (interactive capability menu), W2-06 (worker concurrency & patient ordering), W2-07 (dedicated scheduler service & retryable slot expansion)
+- CHECKS EXECUTED LOCALLY:
+  1. Automated Quality Gate:
+     - `uv run ruff check .` (0 errors)
+     - `uv run mypy app` (0 errors across 74 source files)
+     - `uv run pytest -q` (386 passed, 4 skipped in 17.56s)
+     - Strict tenant-isolation grep: `git grep -nE 'db\[[^]]+\]\.(find|insert|update|delete)' app/ ':!app/models/'` (0 matches)
+     - `cd dashboard && npm run lint && npm run build` (0 lint errors; Vite production build generated in 715ms)
+     - `docker compose config` (validated cleanly with `api`, `worker`, `scheduler`, and `redis`)
+     - Mock evals: `uv run python evals/run_evals.py --ci --report artifacts/mock-eval-report.json` (25/25 passed, 100% accuracy, 0 hallucinations, 0 ungrounded claims)
+  2. Multi-turn Golden Transcript Suite (W2-08):
+     - 32 scenarios executed across 8 journeys in `en`, `hi`, `hi-Latn`, `or` with regex template matching and global boundary assertions (32/32 passed in 0.99s)
+  3. 20-Conversation Concurrency Soak:
+     - 20 distinct patients with 2 sequential messages each (40 messages total) processed through concurrent worker queue (`test_twenty_conversation_concurrency_soak` — passed; max_concurrent >= 6, strict arrival-order in-group serialization, 0 failed messages, 40 completed)
+  4. Concurrency Rollback Switch:
+     - Full test suite verified green with `WORKER_CONCURRENCY=1` (377 passed, 4 skipped)
+- RESULTS:
+  - All written Wave 1 and Wave 2 packets have implementation commits on `main`.
+  - All locally executable integration checks for INT-2 are green.
+  - Zero tenant-isolation violations across the platform.
+- PENDING EXTERNAL ACCEPTANCE GATES (NOT LOCALLY EXECUTABLE):
+  1. Live OpenRouter model API credentials: required to execute `evals/run_real_eval.py` against live models to ratify ratified section 5 thresholds (Macro-F1 >= 0.90, safety recall 1.00, date accuracy >= 0.95).
+  2. W2-03 before/after comparative model evaluation benchmark on credentialed OpenRouter models.
+  3. Native-speaker human review and sign-off on Hindi (`hi`), Hinglish (`hi-Latn`), and Odia (`or`) strings in `docs/i18n-review.md`.
+  4. Native-speaker human review on the 320-row multilingual evaluation dataset (`evals/dataset/real_eval.jsonl`).
+  5. Live staging smoke test on a real Meta/WhatsApp business test phone number (INT-3 / manual staging smoke).
+
+
 
 
 
