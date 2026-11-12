@@ -13,6 +13,50 @@ const tabs: { id: Tab; label: string }[] = [
 ];
 const errorText = (value: unknown) => value instanceof Error ? value.message : "The request failed.";
 
+function obj(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+}
+
+function contactLabel(item: Item): string {
+  const contact = obj(item.contact);
+  const name = typeof contact.name === "string" ? contact.name.trim() : "";
+  const phone = typeof contact.phone === "string" ? contact.phone.trim() : "";
+  if (name && name !== phone) return name;
+  if (phone) return phone;
+  return `Conversation ${item._id.slice(-6)}`;
+}
+
+function timeAgo(iso: unknown): string {
+  if (!iso || typeof iso !== "string") return "";
+  const date = new Date(iso);
+  if (isNaN(date.getTime())) return "";
+  const diffSec = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (diffSec < 60) return "just now";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} min ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `${diffHours} h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays} d ago`;
+}
+
+function formatWhen(iso: unknown): string {
+  if (!iso || typeof iso !== "string") return "—";
+  const date = new Date(iso);
+  if (isNaN(date.getTime())) return "—";
+  try {
+    return new Intl.DateTimeFormat("en-IN", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(date);
+  } catch {
+    return "—";
+  }
+}
+
 async function api(path: string, init: RequestInit = {}, retry = true): Promise<unknown> {
   const access = sessionStorage.getItem("vaani_access");
   const response = await fetch(path, { ...init, headers: { "Content-Type": "application/json", ...(access ? { Authorization: `Bearer ${access}` } : {}), ...init.headers } });
@@ -112,14 +156,26 @@ function Inbox({ items, selected, select, messages, messageHasMore, loadMessages
   const [reply, setReply] = useState(""); const [summary, setSummary] = useState(""); const [error, setError] = useState(""); const [busy, setBusy] = useState("");
   if (!items.length) return <Empty title="Inbox is clear" detail="New customer conversations will appear here." />;
   async function action(path: string, body?: object) { if (!selected || busy) return; setBusy(path); setError(""); try { await api(`/api/conversations/${selected._id}/${path}`, { method: "POST", body: body ? JSON.stringify(body) : undefined }); setReply(""); setSummary(""); await reload(); } catch (reason) { setError(errorText(reason)); } finally { setBusy(""); } }
-  return <section className="inbox-layout"><div className="conversation-list">{items.map((item) => <button key={item._id} className={selected?._id === item._id ? "selected" : ""} onClick={() => select(item)}><span className={`state-dot ${item.state}`} /><span><strong>Conversation {item._id.slice(-6)}</strong><small>{String(item.channel || "WhatsApp")} · {String(item.state || "bot")}</small></span><time>now</time></button>)}</div>
-    <article className="thread"><header><div><p className="eyebrow">Customer thread</p><h2>{selected ? `…${selected._id.slice(-8)}` : "Select a conversation"}</h2></div><span className={`flag ${selected?.state === "human" ? "warm" : ""}`}>{selected?.state === "human" ? "Staff owns this" : "Vaani responding"}</span></header><div className="message-stream">{messages.map((message) => <div key={message._id} className={`message ${message.direction}`}><small>{String(message.direction)}</small><p>{String(message.text || message.type)}</p></div>)}</div>{messageHasMore && <button className="text-button" onClick={loadMessages}>Load older messages</button>}{error && <p className="inline-error">{error}</p>}{selected?.state === "human" ? <div className="composer"><textarea value={reply} onChange={(event) => setReply(event.target.value)} placeholder="Reply as business staff" /><button className="primary" disabled={Boolean(busy) || !reply.trim()} onClick={() => action("reply", { text: reply, request_id: crypto.randomUUID() })}>{busy === "reply" ? "Sending…" : "Send reply"}</button><div className="return-row"><input value={summary} onChange={(event) => setSummary(event.target.value)} placeholder="Resolution summary required to return" /><button className="quiet" disabled={Boolean(busy) || !summary.trim()} onClick={() => action("return", { summary })}>{busy === "return" ? "Returning…" : "Return to Vaani"}</button></div></div> : <button className="quiet takeover" disabled={Boolean(busy)} onClick={() => action("takeover")}>{busy ? "Taking over…" : "Take over conversation"}</button>}</article></section>;
+  const selectedLabel = selected ? contactLabel(selected) : "Select a conversation";
+  const selectedPhone = selected ? String(obj(selected.contact).phone || "").trim() : "";
+  return <section className="inbox-layout"><div className="conversation-list">{items.map((item) => {
+    const preview = typeof item.last_message_preview === "string" && item.last_message_preview ? item.last_message_preview : `${String(item.channel || "WhatsApp")} · ${String(item.state || "bot")}`;
+    return <button key={item._id} className={selected?._id === item._id ? "selected" : ""} onClick={() => select(item)}><span className={`state-dot ${item.state}`} /><span><strong>{contactLabel(item)}</strong><small>{preview}</small>{Boolean(item.open_escalation) && <span className="flag warm">Needs staff</span>}</span><time>{timeAgo(item.last_msg_at)}</time></button>;
+  })}</div>
+    <article className="thread"><header><div><p className="eyebrow">Customer thread</p><h2>{selectedLabel}</h2>{Boolean(selected && selectedPhone && selectedPhone !== selectedLabel) && <p className="mono">{selectedPhone}</p>}</div><span className={`flag ${selected?.state === "human" ? "warm" : ""}`}>{selected?.state === "human" ? "Staff owns this" : "Vaani responding"}</span></header><div className="message-stream">{messages.map((message) => <div key={message._id} className={`message ${message.direction}`}><small>{String(message.direction)}</small><p>{String(message.text || message.type)}</p></div>)}</div>{messageHasMore && <button className="text-button" onClick={loadMessages}>Load older messages</button>}{error && <p className="inline-error">{error}</p>}{selected?.state === "human" ? <div className="composer"><textarea value={reply} onChange={(event) => setReply(event.target.value)} placeholder="Reply as business staff" /><button className="primary" disabled={Boolean(busy) || !reply.trim()} onClick={() => action("reply", { text: reply, request_id: crypto.randomUUID() })}>{busy === "reply" ? "Sending…" : "Send reply"}</button><div className="return-row"><input value={summary} onChange={(event) => setSummary(event.target.value)} placeholder="Resolution summary required to return" /><button className="quiet" disabled={Boolean(busy) || !summary.trim()} onClick={() => action("return", { summary })}>{busy === "return" ? "Returning…" : "Return to Vaani"}</button></div></div> : <button className="quiet takeover" disabled={Boolean(busy)} onClick={() => action("takeover")}>{busy ? "Taking over…" : "Take over conversation"}</button>}</article></section>;
 }
 
 function Bookings({ items, reload }: { items: Item[]; reload: () => Promise<void> }) {
   const [error, setError] = useState(""); const [busy, setBusy] = useState(""); if (!items.length) return <Empty title="No appointments yet" detail="Confirmed customer bookings will collect here." />;
   async function cancel(id: string) { if (busy) return; setBusy(id); setError(""); try { await api(`/api/bookings/${id}`, { method: "PATCH", body: JSON.stringify({ status: "cancelled" }) }); await reload(); } catch (reason) { setError(errorText(reason)); } finally { setBusy(""); } }
-  return <section className="table-panel">{error && <p className="inline-error">{error}</p>}<table><thead><tr><th>Customer reference</th><th>Service</th><th>Status</th><th>Source</th><th /></tr></thead><tbody>{items.map((item) => <tr key={item._id}><td className="mono">…{String(item.contact_id || "unknown").slice(-8)}</td><td>{String(item.service || "Consultation")}</td><td><span className={`flag ${item.status}`}>{String(item.status)}</span></td><td>{String(item.source || "WhatsApp")}</td><td>{!["cancelled", "completed"].includes(String(item.status)) && <button className="text-button danger" disabled={Boolean(busy)} onClick={() => cancel(item._id)}>{busy === item._id ? "Cancelling…" : "Cancel"}</button>}</td></tr>)}</tbody></table></section>;
+  return <section className="table-panel">{error && <p className="inline-error">{error}</p>}<table><thead><tr><th>Patient</th><th>Date & time</th><th>Doctor</th><th>Service</th><th>Status</th><th /></tr></thead><tbody>{items.map((item) => {
+    const contact = obj(item.contact);
+    const name = typeof contact.name === "string" ? contact.name.trim() : "";
+    const phone = typeof contact.phone === "string" ? contact.phone.trim() : "";
+    const patientName = name || phone || `…${String(item.contact_id || item._id).slice(-8)}`;
+    const doctorName = typeof obj(item.practitioner).name === "string" ? (obj(item.practitioner).name as string) : "—";
+    return <tr key={item._id}><td><strong>{patientName}</strong>{name && phone && phone !== name && <small style={{ display: "block", color: "#7a8581" }}>{phone}</small>}</td><td>{formatWhen(item.start)}</td><td>{doctorName}</td><td>{String(item.service || "Consultation")}</td><td><span className={`flag ${item.status}`}>{String(item.status)}</span></td><td>{!["cancelled", "completed"].includes(String(item.status)) && <button className="text-button danger" disabled={Boolean(busy)} onClick={() => cancel(item._id)}>{busy === item._id ? "Cancelling…" : "Cancel"}</button>}</td></tr>;
+  })}</tbody></table></section>;
 }
 function Escalations({ items }: { items: Item[] }) { if (!items.length) return <Empty title="No escalations" detail="Customer handoffs will appear here." />; return <section className="escalation-grid">{items.map((item) => <article key={item._id}><header><span className={`flag ${item.status}`}>{String(item.status)}</span><span className={`delivery ${item.notification_status}`}>{String(item.notification_status || "pending")}</span></header><h2>{String(item.reason || "Staff handoff")}</h2><p className="mono">Conversation …{String(item.conversation_id).slice(-8)}</p>{Boolean(item.notification_error) && <p className="inline-error">{String(item.notification_error)}</p>}</article>)}</section>; }
 function Deliveries({ items }: { items: Item[] }) { if (!items.length) return <Empty title="No delivery issues" detail="Failed and uncertain sends will appear here without customer details." />; return <section className="table-panel"><table><thead><tr><th>Status</th><th>Channel item</th><th>Attempted</th><th>Reason</th></tr></thead><tbody>{items.map((item) => <tr key={item._id}><td><span className={`flag ${item.state}`}>{String(item.state)}</span></td><td>{String(item.kind || "message")}</td><td>{item.attempted_at ? new Date(String(item.attempted_at)).toLocaleString() : "Not recorded"}</td><td>{String(item.last_error || "Awaiting reconciliation")}</td></tr>)}</tbody></table></section>; }
