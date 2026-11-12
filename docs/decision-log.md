@@ -204,6 +204,39 @@ This decision separates implementation completion from external acceptance. Miss
   - Tests: `test_get_settings_allow_list_filters_sensitive_fields`
 - PENDING EXTERNAL GATES: none for W1-07
 
+## W1-11 Completion Report
+
+- Commit: `2a91229`
+- TASK: W1-11
+- FILES CHANGED:
+  - `app/owner_api/views.py` — created enrich_conversations and enrich_bookings helpers with batched lookups
+  - `app/owner_api/routes.py` — applied enrichment helpers to list_conversations and list_bookings
+  - `tests/test_owner_view_models.py` — test verifying enriched view models, join shapes, and cross-tenant isolation
+- SUMMARY:
+  Added view-model enrichment helpers in app/owner_api/views.py. GET /api/conversations now includes contact (id, name, phone), last_message_preview, last_msg_at with tenant timezone offset, and open_escalation flag. GET /api/bookings includes contact, start/end ISO strings with tenant timezone offset, and practitioner (id, name).
+- TESTS RUN:
+  - `uv run pytest -q tests/test_owner_view_models.py tests/test_owner_route_authorization.py`
+  - `uv run ruff check .`
+  - `uv run mypy app`
+  - `uv run pytest -q`
+  - `git grep -nE 'db\[[^]]+\]\.(find|insert|update|delete)' app/ ':!app/models/'` (exit code 1, 0 matches)
+- RESULTS:
+  - Focused: 8 passed
+  - Full suite: 250 passed, 4 skipped
+  - Ruff & mypy: passed with 0 issues
+  - Tenant isolation: verified (0 unscoped db calls)
+- DEVIATIONS FROM PACKET: none
+- REMAINING ISSUES: none
+- EVIDENCE:
+  - Tests: `test_owner_view_models_enrichment_and_cross_tenant_isolation`
+- INDEPENDENT REVIEW (§4):
+  - Is every query through a tenant-scoped accessor? Yes; Contacts(tenant_id), Escalations(tenant_id), Messages(tenant_id), Slots(tenant_id), Practitioners(tenant_id).
+  - Could an id from tenant B join into tenant A? No; verified by cross-tenant negative check in test_owner_view_models_enrichment_and_cross_tenant_isolation.
+  - Any N+1 beyond the preview lookup? No; batched $in lookups for all contacts, slots, practitioners, escalations.
+  - PII added to /deliveries or /processing? No; /deliveries and /processing remain untouched and PII-free.
+- PENDING EXTERNAL GATES: none for W1-11
+
+
 
 
 
