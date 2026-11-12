@@ -34,6 +34,7 @@ COPY app ./app
 RUN --mount=type=cache,target=/root/.cache/uv \
   uv sync --frozen --no-dev --no-editable
 COPY --from=dashboard /src/dist ./dashboard/dist
+COPY ops ./ops
 
 # Change ownership to the non-root user
 RUN chown -R appuser:appgroup /srv
