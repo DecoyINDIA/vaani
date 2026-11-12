@@ -399,6 +399,40 @@ This decision separates implementation completion from external acceptance. Miss
   - Container image digest verification on Docker-enabled runner (Docker daemon unavailable locally)
   - Live model evals against OpenRouter credentials
 
+## W2-04 Completion Report
+
+- Commit: `9132652`
+- TASK: W2-04
+- FILES CHANGED:
+  - `app/config.py`: added `llm_timeout_seconds: float = 8.0` and `llm_json_mode: bool = True` settings.
+  - `.env.example`: documented `LLM_TIMEOUT_SECONDS=8.0` and `LLM_JSON_MODE=true`.
+  - `app/models/collections.py`: added `LlmCalls(TenantScoped)` collection helper and compound/TTL index specs (`("tenant_id", 1), ("ts", -1)` and 30-day TTL on `ts`).
+  - `app/agent/llm.py`: introduced `LlmError`, `LlmTimeoutError`, configured client pooling via `_client()` and `set_http_client()`, implemented `call_openrouter()` with JSON mode payload support, structured error retry classification (retryable on timeout, transport, 429, >=500), automatic fallback retry to `llm_model_fallback_provider`, and asynchronous telemetry logging to `llm_calls`.
+  - `app/agent/nodes/intent.py`: passed `json_mode=True`, `node="intent"`, `tenant_id=tenant_id` to `query_llm`.
+  - `app/agent/nodes/responder.py`: passed `node="responder"`, `tenant_id=tenant_id` to `query_llm`.
+  - `tests/test_llm_client.py`: test suite verifying single-attempt success with telemetry, timeout retries falling back to secondary model, non-retryable 4xx errors, retryable 500 errors raising after fallback, `response_format` payload in JSON mode, and mock adapter bypass without network or telemetry.
+- SUMMARY:
+  Hardened the LLM invocation layer with configurable per-call timeout budget (8.0s default), single retry with provider/model fallback on retryable errors, native JSON mode flag, dual-inheritance `LlmTimeoutError` preserving backward compatibility with legacy test expectations, and tenant-scoped datastore telemetry capturing latency, token usage, and status.
+- TESTS RUN:
+  - `uv run pytest -q tests/test_llm_client.py tests/test_fixed_findings.py` (16 passed)
+  - `uv run ruff check .` (0 errors)
+  - `uv run mypy app` (0 errors across 70 source files)
+  - `uv run pytest -q` (296 passed, 4 skipped)
+  - `git grep -nE 'db\[[^]]+\]\.(find|insert|update|delete)' app/ ':!app/models/'` (exit code 1, 0 matches)
+  - `uv run python evals/run_evals.py --ci --report artifacts/mock-eval-report.json` (25/25 passed, 100% accuracy)
+- RESULTS:
+  - All 6 new LLM client tests passed.
+  - Full pytest suite: 296 passed, 4 skipped.
+  - Mock evals: 25/25 passed across EN, HI, HI-Latn, OR.
+  - Zero tenant-isolation violations.
+- DEVIATIONS FROM PACKET: none
+- REMAINING ISSUES: none
+- EVIDENCE:
+  - `tests/test_llm_client.py` covering timeout fallback, JSON mode formatting, 400 rejection, and telemetry collection.
+- PENDING EXTERNAL GATES:
+  - OpenRouter live API validation under valid production credentials.
+
+
 
 
 
