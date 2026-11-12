@@ -265,39 +265,75 @@ This decision separates implementation completion from external acceptance. Miss
 +  - Tests: `tests/test_browser_owner_acceptance.py`
 +- PENDING EXTERNAL GATES: none for W1-12
  
-+## W1-02 Completion Report
-+
-+- Commit: `645d03a`
-+- TASK: W1-02
-+- FILES CHANGED:
-+  - `app/agent/tenant_context.py` — created get_tenant_profile helper (name & business_type with fallback and sanitization)
-+  - `app/agent/nodes/responder.py` — system prompt dynamically inserts tenant name from get_tenant_profile
-+  - `app/agent/nodes/intent.py` — replaced 'weather in bhubaneswar' with 'weather today' in few-shot example
-+  - `app/agent/nodes/output_gate.py` — removed '|bhubaneswar' from location pattern regex
-+  - `app/agent/templates/README.md` — removed dead 'location_landmark' reference
-+  - `tests/test_no_tenant_literals.py` — scan for prohibited literals across app/agent excluding llm.py, and prompt verification test
-+- SUMMARY:
-+  Dehardcoded clinic identity and prohibited literals across all agent code. Created get_tenant_profile in app/agent/tenant_context.py to fetch and sanitize tenant name and business type. Updated responder prompt to introduce itself with the dynamic tenant name while keeping Grounded Facts citation structures intact. Removed Bhubaneswar literal from intent and output gate regex.
-+- TESTS RUN:
-+  - `uv run pytest -q tests/test_no_tenant_literals.py` (3 passed)
-+  - `uv run python evals/run_evals.py --ci --report artifacts/mock-eval-report.json` (25/25, 100% accuracy, 0 hallucinations, 0 ungrounded)
-+  - `uv run ruff check .`
-+  - `uv run mypy app`
-+  - `uv run pytest -q` (253 passed, 4 skipped)
-+  - `git grep -nE 'db\[[^]]+\]\.(find|insert|update|delete)' app/ ':!app/models/'` (exit code 1, 0 matches)
-+- RESULTS:
-+  - Prohibited literal scan: 0 matches in app/agent/ (excluding llm.py)
-+  - Mock evals: 25/25 passed across all 4 languages (EN, HI, HI-LATN, OR)
-+  - Full test suite: 253 passed, 4 skipped
-+  - Ruff & mypy: 0 issues
-+  - Tenant isolation: verified (0 unscoped db calls)
-+- DEVIATIONS FROM PACKET: none
-+- REMAINING ISSUES: none
-+- EVIDENCE:
-+  - Tests: `test_no_hardcoded_tenant_literals_in_agent_code`, `test_responder_system_prompt_uses_tenant_name_and_no_intent_or_classify`, `test_get_tenant_profile_fallback_and_sanitization`
-+  - Mock eval report: `artifacts/mock-eval-report.json`
-+- PENDING EXTERNAL GATES:
-+  - Live model evals against OpenRouter credentials (pending external model credentials)
+## W1-02 Completion Report
+
+- Commit: `645d03a`
+- TASK: W1-02
+- FILES CHANGED:
+  - `app/agent/tenant_context.py` — created get_tenant_profile helper (name & business_type with fallback and sanitization)
+  - `app/agent/nodes/responder.py` — system prompt dynamically inserts tenant name from get_tenant_profile
+  - `app/agent/nodes/intent.py` — replaced 'weather in bhubaneswar' with 'weather today' in few-shot example
+  - `app/agent/nodes/output_gate.py` — removed '|bhubaneswar' from location pattern regex
+  - `app/agent/templates/README.md` — removed dead 'location_landmark' reference
+  - `tests/test_no_tenant_literals.py` — scan for prohibited literals across app/agent excluding llm.py, and prompt verification test
+- SUMMARY:
+  Dehardcoded clinic identity and prohibited literals across all agent code. Created get_tenant_profile in app/agent/tenant_context.py to fetch and sanitize tenant name and business type. Updated responder prompt to introduce itself with the dynamic tenant name while keeping Grounded Facts citation structures intact. Removed Bhubaneswar literal from intent and output gate regex.
+- TESTS RUN:
+  - `uv run pytest -q tests/test_no_tenant_literals.py` (3 passed)
+  - `uv run python evals/run_evals.py --ci --report artifacts/mock-eval-report.json` (25/25, 100% accuracy, 0 hallucinations, 0 ungrounded)
+  - `uv run ruff check .`
+  - `uv run mypy app`
+  - `uv run pytest -q` (253 passed, 4 skipped)
+  - `git grep -nE 'db\[[^]]+\]\.(find|insert|update|delete)' app/ ':!app/models/'` (exit code 1, 0 matches)
+- RESULTS:
+  - Prohibited literal scan: 0 matches in app/agent/ (excluding llm.py)
+  - Mock evals: 25/25 passed across all 4 languages (EN, HI, HI-LATN, OR)
+  - Full test suite: 253 passed, 4 skipped
+  - Ruff & mypy: 0 issues
+  - Tenant isolation: verified (0 unscoped db calls)
+- DEVIATIONS FROM PACKET: none
+- REMAINING ISSUES: none
+- EVIDENCE:
+  - Tests: `test_no_hardcoded_tenant_literals_in_agent_code`, `test_responder_system_prompt_uses_tenant_name_and_no_intent_or_classify`, `test_get_tenant_profile_fallback_and_sanitization`
+  - Mock eval report: `artifacts/mock-eval-report.json`
+- PENDING EXTERNAL GATES:
+  - Live model evals against OpenRouter credentials (pending external model credentials)
+
+## W1-08 Completion Report
+
+- Commit: `9b42ce1`
+- TASK: W1-08
+- FILES CHANGED:
+  - `app/config.py` — added `enable_voice`, `enable_payments`, `enable_billing` (bool, default False); restructured `validate_runtime()` to conditionally require voice/payments/billing settings; dropped unused `bsp_*` from required list (kept fields).
+  - `app/main.py` — conditional router mounts for Exotel and Razorpay based on feature flags; `create_app` accepts optional `Settings`.
+  - `.env.example` — added `ENABLE_VOICE=false`, `ENABLE_PAYMENTS=false`, `ENABLE_BILLING=false`; updated `JWT_SECRET=` (no default) and `INVOICE_SAC_CODE=998313`.
+  - `tests/conftest.py` — setdefault `ENABLE_VOICE`, `ENABLE_PAYMENTS`, `ENABLE_BILLING` to `true` so suite exercises all routes.
+  - `tests/test_fixed_findings.py` — enabled flags on `valid` settings fixture so full credential validations remain asserted.
+  - `tests/test_production_load_security_closure.py` — enabled flags on `valid` settings fixture so full credential validations remain asserted.
+  - `tests/test_feature_flags.py` — unit and integration tests for feature flags, validation errors, and router mounting.
+- SUMMARY:
+  Implemented feature-flagged runtime validation allowing staging/prod to boot with WhatsApp-only configuration when voice, payments, and billing flags are off. Verified `bsp_access_token`, `bsp_waba_id`, and `bsp_phone_number_id` are read nowhere outside `app/config.py` and dropped them from the required validation list while retaining field declarations.
+- TESTS RUN:
+  - `uv run pytest -q tests/test_feature_flags.py tests/test_fixed_findings.py tests/test_production_load_security_closure.py` (22 passed)
+  - `uv run ruff check .`
+  - `uv run mypy app`
+  - `uv run pytest -q` (260 passed, 4 skipped)
+  - `git grep -nE 'db\[[^]]+\]\.(find|insert|update|delete)' app/ ':!app/models/'` (exit code 1, 0 matches)
+- RESULTS:
+  - Focused tests: 22 passed
+  - Full test suite: 260 passed, 4 skipped
+  - Ruff & mypy: 0 issues
+  - Tenant isolation: verified (0 unscoped db calls)
+- INDEPENDENT REVIEW (§4):
+  - Staging with flags off boots with WhatsApp + LLM alone? Yes (`test_whatsapp_only_staging_boots_with_flags_off`).
+  - Flags on with missing keys raise and name the missing keys? Yes (`test_enable_voice_without_exotel_raises_naming_missing_settings`, `test_enable_voice_with_sarvam_requires_sarvam_api_key`, `test_enable_billing_without_gstin_raises_naming_missing_settings`).
+  - Default JWT secret still rejected with flags off? Yes (`test_default_jwt_secret_rejected_with_all_flags_off`).
+  - Exotel/Razorpay routers unmounted when flags are off? Yes (`test_router_mounting_respects_feature_flags`).
+- DEVIATIONS FROM PACKET: none
+- REMAINING ISSUES: none
+- EVIDENCE:
+  - Tests: `test_feature_flags.py`, `test_fixed_findings.py`, `test_production_load_security_closure.py`
+- PENDING EXTERNAL GATES: none for W1-08
 
 
 
