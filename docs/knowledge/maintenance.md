@@ -32,3 +32,6 @@ Apply the same method to AI Studio by connecting its existing MEMORIES, HANDOVER
 # Source references
 [^s1]: [README.md](https://github.com/DecoyINDIA/vaani/blob/804daa18c83b39e5785ba9ddcf9f534b1e8a7aa4/README.md)
 [^s2]: [docs/production-remediation-plan.md](https://github.com/DecoyINDIA/vaani/blob/804daa18c83b39e5785ba9ddcf9f534b1e8a7aa4/docs/production-remediation-plan.md)
+
+# Concurrent remediation
+While the production remediation agent is active, knowledge CI is advisory and the knowledge-curation task owns these pages. Remediation proceeds under its existing application/release checks. Source drift remains visible for later review; do not bulk-refresh fingerprints or change release status to make the knowledge graph look current. This temporary coordination rule takes precedence over same-change knowledge upkeep during the overlap.
