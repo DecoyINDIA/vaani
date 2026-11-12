@@ -235,6 +235,36 @@ This decision separates implementation completion from external acceptance. Miss
   - Any N+1 beyond the preview lookup? No; batched $in lookups for all contacts, slots, practitioners, escalations.
   - PII added to /deliveries or /processing? No; /deliveries and /processing remain untouched and PII-free.
 - PENDING EXTERNAL GATES: none for W1-11
+ 
++## W1-12 Completion Report
++
++- Commit: `8c25086`
++- TASK: W1-12
++- FILES CHANGED:
++  - `dashboard/src/App.tsx`
++- SUMMARY:
++  Added pure helpers `obj`, `contactLabel`, `timeAgo`, and `formatWhen` (Intl.DateTimeFormat en-IN). Updated Inbox list rows to display patient name/phone, preview message, relative timestamp (`timeAgo(last_msg_at)`), and "Needs staff" badge when `open_escalation` is true. Updated thread header with contact label and distinct phone. Updated Appointments table to `Patient | Date & time | Doctor | Service | Status | (action)`, showing practitioner name and formatted appointment time, removing `Customer reference`/`Patient reference` and `Source`.
++- TESTS RUN:
++  - `git grep -n ">now<" dashboard/src/App.tsx` (exit code 1, 0 matches)
++  - `git grep -n "Patient reference" dashboard/src/App.tsx` (exit code 1, 0 matches)
++  - `npm --prefix dashboard run lint; npm --prefix dashboard run build`
++  - `uv run pytest -q tests/test_browser_owner_acceptance.py`
++  - `uv run ruff check app/ tests/ ; uv run mypy app/`
++  - `uv run pytest -q`
++  - `git grep -nE 'db\[[^]]+\]\.(find|insert|update|delete)' app/ ':!app/models/'` (exit code 1, 0 matches)
++- RESULTS:
++  - Acceptance grep: 0 matches for `>now<` or `Patient reference`
++  - Dashboard lint & build: 0 errors, Vite bundle generated
++  - Focused pytest: 9 passed
++  - Full suite: 250 passed, 4 skipped
++  - Ruff & mypy: 0 issues
++  - Tenant isolation: verified (0 unscoped db calls)
++- DEVIATIONS FROM PACKET: none
++- REMAINING ISSUES: none
++- EVIDENCE:
++  - Tests: `tests/test_browser_owner_acceptance.py`
++- PENDING EXTERNAL GATES: none for W1-12
+
 
 
 
