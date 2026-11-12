@@ -15,6 +15,7 @@ from app.agent.llm import query_llm
 from app.agent.profile import load_profile
 from app.agent.state import AgentState
 from app.agent.templates import get_template
+from app.agent.tenant_context import get_tenant_profile
 from app.config import settings
 from app.models.base import mongo_id_candidates
 from app.models.collections import Contacts, Conversations, Messages, Practitioners
@@ -101,9 +102,12 @@ async def responder(state: AgentState) -> dict[str, Any]:
     except Exception as e:
         logger.warning(f"Failed to load contact profile for responder: {e}")
 
+    tenant_profile = await get_tenant_profile(tenant_id)
+    name = tenant_profile["name"]
+
     # 4. Construct Prompt
     system_prompt = (
-        f"You are an empathetic, professional AI receptionist at {business.name}, a {business.business_type}.\n"
+        f"You are an empathetic, professional AI receptionist at {name}.\n"
         f"Answer the {customer}'s query in their detected language ({lang}) using ONLY the provided Grounded Facts.\n\n"
         "Grounded Facts:\n"
         f"{grounded_facts_str}\n\n"
