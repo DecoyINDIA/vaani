@@ -575,6 +575,38 @@ This decision separates implementation completion from external acceptance. Miss
   - Credentialed before/after W2-03 real-model evaluation comparison reports on OpenRouter models (`evals/run_real_eval.py`).
   - Native-speaker human review and sign-off on Hindi and Odia strings in `docs/i18n-review.md`.
 
+## 2026-11-12 — W2-08: Golden multi-turn transcript tests in four languages
+- STATUS: Completed
+- COMMIT: 0a97fc5
+- PACKET: vaani-master-plan/06-AGENT_TASKS/W2-08-golden-transcripts.md
+- SUBSYSTEMS TOUCHED:
+  - `tests/golden_support.py` — Meta webhook inbound payload builders (text, list reply, button reply, media) and WhatsApp recorder monkeypatching `app.channels.whatsapp._post`
+  - `tests/golden/README.md` — comprehensive specification of scenario schema, matching contracts, global assertions, and step lifecycle
+  - `tests/golden/<journey>.<lang>.json` — 32 scenario files covering 8 journeys (faq_fees, book_confirm, book_choose_again, status, cancel_confirm, cancel_keep, medical_refusal, unsupported_media) across 4 languages (en, hi, hi-Latn, or)
+  - `tests/test_golden_transcripts.py` — parametrized runner verifying conversation flow, template regex matching, WhatsApp length limits, tenant de-hardcoding, and database post-conditions
+- SUMMARY:
+  Implemented a data-driven end-to-end conversation test suite replaying patient interactions through `process_event`. Validates complete conversational journeys across English, Hindi, Hinglish, and Odia without modifying application code. All outbound messages are asserted for exact structure, localized text matching, absence of leaked internal citation tags, proper clinic identity, absence of unrendered ISO datetimes, and WhatsApp character constraints (buttons ≤ 20, lists ≤ 24).
+- TESTS RUN:
+  - `uv run pytest -q tests/test_golden_transcripts.py` (32 passed in 1.42s)
+  - `uv run ruff check .` (0 errors)
+  - `uv run mypy app` (0 errors across 73 source files)
+  - `uv run pytest -q` (359 passed, 4 skipped in 14.44s)
+  - `git grep -nE 'db\[[^]]+\]\.(find|insert|update|delete)' app/ ':!app/models/'` (exit code 1, 0 matches)
+  - `uv run python evals/run_evals.py --ci` (25/25 passed, 100% accuracy)
+- RESULTS:
+  - All 32 golden multi-turn transcript scenarios passed with 0 xfails.
+  - Full pytest suite: 359 passed, 4 skipped (32 new parametrized tests added).
+  - Mock evals: 25/25 passed.
+  - Zero tenant-isolation violations.
+- DEVIATIONS FROM PACKET: none
+- REMAINING ISSUES: none (target of zero xfails met)
+- EVIDENCE:
+  - `tests/golden/` directory containing all 32 golden scenario specifications.
+  - `tests/test_golden_transcripts.py` passing under 2 seconds.
+- PENDING EXTERNAL GATES:
+  - Native-speaker human review and sign-off on Hindi and Odia strings in `docs/i18n-review.md`.
+  - Credentialed model evaluation on OpenRouter (`evals/run_real_eval.py`).
+
 
 
 
