@@ -1,0 +1,23 @@
+{
+  "lang": "or",
+  "tenant": {
+    "name": "Apex Clinic",
+    "locale_default": "or"
+  },
+  "steps": [
+    {
+      "send": {
+        "text": "କନ୍ସଲ୍ଟେସନ୍ ଫିସ୍ କେତେ"
+      },
+      "expect": [
+        {
+          "kind": "text",
+          "contains": "500"
+        }
+      ]
+    }
+  ],
+  "final": {
+    "bookings_confirmed": 0
+  }
+}

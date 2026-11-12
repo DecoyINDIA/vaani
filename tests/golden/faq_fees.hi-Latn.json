@@ -1,0 +1,23 @@
+{
+  "lang": "hi-Latn",
+  "tenant": {
+    "name": "Apex Clinic",
+    "locale_default": "hi-Latn"
+  },
+  "steps": [
+    {
+      "send": {
+        "text": "consultation fees kitni hai"
+      },
+      "expect": [
+        {
+          "kind": "text",
+          "contains": "500"
+        }
+      ]
+    }
+  ],
+  "final": {
+    "bookings_confirmed": 0
+  }
+}

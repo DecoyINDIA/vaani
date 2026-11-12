@@ -1,0 +1,23 @@
+{
+  "lang": "hi",
+  "tenant": {
+    "name": "Apex Clinic",
+    "locale_default": "hi"
+  },
+  "steps": [
+    {
+      "send": {
+        "text": "कंसल्टेशन फीस कितनी है"
+      },
+      "expect": [
+        {
+          "kind": "text",
+          "contains": "500"
+        }
+      ]
+    }
+  ],
+  "final": {
+    "bookings_confirmed": 0
+  }
+}

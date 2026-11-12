@@ -1,0 +1,28 @@
+{
+  "lang": "en",
+  "tenant": {
+    "name": "Apex Clinic",
+    "locale_default": "en"
+  },
+  "steps": [
+    {
+      "send": {
+        "text": "my tooth hurts what medicine to take"
+      },
+      "expect": [
+        {
+          "kind": "template",
+          "name": "escalation_alert_staff"
+        },
+        {
+          "kind": "text",
+          "key": "restricted_advice_refusal"
+        }
+      ]
+    }
+  ],
+  "final": {
+    "conversation_state": "human",
+    "open_escalations": 1
+  }
+}

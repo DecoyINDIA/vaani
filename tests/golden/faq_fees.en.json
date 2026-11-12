@@ -1,0 +1,23 @@
+{
+  "lang": "en",
+  "tenant": {
+    "name": "Apex Clinic",
+    "locale_default": "en"
+  },
+  "steps": [
+    {
+      "send": {
+        "text": "what is the consultation fee"
+      },
+      "expect": [
+        {
+          "kind": "text",
+          "contains": "500"
+        }
+      ]
+    }
+  ],
+  "final": {
+    "bookings_confirmed": 0
+  }
+}

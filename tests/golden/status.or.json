@@ -1,0 +1,26 @@
+{
+  "lang": "or",
+  "tenant": {
+    "name": "Apex Clinic",
+    "locale_default": "or"
+  },
+  "setup": {
+    "seed_booking": true
+  },
+  "steps": [
+    {
+      "send": {
+        "text": "ମୋର ବୁକିଂ status କ'ଣ"
+      },
+      "expect": [
+        {
+          "kind": "text",
+          "key": "status.found"
+        }
+      ]
+    }
+  ],
+  "final": {
+    "bookings_confirmed": 1
+  }
+}

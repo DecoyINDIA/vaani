@@ -1,0 +1,28 @@
+{
+  "lang": "hi-Latn",
+  "tenant": {
+    "name": "Apex Clinic",
+    "locale_default": "hi-Latn"
+  },
+  "steps": [
+    {
+      "send": {
+        "text": "sar me dard hai dawai batao"
+      },
+      "expect": [
+        {
+          "kind": "template",
+          "name": "escalation_alert_staff"
+        },
+        {
+          "kind": "text",
+          "key": "restricted_advice_refusal"
+        }
+      ]
+    }
+  ],
+  "final": {
+    "conversation_state": "human",
+    "open_escalations": 1
+  }
+}
