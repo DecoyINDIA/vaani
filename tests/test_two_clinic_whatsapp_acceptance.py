@@ -443,6 +443,18 @@ async def test_two_clinic_interactive_booking_journey_and_isolation() -> None:
     await _send_inbound(
         "clinic-a", "msg-a-cancel", patient_a, {"type": "text", "text": {"body": "cancel my appointment"}}
     )
+    await _send_inbound(
+        "clinic-a",
+        "msg-a-cancel-confirm",
+        patient_a,
+        {
+            "type": "interactive",
+            "interactive": {
+                "type": "button_reply",
+                "button_reply": {"id": "cancel:confirm", "title": "Yes, cancel"},
+            },
+        },
+    )
     booking_a_cancelled = await db["bookings"].find_one({"_id": booking_a["_id"]})
     assert booking_a_cancelled["status"] == "cancelled"
     assert (await db["slots"].find_one({"_id": "slot-clinic-a-2"}))["status"] == "open"

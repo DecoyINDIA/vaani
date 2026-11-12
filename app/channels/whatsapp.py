@@ -422,6 +422,48 @@ async def send_booking_confirmation(
     return result
 
 
+async def send_cancel_confirmation(
+    tenant_id: str,
+    wa_id: str,
+    *,
+    prompt: str,
+    operation_key: str,
+) -> dict[str, Any]:
+    """Send explicit confirm/keep buttons for appointment cancellation."""
+    if not await _window_open(tenant_id, wa_id):
+        raise WindowClosedError("24h window closed; confirmation buttons are not permitted")
+    body = {
+        "messaging_product": "whatsapp",
+        "to": wa_id,
+        "type": "interactive",
+        "interactive": {
+            "type": "button",
+            "body": {"text": prompt},
+            "action": {
+                "buttons": [
+                    {
+                        "type": "reply",
+                        "reply": {"id": "cancel:confirm", "title": "Yes, cancel"},
+                    },
+                    {
+                        "type": "reply",
+                        "reply": {"id": "cancel:keep", "title": "Keep appointment"},
+                    },
+                ]
+            },
+        },
+    }
+    result = await _post(tenant_id, wa_id, body, operation_key)
+    await audit.record(
+        tenant_id,
+        actor="agent",
+        event_type="outbound_interactive",
+        operation_key=operation_key,
+        payload={"wa_id": wa_id, "kind": "cancel_confirmation", "wamid": _wamid(result)},
+    )
+    return result
+
+
 def _wamid(result: dict[str, Any]) -> str | None:
     messages = result.get("messages")
     if isinstance(messages, list) and messages:
