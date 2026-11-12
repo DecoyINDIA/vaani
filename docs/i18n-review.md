@@ -58,6 +58,11 @@ This document catalogs all Hindi (`hi`, Devanagari) and Odia (`or`, Odia script)
 - **Hindi (`hi`):** `आपका अपॉइंटमेंट पहले से ही {when} के लिए कन्फर्म है।`
 - **Odia (`or`):** `ଆପଣଙ୍କ ଅପଏଣ୍ଟମେଣ୍ଟ ପୂର୍ବରୁ {when} ପାଇଁ ନିଶ୍ଚିତ ହୋଇସାରିଛି।`
 
+#### `booking.no_slots`
+- **English:** `No appointments are available on {date}. Please send another day.`
+- **Hindi (`hi`):** `{date} को कोई अपॉइंटमेंट उपलब्ध नहीं है। कृपया कोई दूसरा दिन बताएं।`
+- **Odia (`or`):** `{date} ରେ କୌଣସି ଅପଏଣ୍ଟମେଣ୍ଟ ଉପଲବ୍ଧ ନାହିଁ। ଦୟାକରି ଅନ୍ୟ ଏକ ଦିନ ଜଣାନ୍ତୁ।`
+
 ---
 
 ### 2. Status & Reschedule Messages

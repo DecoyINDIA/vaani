@@ -73,6 +73,14 @@ STRINGS: dict[str, dict[str, str]] = {
         "hi-Latn": "Aapka appointment pehle se hi {when} ke liye confirmed hai.",
         "or": "ଆପଣଙ୍କ ଅପଏଣ୍ଟମେଣ୍ଟ ପୂର୍ବରୁ {when} ପାଇଁ ନିଶ୍ଚିତ ହୋଇସାରିଛି।",
     },
+    "booking.no_slots": {
+        "en": "No appointments are available on {date}. Please send another day.",
+        "hi": "{date} को कोई अपॉइंटमेंट उपलब्ध नहीं है। कृपया कोई दूसरा दिन बताएं।",
+        "hi-Latn": (
+            "{date} ko koi appointment available nahi hai. Kripya koi doosra din batayein."
+        ),
+        "or": "{date} ରେ କୌଣସି ଅପଏଣ୍ଟମେଣ୍ଟ ଉପଲବ୍ଧ ନାହିଁ। ଦୟାକରି ଅନ୍ୟ ଏକ ଦିନ ଜଣାନ୍ତୁ।",
+    },
     "status.found": {
         "en": "Your appointment is {status} for {when}.",
         "hi": "आपका अपॉइंटमेंट {when} के लिए {status} है।",

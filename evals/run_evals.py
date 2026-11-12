@@ -95,7 +95,7 @@ async def run_evaluation(classifier_model: str | None, responder_model: str | No
         state = {
             "tenant_id": "test_tenant",
             "conversation_id": f"eval_conv_{idx}",
-            "channel": "wa",
+            "channel": "voice",
             "text": text
         }
         

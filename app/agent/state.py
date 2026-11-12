@@ -25,3 +25,7 @@ class AgentState(TypedDict, total=False):
     agent_error: str
     retry_count: int
     regenerate: bool
+    req_date: str          # YYYY-MM-DD
+    req_time: str          # HH:MM
+    practitioner_hint: str
+    service_hint: str
