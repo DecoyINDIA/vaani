@@ -13,6 +13,7 @@ from datetime import datetime as dt
 from typing import Any
 
 from app.agent.graph import build_graph
+from app.agent.render import strip_citations
 from app.channels.voice.stt import transcribe_audio
 from app.channels.voice.tts import synthesize
 from app.models.collections import Contacts, Conversations, Messages, Tenants
@@ -243,7 +244,7 @@ class VoiceSession:
             "text": transcript
         }
         res = await app.ainvoke(state)
-        response_text = res.get("response", "")
+        response_text = strip_citations(res.get("response", ""))
         t_llm = time.perf_counter() - t0
         self.latencies["llm_ms"] = int(t_llm * 1000)
 

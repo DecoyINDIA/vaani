@@ -74,6 +74,8 @@ async def test_inbound_event_produces_audited_reply():
     msgs = await db["messages"].find({"tenant_id": tenant_id}).to_list(length=10)
     assert sorted(m["direction"] for m in msgs) == ["inbound", "outbound"]
     assert all(m["tenant_id"] == tenant_id for m in msgs)
+    outbound_msg = next(m for m in msgs if m["direction"] == "outbound")
+    assert "[source_ref" not in outbound_msg.get("text", "")
 
     # The outbound send passed through the audit choke point.
     events = {
