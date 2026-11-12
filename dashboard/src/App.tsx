@@ -31,7 +31,12 @@ async function api(path: string, init: RequestInit = {}, retry = true): Promise<
   }
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(body.detail || `Request failed (${response.status})`);
+    const message =
+      typeof body.detail === "string"
+        ? body.detail
+        : (body.detail && typeof body.detail === "object" && body.detail.message) ||
+          `Request failed (${response.status})`;
+    throw new Error(message);
   }
   return response.json();
 }
