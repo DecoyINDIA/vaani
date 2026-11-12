@@ -65,4 +65,36 @@ This decision separates implementation completion from external acceptance. Miss
   - `git grep -n "isoformat()" app/workers/inbound.py`: 0 matches
 - PENDING EXTERNAL GATES: none for W1-05
 
+## W1-03 Completion Report
+
+- Commit: `eaa8120`
+- TASK: W1-03
+- FILES CHANGED:
+  - `app/agent/tools/slots_get.py` — filter slots by lead time (min start >= now + booking_lead_minutes)
+  - `app/booking/engine.py` — atomic hold_slot requires slot start > now
+  - `tests/test_past_slot_guard.py` — 4 new tests for past/lead time slot guards
+  - `tests/test_booking_journey.py` — moved fixture slot dates to future
+  - `tests/test_booking_transitions.py` — added future start times to slot fixtures
+  - `tests/test_browser_owner_acceptance.py` — moved fixture slots to future
+  - `tests/test_generated_objectid_boundaries.py` — added future start times to slot fixtures
+  - `tests/test_production_load_security_closure.py` — added future start time to slot fixture
+  - `tests/test_two_clinic_whatsapp_acceptance.py` — moved fixture slots to future
+- SUMMARY:
+  Implemented past-slot guards in slots_get (respecting booking_lead_minutes, default 30, clamp 0..1440) and hold_slot (requiring start > now in atomic query). Reconciled test fixture slots with past dates into future dates while preserving every assertion.
+- TESTS RUN:
+  - `uv run pytest -q tests/test_past_slot_guard.py`
+  - `uv run ruff check .`
+  - `uv run mypy app`
+  - `uv run pytest -q`
+- RESULTS:
+  - Focused: 4 passed
+  - Full suite: 234 passed, 4 skipped
+  - Ruff & mypy: passed with 0 issues
+- DEVIATIONS FROM PACKET: none
+- REMAINING ISSUES: none
+- EVIDENCE:
+  - Tests: `test_past_slot_not_listed_and_not_holdable`, `test_slot_in_10_min_not_listed_with_default_lead_but_holdable`, `test_slot_in_2_hours_listed_and_holdable`, `test_tenant_zero_lead_lists_slot_in_10_min`
+- PENDING EXTERNAL GATES: none for W1-03
+
+
 
