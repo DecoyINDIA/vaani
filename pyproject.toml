@@ -21,6 +21,7 @@ dependencies = [
     "PyJWT>=2.10",                  # JWT for owner_api (TRD §6)
     "python-multipart>=0.0.9",
     "tzdata>=2025.2",               # IANA zones for Windows/minimal containers
+    "sentry-sdk>=2",
 ]
 
 [project.optional-dependencies]

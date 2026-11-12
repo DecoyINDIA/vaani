@@ -33,6 +33,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 def create_app(app_settings: Settings | None = None) -> FastAPI:
+    from app.observability import init_observability
+
+    init_observability("api")
     active_settings = app_settings or settings
     app = FastAPI(title="Vaani", version="0.1.0", lifespan=lifespan)
 
