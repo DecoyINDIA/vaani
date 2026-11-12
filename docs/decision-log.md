@@ -678,6 +678,46 @@ This decision separates implementation completion from external acceptance. Miss
   - Native-speaker human review and sign-off on Hindi and Odia strings in `docs/i18n-review.md`.
   - Credentialed model evaluation on OpenRouter (`evals/run_real_eval.py`).
 
+## 2026-11-12 — W2-07: Extract scheduler to dedicated service & retryable slot expansion
+- STATUS: Completed
+- COMMIT: ba3758b
+- PACKET: vaani-master-plan/06-AGENT_TASKS/W2-07-scheduler-split.md
+- SUBSYSTEMS TOUCHED:
+  - `app/config.py` & `.env.example` — added `scheduler_interval_seconds: int = 300` setting
+  - `app/workers/scheduler.py` — created dedicated scheduler entrypoint (`run_once()`, `run_scheduler_background()`, `main()`) running stale sends, slot expansion, reminders, escalation SLAs, monthly billing (conditional on `enable_billing`), daily briefs, and weekly summaries with Redis heartbeat `vaani:scheduler:heartbeat`
+  - `app/workers/inbound.py` — removed embedded scheduler background task from inbound worker loop while re-exporting `run_scheduler_background` for backwards compatibility
+  - `app/booking/engine.py` — enabled retry takeover of failed or stale running (>30 min) `slot_expansion` job rows via atomic `find_one_and_update` with `$inc: {retries: 1}`
+  - `app/workers/healthcheck.py` — parameterized healthcheck to accept optional heartbeat key and max age CLI arguments with component identifier in audit alert payload
+  - `docker-compose.yml` — added `scheduler` single-replica Compose service with healthcheck on `vaani:scheduler:heartbeat` (900s timeout)
+  - `tests/test_scheduler.py` — 8 tests covering `run_once` execution order, failure isolation, billing gating, slot expansion retry takeover, inbound worker decoupling, and healthcheck key/staleness validation
+- SUMMARY:
+  Extracted all periodic maintenance jobs (reminders, slot expansion, escalation SLAs, daily briefs, weekly summaries, billing invoices) into an independent scheduler worker process (`app.workers.scheduler`). Added atomic takeover and retry of failed or stale slot expansion runs to prevent clinics from running out of bookable slots. Updated container infrastructure and healthchecks to monitor scheduler heartbeat separately.
+- TESTS RUN:
+  - `uv run pytest -q tests/test_scheduler.py tests/test_schedule_expansion.py tests/test_handoff_scheduling_alerts_acceptance.py` (17 passed in 1.04s)
+  - `docker compose config` (validated successfully with 0 errors)
+  - `uv run pytest -q` (385 passed, 4 skipped in 14.39s)
+  - `uv run ruff check .` (0 errors)
+  - `uv run mypy app` (0 errors across 74 source files)
+  - `git grep -nE 'db\[[^]]+\]\.(find|insert|update|delete)' app/ ':!app/models/'` (exit code 1, 0 matches)
+  - `uv run python evals/run_evals.py --ci --report artifacts/mock-eval-report.json` (25/25 passed, 100% accuracy)
+- RESULTS:
+  - All 8 new scheduler tests passed.
+  - Zero scheduler tasks running inside inbound worker loop (`grep -n "create_task(run_scheduler_background" app/workers/inbound.py` returned 0 matches).
+  - Slot expansion takeover confirmed for `failed` state and `running` state >30m.
+  - Full pytest suite: 385 passed, 4 skipped.
+  - Mock evals: 25/25 passed.
+  - Zero tenant-isolation violations.
+- DEVIATIONS FROM PACKET: none
+- REMAINING ISSUES: none
+- EVIDENCE:
+  - `app/workers/scheduler.py` dedicated service.
+  - `tests/test_scheduler.py` passing with 100% assertions.
+  - `docker-compose.yml` scheduler service definition.
+- PENDING EXTERNAL GATES:
+  - Native-speaker human review and sign-off on Hindi and Odia strings in `docs/i18n-review.md`.
+  - Credentialed model evaluation on OpenRouter (`evals/run_real_eval.py`).
+
+
 
 
 
