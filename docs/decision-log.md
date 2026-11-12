@@ -153,6 +153,34 @@ This decision separates implementation completion from external acceptance. Miss
   - Tests: `test_audio_message_replies_once_with_unsupported_text`, `test_duplicate_audio_event_deduplicates_outbound`, `test_human_state_stores_media_without_outbound`, `test_reaction_is_ignored_and_not_stored`, `test_text_inbound_sets_last_msg_at`
 - PENDING EXTERNAL GATES: none for W1-10
 
+## W1-06 Completion Report
+
+- Commit: `7a2ef09`
+- TASK: W1-06
+- FILES CHANGED:
+  - `app/owner_api/routes.py` — mapped delivery exceptions (WindowClosedError, SuppressedRecipientError, AmbiguousDeliveryError, RuntimeError) to 409 and 502 with structured detail {"code", "message"}
+  - `dashboard/src/App.tsx` — updated api() helper to extract detail.message when detail is an object
+  - `tests/test_staff_reply_errors.py` — 4 new tests verifying error mapping and ensuring failed deliveries do not record Messages rows
+- SUMMARY:
+  Staff reply endpoint now returns structured HTTP error responses (409 for window_closed, suppressed, delivery_unknown; 502 for provider_error) instead of unhandled 500s. Updated the dashboard error unpacker to display detail.message cleanly.
+- TESTS RUN:
+  - `uv run pytest -q tests/test_staff_reply_errors.py tests/test_browser_owner_acceptance.py`
+  - `uv run ruff check .`
+  - `uv run mypy app`
+  - `uv run pytest -q`
+  - `npm --prefix dashboard run lint ; npm --prefix dashboard run build`
+- RESULTS:
+  - Focused: 13 passed
+  - Full suite: 248 passed, 4 skipped
+  - Ruff & mypy: passed with 0 issues
+  - Dashboard: built in 640ms, 0 lint errors
+- DEVIATIONS FROM PACKET: none
+- REMAINING ISSUES: none
+- EVIDENCE:
+  - Tests: `test_staff_reply_error_mapping` covering `window_closed` (409), `suppressed` (409), `delivery_unknown` (409), and `provider_error` (502).
+- PENDING EXTERNAL GATES: none for W1-06
+
+
 
 
 
