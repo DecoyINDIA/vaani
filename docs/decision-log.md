@@ -356,6 +356,32 @@ This decision separates implementation completion from external acceptance. Miss
 - PENDING EXTERNAL GATES:
   - Container build verification on Docker-enabled runner / CI
 
+## W1-13 Completion Report
+
+- Commit: `eae1b55`
+- TASK: W1-13
+- FILES CHANGED:
+  - `app/booking/relative_date.py` — added `_has` helper enforcing word boundaries on ASCII keywords while preserving Indic substring matching; added explicit "today" check; added month-name date parsing (`15 november`, `nov 20th`, `5 jan`); added `tarikh` parsing with next-month roll; fixed `parse_colloquial_time` to remove `baje`/`bajey` from PM indicators, use `_has`, and give AM priority over PM.
+  - `tests/test_relative_date_table.py` — parametrized test table covering 21 date phrases and 7 colloquial time phrases with base date 2026-11-12.
+- SUMMARY:
+  Fixed substring matching bugs in date resolution where words like "next month", "satisfied", and "aajkal" falsely matched weekday or relative keywords. Added support for named months and "tarikh" phrases. Fixed colloquial time parsing so "subah 10 baje" and "10 baje" resolve to 10:00 instead of 22:00.
+- TESTS RUN:
+  - `uv run pytest -q tests/test_relative_date_table.py tests/test_relative_date_boundaries.py` (30 passed)
+  - `uv run ruff check .`
+  - `uv run mypy app`
+  - `uv run pytest -q` (288 passed, 4 skipped)
+  - `git grep -nE 'db\[[^]]+\]\.(find|insert|update|delete)' app/ ':!app/models/'` (exit code 1, 0 matches)
+- RESULTS:
+  - Focused table tests: 30 passed (all 21 date rows and 7 time rows)
+  - Full test suite: 288 passed, 4 skipped
+  - Ruff & mypy: 0 issues
+  - Tenant isolation: verified (0 unscoped db calls)
+- DEVIATIONS FROM PACKET: none
+- REMAINING ISSUES: none
+- EVIDENCE:
+  - Tests: `test_relative_date_resolution_table`, `test_parse_colloquial_time_table`, `test_day_after_tomorrow_precedes_tomorrow_match`, `test_short_date_rolls_across_year_and_normalizes_indic_digits`
+- PENDING EXTERNAL GATES: none for W1-13
+
 
 
 
