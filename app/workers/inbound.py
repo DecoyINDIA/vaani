@@ -478,7 +478,22 @@ async def _handle_booking_action(
 
 async def process_event(fields: dict[str, Any]) -> None:
     """Run one inbound event end-to-end: agent graph -> WhatsApp reply."""
+    from app.observability import bind, clear
+
     tenant_id = fields["tenant_id"]
+    message_id = fields.get("message_id")
+    bind(tenant_id=tenant_id, message_id=message_id)
+    try:
+        await _process_event_inner(fields, tenant_id, message_id)
+    finally:
+        clear()
+
+
+async def _process_event_inner(
+    fields: dict[str, Any], tenant_id: str, message_id: str | None
+) -> None:
+    from app.observability import bind
+
     payload = json.loads(fields["payload"])
 
     parsed = _parse_message(payload)
@@ -489,10 +504,10 @@ async def process_event(fields: dict[str, Any]) -> None:
         msg_type = parsed.get("message_type", "")
         if msg_type in UNSUPPORTED_TYPES:
             wa_id = parsed["wa_id"]
-            message_id = fields.get("message_id")
             conversation_id, conversation_state, conversation_db_id, contact_id = (
                 await _resolve_conversation(tenant_id, wa_id, parsed["profile_name"])
             )
+            bind(conversation_id=conversation_id)
             await _store_inbound(
                 tenant_id,
                 conversation_id,
@@ -517,7 +532,7 @@ async def process_event(fields: dict[str, Any]) -> None:
     conversation_id, conversation_state, conversation_db_id, contact_id = (
         await _resolve_conversation(tenant_id, wa_id, parsed["profile_name"])
     )
-    message_id = fields.get("message_id")
+    bind(conversation_id=conversation_id)
 
     try:
         from app.billing.meters import record_usage
@@ -800,7 +815,7 @@ async def process_event(fields: dict[str, Any]) -> None:
         await messages.insert_one(document)
 
     if not response:
-        logger.warning("Agent produced an empty response for %s; nothing to send", wa_id)
+        logger.warning("Agent produced an empty response for %s; nothing to send", conversation_id)
         return
 
     # Takeover may occur while the agent is working; ownership wins over a queued reply.
@@ -824,7 +839,7 @@ async def process_event(fields: dict[str, Any]) -> None:
     except WindowClosedError:
         # Directly after an inbound message the window is open, so this is an edge
         # case (clock skew / very slow processing). Escalate rather than drop.
-        logger.warning("24h window closed while replying to %s; leaving for staff", wa_id)
+        logger.warning("24h window closed while replying to %s; leaving for staff", conversation_id)
         await audit.record(
             tenant_id,
             actor="system",
@@ -1080,7 +1095,9 @@ async def run(iterations: int | None = None) -> None:
 
 
 def main() -> None:
-    logging.basicConfig(level=logging.INFO)
+    from app.observability import init_observability
+
+    init_observability("worker")
     logger.info("Starting inbound worker...")
     asyncio.run(run())
 
