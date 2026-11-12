@@ -17,7 +17,12 @@ from typing import Any, Literal
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from app.channels.whatsapp import send_freeform
+from app.channels.whatsapp import (
+    AmbiguousDeliveryError,
+    SuppressedRecipientError,
+    WindowClosedError,
+    send_freeform,
+)
 from app.config import settings
 from app.gateway.exotel import start_outbound_call
 from app.kb.embedding import embed_text
@@ -169,12 +174,51 @@ async def reply_to_conversation(
     if not contact or not (contact.get("wa_id") or contact.get("phone")):
         raise HTTPException(status_code=409, detail="Conversation has no reachable contact")
     wa_id = str(contact.get("wa_id") or contact.get("phone"))
-    result = await send_freeform(
-        tenant_id,
-        wa_id,
-        text,
-        operation_key=f"staff-reply:{payload.request_id.strip()}",
-    )
+    try:
+        result = await send_freeform(
+            tenant_id,
+            wa_id,
+            text,
+            operation_key=f"staff-reply:{payload.request_id.strip()}",
+        )
+    except WindowClosedError as e:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "window_closed",
+                "message": (
+                    "The patient's last message was more than 24 hours ago. "
+                    "WhatsApp only allows approved templates now."
+                ),
+            },
+        ) from e
+    except SuppressedRecipientError as e:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "suppressed",
+                "message": "This contact has been erased and cannot be messaged.",
+            },
+        ) from e
+    except AmbiguousDeliveryError as e:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "delivery_unknown",
+                "message": (
+                    "This reply may already have been sent. "
+                    "Check Delivery issues before retrying."
+                ),
+            },
+        ) from e
+    except RuntimeError as e:
+        raise HTTPException(
+            status_code=502,
+            detail={
+                "code": "provider_error",
+                "message": "WhatsApp could not deliver the reply. Try again shortly.",
+            },
+        ) from e
     request_id = payload.request_id.strip()
     await Messages(tenant_id).update_one(
         {"staff_request_id": request_id},
