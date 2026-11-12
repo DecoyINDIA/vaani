@@ -7,7 +7,7 @@ Reads open slots for a practitioner/date, respecting the holiday calendar
 from __future__ import annotations
 
 import logging
-from datetime import UTC, date, time
+from datetime import UTC, date, time, timedelta
 from datetime import datetime as dt
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -38,9 +38,18 @@ async def slots_get(tenant_id: str, practitioner_id: str, date_str: str) -> list
     )
     now = dt.now(UTC).replace(tzinfo=None)
 
+    lead_raw = tenant.get("booking_lead_minutes", 30) if tenant else 30
+    try:
+        lead = int(lead_raw)
+    except (ValueError, TypeError):
+        lead = 30
+    lead = max(0, min(1440, lead))
+
+    earliest = max(start_of_day, now + timedelta(minutes=lead))
+
     query = {
         "practitioner_id": practitioner_id,
-        "start": {"$gte": start_of_day, "$lte": end_of_day},
+        "start": {"$gte": earliest, "$lte": end_of_day},
         "$or": [
             {"status": "open"},
             {"status": "held", "hold_expiry": {"$lt": now}}

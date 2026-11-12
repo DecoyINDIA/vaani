@@ -275,6 +275,7 @@ async def hold_slot(tenant_id: str, slot_id: str, operation_id: str) -> bool:
 
     query = {
         "_id": stored_slot_id,
+        "start": {"$gt": now},
         "$or": [
             {"status": "open"},
             {"status": "held", "hold_expiry": {"$lt": now}},

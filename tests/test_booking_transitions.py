@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
+
 from app.booking.engine import cancel_booking, create_booking, move_booking
 from app.models.base import get_db
 from app.models.collections import Bookings, Slots
@@ -7,7 +9,8 @@ from app.models.collections import Bookings, Slots
 
 async def test_create_is_owned_and_idempotent() -> None:
     tenant_id = "t_booking"
-    await Slots(tenant_id).insert_one({"_id": "slot-create", "status": "open"})
+    future = datetime.now(UTC).replace(tzinfo=None) + timedelta(days=1)
+    await Slots(tenant_id).insert_one({"_id": "slot-create", "start": future, "status": "open"})
 
     first = await create_booking(
         tenant_id, "slot-create", "contact-1", "Cleaning", "request-1"
@@ -27,7 +30,8 @@ async def test_create_is_owned_and_idempotent() -> None:
 
 async def test_cancel_rejects_another_patient_and_never_reopens_rebooked_slot() -> None:
     tenant_id = "t_cancel"
-    await Slots(tenant_id).insert_one({"_id": "slot-cancel", "status": "open"})
+    future = datetime.now(UTC).replace(tzinfo=None) + timedelta(days=1)
+    await Slots(tenant_id).insert_one({"_id": "slot-cancel", "start": future, "status": "open"})
     booking = await create_booking(
         tenant_id, "slot-cancel", "contact-1", "Cleaning", "cancel-create-request"
     )
@@ -51,8 +55,9 @@ async def test_cancel_rejects_another_patient_and_never_reopens_rebooked_slot() 
 
 async def test_move_transfers_slot_ownership_together() -> None:
     tenant_id = "t_move"
-    await Slots(tenant_id).insert_one({"_id": "old-slot", "status": "open"})
-    await Slots(tenant_id).insert_one({"_id": "new-slot", "status": "open"})
+    future = datetime.now(UTC).replace(tzinfo=None) + timedelta(days=1)
+    await Slots(tenant_id).insert_one({"_id": "old-slot", "start": future, "status": "open"})
+    await Slots(tenant_id).insert_one({"_id": "new-slot", "start": future + timedelta(hours=1), "status": "open"})
     booking = await create_booking(
         tenant_id, "old-slot", "contact-1", "Cleaning", "create-request"
     )

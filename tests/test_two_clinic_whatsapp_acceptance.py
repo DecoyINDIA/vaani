@@ -259,8 +259,9 @@ async def test_two_clinic_interactive_booking_journey_and_isolation() -> None:
     """Verifies 2 clinics can run concurrent bookings, status checks, cancels, moves with tenant isolation."""
     db = get_db()
     local_now = datetime.now(UTC).astimezone(ZoneInfo("Asia/Kolkata"))
-    start_1 = local_now.replace(hour=10, minute=0, second=0, microsecond=0).astimezone(UTC).replace(tzinfo=None)
-    start_2 = local_now.replace(hour=11, minute=0, second=0, microsecond=0).astimezone(UTC).replace(tzinfo=None)
+    tomorrow = local_now + timedelta(days=1)
+    start_1 = tomorrow.replace(hour=10, minute=0, second=0, microsecond=0).astimezone(UTC).replace(tzinfo=None)
+    start_2 = tomorrow.replace(hour=11, minute=0, second=0, microsecond=0).astimezone(UTC).replace(tzinfo=None)
 
     for clinic_id, clinic_name, doc_id, doc_name in (
         ("clinic-a", "Clinic Alpha", "doc-a", "Dr. Alice"),
@@ -303,7 +304,7 @@ async def test_two_clinic_interactive_booking_journey_and_isolation() -> None:
 
     # Step 1: Patient A books at Clinic A
     await _send_inbound(
-        "clinic-a", "msg-a-1", patient_a, {"type": "text", "text": {"body": "I want to book an appointment today"}}
+        "clinic-a", "msg-a-1", patient_a, {"type": "text", "text": {"body": "I want to book an appointment tomorrow"}}
     )
     await _send_inbound(
         "clinic-a",
@@ -336,7 +337,7 @@ async def test_two_clinic_interactive_booking_journey_and_isolation() -> None:
 
     # Step 2: Patient B books at Clinic B
     await _send_inbound(
-        "clinic-b", "msg-b-1", patient_b, {"type": "text", "text": {"body": "book appointment today"}}
+        "clinic-b", "msg-b-1", patient_b, {"type": "text", "text": {"body": "book appointment tomorrow"}}
     )
     await _send_inbound(
         "clinic-b",
@@ -406,7 +407,7 @@ async def test_two_clinic_interactive_booking_journey_and_isolation() -> None:
 
     # Step 6: Patient A reschedules at Clinic A
     await _send_inbound(
-        "clinic-a", "msg-a-resched-1", patient_a, {"type": "text", "text": {"body": "reschedule my appointment today"}}
+        "clinic-a", "msg-a-resched-1", patient_a, {"type": "text", "text": {"body": "reschedule my appointment tomorrow"}}
     )
     await _send_inbound(
         "clinic-a",
