@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import logging
 import re
+import time
+from datetime import UTC, datetime
+from typing import Any
 
 import httpx
 
@@ -119,12 +122,152 @@ def get_mock_response(prompt: str, model: str) -> str:
     return "I'm sorry, I couldn't find information about that. I will escalate this to our team to help you. [source_ref: fallback]"
 
 
+class LlmError(RuntimeError):
+    def __init__(self, message: str, *, retryable: bool = False) -> None:
+        super().__init__(message)
+        self.retryable = retryable
+
+
+class LlmTimeoutError(LlmError, httpx.ReadTimeout):
+    def __init__(self, message: str) -> None:
+        LlmError.__init__(self, message, retryable=True)
+        httpx.ReadTimeout.__init__(self, message)
+
+
+_http: httpx.AsyncClient | None = None
+
+
+def set_http_client(client: httpx.AsyncClient | None) -> None:
+    """Set or reset the shared HTTP client (used for tests and lifecycle)."""
+    global _http
+    _http = client
+
+
+def _client() -> httpx.AsyncClient:
+    global _http
+    if _http is None or getattr(_http, "is_closed", False) or not isinstance(_http, httpx.AsyncClient):
+        try:
+            _http = httpx.AsyncClient(
+                timeout=httpx.Timeout(settings.llm_timeout_seconds, connect=3.0)
+            )
+        except TypeError:
+            _http = httpx.AsyncClient()
+    return _http
+
+
+async def _record_call(
+    tenant_id: str,
+    node: str,
+    model: str,
+    latency_ms: int,
+    prompt_tokens: int,
+    completion_tokens: int,
+    ok: bool,
+    error_type: str | None,
+) -> None:
+    if not tenant_id:
+        return
+    try:
+        from app.models.collections import LlmCalls
+        doc = {
+            "tenant_id": tenant_id,
+            "node": node,
+            "model": model,
+            "latency_ms": latency_ms,
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "ok": ok,
+            "error_type": error_type,
+            "ts": datetime.now(UTC).replace(tzinfo=None),
+        }
+        await LlmCalls(tenant_id).insert_one(doc)
+    except Exception as exc:
+        logger.warning("Failed to record LLM telemetry: %s", exc)
+
+
+async def call_openrouter(
+    model: str,
+    messages: list[dict[str, str]],
+    *,
+    temperature: float = 0.0,
+    max_tokens: int = 500,
+    json_mode: bool = False,
+) -> tuple[str, dict[str, int]]:
+    """Perform one HTTP attempt against OpenRouter, returning (text, usage).
+
+    Raises LlmError with retryable=True for timeouts, transport errors, HTTP 429, and >= 500.
+    Raises LlmError with retryable=False for 4xx errors, empty choices, or malformed payloads.
+    """
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {settings.openrouter_api_key}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://github.com/DecoyINDIA/vaani",
+        "X-Title": "Vaani Front Desk",
+    }
+    payload: dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+    }
+    if json_mode and settings.llm_json_mode:
+        payload["response_format"] = {"type": "json_object"}
+
+    client = _client()
+    try:
+        resp = await client.post(url, headers=headers, json=payload)
+    except (httpx.TimeoutException, httpx.ReadTimeout) as exc:
+        raise LlmTimeoutError(
+            f"Network error calling OpenRouter: {type(exc).__name__}"
+        ) from exc
+    except httpx.TransportError as exc:
+        raise LlmError(
+            f"Network error calling OpenRouter: {type(exc).__name__}", retryable=True
+        ) from exc
+    except Exception as exc:
+        raise LlmError(
+            f"Unexpected error calling OpenRouter: {type(exc).__name__}", retryable=False
+        ) from exc
+
+    if resp.status_code == 200:
+        try:
+            body = resp.json()
+            choices = body.get("choices")
+            if not choices:
+                raise LlmError("OpenRouter returned empty choices", retryable=False)
+            message = choices[0].get("message")
+            if not message or message.get("content") is None:
+                raise LlmError("OpenRouter choice missing message content", retryable=False)
+            content = str(message["content"]).strip()
+            raw_usage = body.get("usage") or {}
+            usage = {
+                "prompt_tokens": int(raw_usage.get("prompt_tokens") or 0),
+                "completion_tokens": int(raw_usage.get("completion_tokens") or 0),
+            }
+            return content, usage
+        except Exception as exc:
+            if isinstance(exc, LlmError):
+                raise
+            raise LlmError(
+                f"Malformed OpenRouter response body: {exc}", retryable=False
+            ) from exc
+
+    status = resp.status_code
+    retryable = status == 429 or status >= 500
+    raise LlmError(f"OpenRouter HTTP error {status}: {resp.text}", retryable=retryable)
+
+
 async def query_llm(
     prompt: str,
     model: str,
     system_prompt: str | None = None,
     temperature: float = 0.0,
-    max_tokens: int = 500
+    max_tokens: int = 500,
+    *,
+    json_mode: bool = False,
+    node: str = "",
+    tenant_id: str = "",
 ) -> str:
     """Query OpenRouter, using the rule-based adapter only when explicitly enabled."""
     if settings.use_mock_adapters or settings.use_mock_llm:
@@ -132,42 +275,84 @@ async def query_llm(
         return get_mock_response(prompt + " ---SYSTEM_PROMPT--- " + (system_prompt or ""), model)
     if not settings.openrouter_api_key:
         raise RuntimeError("OPENROUTER_API_KEY is required when mock adapters are disabled")
-        
-    url = "https://openrouter.ai/api/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {settings.openrouter_api_key}",
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://github.com/DecoyINDIA/vaani",
-        "X-Title": "Vaani Front Desk"
-    }
-    
-    messages = []
+
+    messages: list[dict[str, str]] = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
     messages.append({"role": "user", "content": prompt})
-    
-    data = {
-        "model": model,
-        "messages": messages,
-        "temperature": temperature,
-        "max_tokens": max_tokens
-    }
-    
+
+    # Attempt 1
+    t0 = time.perf_counter()
     try:
-        async with httpx.AsyncClient() as client:
-            resp = await client.post(url, headers=headers, json=data, timeout=30.0)
-            if resp.status_code == 200:
-                result = resp.json()
-                return str(result["choices"][0]["message"]["content"]).strip()
-            else:
-                logger.error("OpenRouter API failed with status %s", resp.status_code)
-                # Try fallback provider if configured
-                if settings.llm_model_fallback_provider:
-                    data["model"] = settings.llm_model_fallback_provider
-                    resp_fallback = await client.post(url, headers=headers, json=data, timeout=30.0)
-                    if resp_fallback.status_code == 200:
-                        return str(resp_fallback.json()["choices"][0]["message"]["content"]).strip()
-                raise RuntimeError(f"OpenRouter API error {resp.status_code}")
-    except Exception as e:
-        logger.error("Error querying LLM: %s", type(e).__name__)
-        raise
+        text, usage = await call_openrouter(
+            model,
+            messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            json_mode=json_mode,
+        )
+        latency_ms = int((time.perf_counter() - t0) * 1000)
+        await _record_call(
+            tenant_id=tenant_id,
+            node=node,
+            model=model,
+            latency_ms=latency_ms,
+            prompt_tokens=usage["prompt_tokens"],
+            completion_tokens=usage["completion_tokens"],
+            ok=True,
+            error_type=None,
+        )
+        return text
+    except LlmError as err:
+        latency_ms = int((time.perf_counter() - t0) * 1000)
+        await _record_call(
+            tenant_id=tenant_id,
+            node=node,
+            model=model,
+            latency_ms=latency_ms,
+            prompt_tokens=0,
+            completion_tokens=0,
+            ok=False,
+            error_type=type(err).__name__,
+        )
+        if not err.retryable:
+            raise
+
+    # Attempt 2 (fallback model or same model on retryable error)
+    fallback_model = settings.llm_model_fallback_provider or model
+    t0 = time.perf_counter()
+    try:
+        text, usage = await call_openrouter(
+            fallback_model,
+            messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            json_mode=json_mode,
+        )
+        latency_ms = int((time.perf_counter() - t0) * 1000)
+        await _record_call(
+            tenant_id=tenant_id,
+            node=node,
+            model=fallback_model,
+            latency_ms=latency_ms,
+            prompt_tokens=usage["prompt_tokens"],
+            completion_tokens=usage["completion_tokens"],
+            ok=True,
+            error_type=None,
+        )
+        return text
+    except Exception as err:
+        latency_ms = int((time.perf_counter() - t0) * 1000)
+        await _record_call(
+            tenant_id=tenant_id,
+            node=node,
+            model=fallback_model,
+            latency_ms=latency_ms,
+            prompt_tokens=0,
+            completion_tokens=0,
+            ok=False,
+            error_type=type(err).__name__,
+        )
+        if isinstance(err, LlmTimeoutError):
+            raise
+        raise RuntimeError(f"OpenRouter query failed after fallback retry: {err}") from err

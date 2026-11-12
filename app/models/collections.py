@@ -375,6 +375,10 @@ class JobRuns(TenantScoped):
     collection = "job_runs"
 
 
+class LlmCalls(TenantScoped):
+    collection = "llm_calls"
+
+
 async def ensure_indexes() -> None:
     """Create compound (tenant_id, ...) indexes + the slots uniqueness constraint.
 
@@ -493,4 +497,8 @@ async def ensure_indexes() -> None:
 
     # 14. Waitlist indexes
     await db["waitlist"].create_index([("tenant_id", 1), ("practitioner_id", 1), ("date", 1)])
+
+    # 15. LlmCalls indexes (with 30-day TTL)
+    await db["llm_calls"].create_index([("tenant_id", 1), ("ts", -1)])
+    await db["llm_calls"].create_index("ts", expireAfterSeconds=30 * 24 * 3600)
 
