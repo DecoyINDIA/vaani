@@ -501,6 +501,42 @@ This decision separates implementation completion from external acceptance. Miss
   - Credentialed model evaluation run against live OpenRouter API keys in CI / staging.
   - Native speaker human review of Hindi and Odia rows in `evals/dataset/real_eval.jsonl`.
 
+## 2026-11-12 — W2-01: Localize deterministic patient copy and persist conversation language
+- STATUS: Completed
+- COMMIT: bcc98bd
+- PACKET: vaani-master-plan/06-AGENT_TASKS/W2-01-i18n-flow-strings.md
+- SUBSYSTEMS TOUCHED:
+  - `app/i18n/__init__.py` — LANGS ("en", "hi", "hi-Latn", "or"), normalize_lang(), and t(key, lang, **params) with fallback to English
+  - `app/i18n/strings.py` — string table with all 27 keys translated across en, hi, hi-Latn, and or
+  - `app/booking/timefmt.py` — format_local with lang parameter supporting English, Hindi, and Odia date/time abbreviations (<= 24 chars)
+  - `app/channels/whatsapp.py` — added keyword-only button and title label parameters with truncation to WhatsApp character limits
+  - `app/workers/inbound.py` — replaced all inline English copy with t(); implemented _conversation_lang(); persisted detected language on non-Latin or >= 3 words; stored slot instants in ISO format and localized labels on send
+  - `docs/i18n-review.md` — catalog of all Hindi and Odia translations needing native-speaker sign-off
+  - `tests/test_i18n.py` — tests for string presence, parameter parity, WhatsApp length limits, date formatting, language persistence, and prohibited inline copy
+- SUMMARY:
+  Localize every deterministic patient message across booking, status, reschedule, cancel, opt-in/opt-out, and unsupported media flows into four languages (en, hi, hi-Latn, or). Language is remembered on the conversation and contact. Slot instants are stored as ISO timestamps and formatted localized at send time. All UI literals respect strict WhatsApp character limits.
+- TESTS RUN:
+  - `uv run pytest -q tests/test_i18n.py tests/test_handoff.py tests/test_booking_journey.py tests/test_cancel_confirmation.py` (24 passed)
+  - `uv run pytest -q tests/test_two_clinic_whatsapp_acceptance.py tests/test_unsupported_media.py tests/test_no_tenant_literals.py` (13 passed)
+  - `uv run ruff check .` (0 errors)
+  - `uv run mypy app` (0 errors across 73 source files)
+  - `uv run pytest -q` (318 passed, 4 skipped)
+  - `git grep -nE 'db\[[^]]+\]\.(find|insert|update|delete)' app/ ':!app/models/'` (exit code 1, 0 matches)
+  - `uv run python evals/run_evals.py` (25/25 passed, 100% accuracy)
+- RESULTS:
+  - All 10 i18n tests passed.
+  - Prohibited string regex in `inbound.py` returned 0 matches.
+  - Full pytest suite: 318 passed, 4 skipped (10 new tests added).
+  - Zero tenant-isolation violations.
+- DEVIATIONS FROM PACKET: none
+- REMAINING ISSUES: none
+- EVIDENCE:
+  - `tests/test_i18n.py` verifying full language coverage, param alignment, and length constraints.
+  - `docs/i18n-review.md` with complete catalog of translated strings.
+- PENDING EXTERNAL GATES:
+  - Native-speaker human review and sign-off on Hindi and Odia strings in `docs/i18n-review.md`.
+
+
 
 
 
