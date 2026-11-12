@@ -429,8 +429,41 @@ This decision separates implementation completion from external acceptance. Miss
 - REMAINING ISSUES: none
 - EVIDENCE:
   - `tests/test_llm_client.py` covering timeout fallback, JSON mode formatting, 400 rejection, and telemetry collection.
+## W2-05 Completion Report
+
+- Commit: `8abc331`
+- TASK: W2-05
+- FILES CHANGED:
+  - `pyproject.toml`, `uv.lock`: added `sentry-sdk>=2` runtime dependency via `uv add "sentry-sdk>=2"`.
+  - `app/observability.py`: implemented `ContextVar` trackers for `tenant_id`, `conversation_id`, and `message_id` with `bind()` and `clear()`; single-line JSON log formatter `JsonFormatter` with UTC ISO timestamps, log level, logger name, message, service tag, non-empty correlation IDs, and `exc_type`; Sentry scrubber `_scrub` purging request body, cookies, headers, and stackframe local variables; idempotent `init_observability(service)` installing `StreamHandler(sys.stdout)` and configuring Sentry when `SENTRY_DSN` is configured.
+  - `app/main.py`: initialized observability in `create_app()` with service `"api"`.
+  - `app/workers/inbound.py`: initialized observability in `main()` with service `"worker"`; bound `tenant_id` and `message_id` at start of `process_event`, bound `conversation_id` upon resolution, and ensured `clear()` runs in `finally`; purged patient WhatsApp numbers from log calls ("Agent produced an empty response", "24h window closed"), referencing `conversation_id` instead.
+  - `tests/test_observability.py`: unit tests verifying JSON formatting, correlation ID injection and clearing, exception type logging, Sentry event scrubbing, idempotent initialization with empty DSN, and untouched log message arguments.
+- SUMMARY:
+  Implemented structured JSON logging with context-bound correlation IDs (`tenant_id`, `conversation_id`, `message_id`), safe Sentry error reporting with PII data and frame-variable scrubbing, and removed patient WhatsApp numbers from inbound worker log messages.
+- TESTS RUN:
+  - `uv run pytest -q tests/test_observability.py` (6 passed)
+  - `uv sync --frozen --extra dev` (0 errors)
+  - `git grep -n "wa_id" app/workers/inbound.py | Select-String "logger\."` (0 matches)
+  - `uv run ruff check .` (0 errors)
+  - `uv run mypy app` (0 errors across 71 source files)
+  - `uv run pytest -q` (302 passed, 4 skipped)
+  - `git grep -nE 'db\[[^]]+\]\.(find|insert|update|delete)' app/ ':!app/models/'` (exit code 1, 0 matches)
+  - `uv run python evals/run_evals.py --ci --report artifacts/mock-eval-report.json` (25/25 passed, 100% accuracy)
+- RESULTS:
+  - All 6 new observability tests passed.
+  - Full pytest suite: 302 passed, 4 skipped.
+  - Frozen dev environment synced cleanly.
+  - Mock evals: 25/25 passed across EN, HI, HI-Latn, OR.
+  - Zero PII leaks in worker logger statements.
+  - Zero tenant-isolation violations.
+- DEVIATIONS FROM PACKET: none
+- REMAINING ISSUES: none
+- EVIDENCE:
+  - `tests/test_observability.py` covering formatting, binding, scrubbing, and idempotence.
 - PENDING EXTERNAL GATES:
-  - OpenRouter live API validation under valid production credentials.
+  - Sentry event reception verification against live SENTRY_DSN on staging/production environment.
+
 
 
 
