@@ -382,6 +382,23 @@ This decision separates implementation completion from external acceptance. Miss
   - Tests: `test_relative_date_resolution_table`, `test_parse_colloquial_time_table`, `test_day_after_tomorrow_precedes_tomorrow_match`, `test_short_date_rolls_across_year_and_normalizes_indic_digits`
 - PENDING EXTERNAL GATES: none for W1-13
 
+## INT-1 Integration Checkpoint Report
+
+- Commit: `4b0b090`
+- CHECKPOINT: INT-1 (Wave 1 Complete)
+- SUMMARY:
+  All Wave 1 packets (W1-01 through W1-13) are merged on `main`. Quality gate 09 §2 passed with 290 pytest tests passing (4 skipped), 0 ruff errors, 0 mypy issues, clean Vite dashboard build, 0 tenant-isolation violations, and 25/25 mock evals (100% accuracy across EN, HI, HI-Latn, and OR). Scripted transcript test `tests/test_wave1_transcript.py` verified end-to-end multi-tenant behavior under mock adapters: FAQ citations stripped, past slots excluded from booking, local formatted appointment time rendered in booking status, two-step interactive cancellation confirmed, unsupported audio politely refused, and strict tenant isolation preserved. Staging startup with feature flags off verified: WhatsApp and Meta routes mount cleanly while voice (Exotel) and payments (Razorpay) routes remain unmounted.
+- TEST COUNTS & GATE RESULTS:
+  - Pytest: 290 passed, 4 skipped in 13.37s
+  - Mock evals: 25/25 passed across 4 languages (Macro F1 1.0000, 0 hallucinations, 0 ungrounded)
+  - Ruff check: 0 errors
+  - Mypy check: 0 errors across 70 source files
+  - Tenant isolation: 0 unscoped db calls outside `app/models/`
+  - Dashboard: TypeScript lint and Vite build succeeded
+- PENDING EXTERNAL GATES:
+  - Container image digest verification on Docker-enabled runner (Docker daemon unavailable locally)
+  - Live model evals against OpenRouter credentials
+
 
 
 
