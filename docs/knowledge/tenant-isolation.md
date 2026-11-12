@@ -3,7 +3,7 @@ type: "Invariant"
 title: "Tenant and identifier boundaries"
 description: "Explicit clinic context and MongoDB identifiers constrain data access."
 status: "draft"
-generated: {"by": "codex/knowledge-starter", "at": "2026-11-09T11:32:20.670109+00:00"}
+generated: {"by": "codex/booking-impact-map", "at": "2026-11-09T11:38:56.821259+00:00"}
 source_commit: "804daa18c83b39e5785ba9ddcf9f534b1e8a7aa4"
 source_paths: ["app/models/base.py", "app/models/collections.py", "tests/test_tenant_isolation.py", "tests/test_generated_objectid_boundaries.py"]
 source_hashes: {"app/models/base.py": "f2141ff668fa8c6ea338b5ce667c7cb5e4c0129b6ce5c796565c387064483f10", "app/models/collections.py": "e18443ad6693cff6445447e5a6a0cbc38cb177818a1ebfbdae2926cf69bce8b1", "tests/test_tenant_isolation.py": "6415d6f89e3c1e42be11a0ddc1b8dc60dc53387818ce19feee42970b9dc27d24", "tests/test_generated_objectid_boundaries.py": "20ffd2d35af52ed926ae84b191ee5e687fadac6f14b8f4cb6f015e8f73ad69eb"}
@@ -30,3 +30,6 @@ Review cross-clinic and generated-ID regressions for every affected API/tool pat
 
 # Working-tree reconciliation
 The current working tree also adds Tenants.update_settings, matching the tenant document by _id. Review that platform-level method along with the lookup and scan exceptions.
+
+# Booking-specific identifier map
+See [identifier contracts](identifier-contracts.md) for representation and caller differences, [booking impact](booking-impact.md) for mutation paths, and [booking evidence](booking-evidence.md) for coverage limits.

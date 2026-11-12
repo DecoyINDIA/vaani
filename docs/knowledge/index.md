@@ -17,6 +17,11 @@ Start at [Vaani project map](project.md). This is a source-backed draft at commi
 - [Maintain the knowledge graph](maintenance.md) - Update affected concepts with code changes and review source drift.
 - [Clinic knowledge retrieval next](product-retrieval-plan.md) - A staged plan for using curated clinic knowledge inside Vaani.
 
+## Booking change-impact deep dive
+- [Booking change-impact map](booking-impact.md) - Actual entry points, state guards, side effects, and review targets.
+- [Booking identifier contracts](identifier-contracts.md) - Representations, ownership, and collision policies by caller.
+- [Booking evidence and test selection](booking-evidence.md) - Fresh offline results and explicit coverage gaps.
+
 ## Relationship overview
 ```mermaid
 flowchart LR
@@ -25,6 +30,11 @@ flowchart LR
     Agent --> Retrieval
     Agent --> Handoff
     Delivery --> Agent
+    Booking --> Impact
+    Impact --> Identifiers
+    Impact --> Tests
+    Identifiers --> Tenant
+    Tests --> Evidence
     Booking --> Tenant
     Retrieval --> Tenant
     Handoff --> Delivery
