@@ -121,8 +121,10 @@ class Messages(TenantScoped):
         )
 
     @classmethod
-    async def acquire_work_unscoped(cls, message_id: str) -> dict[str, Any] | None:
-        """Atomically lease queued or abandoned work to one worker for 60 seconds."""
+    async def acquire_work_unscoped(
+        cls, message_id: str, *, lease_seconds: int = 60
+    ) -> dict[str, Any] | None:
+        """Atomically lease queued or abandoned work to one worker."""
         now = datetime.now(UTC).replace(tzinfo=None)
         result = await get_db()[cls.collection].find_one_and_update(
             {
@@ -133,7 +135,10 @@ class Messages(TenantScoped):
                 ],
             },
             {
-                "$set": {"status": "processing", "lease_expires_at": now + timedelta(seconds=60)},
+                "$set": {
+                    "status": "processing",
+                    "lease_expires_at": now + timedelta(seconds=lease_seconds),
+                },
                 "$inc": {"attempts": 1},
             },
             return_document=ReturnDocument.AFTER,
@@ -168,7 +173,7 @@ class Messages(TenantScoped):
 
     @classmethod
     async def find_queued_unscoped(cls) -> list[dict[str, Any]]:
-        """Find queued and expired leased work across all tenants."""
+        """Find queued and expired leased work across all tenants sorted by arrival order."""
         now = datetime.now(UTC).replace(tzinfo=None)
         query = {
             "$or": [
@@ -176,7 +181,8 @@ class Messages(TenantScoped):
                 {"status": "processing", "lease_expires_at": {"$lte": now}},
             ]
         }
-        return [doc async for doc in get_db()[cls.collection].find(query)]
+        cursor = get_db()[cls.collection].find(query).sort([("accepted_at", 1), ("_id", 1)])
+        return [doc async for doc in cursor]
 
     @classmethod
     async def mark_failed_unscoped(cls, message_id: str, reason: str) -> None:
