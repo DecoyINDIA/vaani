@@ -10,7 +10,6 @@ Required set (TRD §4.1, §5.3):
 - `out_of_scope` — static refusal + capability menu
 - `restricted_advice_refusal` — templated refusal + booking offer + escalate flag
 - `de_escalation` — one attempt before escalate (complaint/abuse)
-- `location_landmark` — location pin + landmark-based directions
 
 **Rule:** anything user-facing exists in all 4 languages or it does not ship
 (06-engineering-plan §4, global definition of done).

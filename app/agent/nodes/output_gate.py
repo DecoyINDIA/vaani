@@ -45,7 +45,7 @@ async def output_gate(state: AgentState) -> dict[str, Any]:
         # timings — word-bounded, else "am" matches inside "Namaste"
         r"\b(am|pm|baje|time)\b",
         # location details
-        r"\b(address|location|landmark|bhubaneswar)\b",
+        r"\b(address|location|landmark)\b",
     ]
     
     response_lower = response.lower()

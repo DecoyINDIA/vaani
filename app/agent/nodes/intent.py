@@ -76,7 +76,7 @@ def build_system_prompt(profile: BusinessProfile) -> str:
         "2. Text: 'appointment mil sakta hai?' -> {\"intent\": \"book\", \"confidence\": 0.95}\n"
         "3. Text: 'charge kitna hai?' -> {\"intent\": \"faq_fees\", \"confidence\": 0.95}\n"
         "4. Text: 'mujhe kal milna hai, time milega?' -> {\"intent\": \"book\", \"confidence\": 0.90}\n"
-        "5. Text: 'weather in bhubaneswar' -> {\"intent\": \"out_of_scope\", \"confidence\": 1.0}\n"
+        "5. Text: 'weather today' -> {\"intent\": \"out_of_scope\", \"confidence\": 1.0}\n"
         "6. Text: 'staff se baat karayein' -> {\"intent\": \"human_request\", \"confidence\": 0.95}\n"
         f"{examples}"
     )
