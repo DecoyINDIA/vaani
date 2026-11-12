@@ -96,5 +96,39 @@ This decision separates implementation completion from external acceptance. Miss
   - Tests: `test_past_slot_not_listed_and_not_holdable`, `test_slot_in_10_min_not_listed_with_default_lead_but_holdable`, `test_slot_in_2_hours_listed_and_holdable`, `test_tenant_zero_lead_lists_slot_in_10_min`
 - PENDING EXTERNAL GATES: none for W1-03
 
+## W1-04 Completion Report
+
+- Commit: `6a92612`
+- TASK: W1-04
+- FILES CHANGED:
+  - `app/channels/whatsapp.py` — added send_cancel_confirmation interactive button message
+  - `app/workers/inbound.py` — replaced immediate cancellation with button prompt and added _handle_cancel_action
+  - `tests/test_cancel_confirmation.py` — 5 new tests for cancel prompt, keep, expiry, no-flow, and duplicate tap idempotency
+  - `tests/test_booking_journey.py` — updated cancel journey to tap cancel:confirm button
+  - `tests/test_two_clinic_whatsapp_acceptance.py` — updated cancel journey to tap cancel:confirm button
+- SUMMARY:
+  Implemented two-step cancellation requiring an explicit button tap (cancel:confirm) before invoking booking_cancel. Cancel intent saves cancel_flow with 30-minute expiry and sends interactive buttons. Added _handle_cancel_action before _handle_booking_action.
+- TESTS RUN:
+  - `uv run pytest -q tests/test_cancel_confirmation.py`
+  - `uv run ruff check .`
+  - `uv run mypy app`
+  - `uv run pytest -q`
+- RESULTS:
+  - Focused: 5 passed
+  - Full suite: 239 passed, 4 skipped
+  - Ruff & mypy: passed with 0 issues
+- DEVIATIONS FROM PACKET: none
+- REMAINING ISSUES: none
+- EVIDENCE:
+  - Tests: `test_cancel_prompt_and_confirmation_flow`, `test_cancel_keep_leaves_booking_unchanged`, `test_cancel_confirm_with_no_flow_is_ignored`, `test_cancel_confirm_expired_31_minutes_later`, `test_duplicate_cancel_confirm_idempotency`
+  - `git grep -n "booking_cancel(" app/workers/inbound.py`: called only at line 239 inside `_handle_cancel_action`
+- INDEPENDENT REVIEW (§4):
+  - Any remaining path that cancels without cancel:confirm? No; booking_cancel is only called in _handle_cancel_action after verifying action_id == "cancel:confirm".
+  - Is the conversation state == "bot" filter on every write? Yes; both update_one calls in inbound.py filter by `{"_id": conversation_db_id, "state": "bot"}`.
+  - Are operation keys deterministic and distinct? Yes; cancel-confirm:{message_id or conversation_id}, cancel-keep:{message_id or conversation_id}, cancel-result:{conversation_id}:{booking_id}.
+  - Does a duplicate tap double-send? No; idempotent operation key and stage completion prevents double processing.
+- PENDING EXTERNAL GATES: none for W1-04
+
+
 
 
