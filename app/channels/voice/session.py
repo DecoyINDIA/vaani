@@ -41,7 +41,7 @@ class VoiceSession:
         self.call_sid = call_sid
         self.caller_phone = caller_phone or f"ephemeral:{call_sid}"
         self.sample_rate = sample_rate
-        self.clinic_name = "the clinic"
+        self.clinic_name = "our business"
         self.default_lang = "hi-Latn"
         
         self.conversation_id: str | None = None
@@ -56,7 +56,7 @@ class VoiceSession:
         now = dt.now(UTC).replace(tzinfo=None)
         tenant = await Tenants.find_by_id(self.tenant_id)
         if tenant:
-            self.clinic_name = str(tenant.get("name", "the clinic"))
+            self.clinic_name = str(tenant.get("name", "our business"))
             self.default_lang = str(tenant.get("locale_default", "hi-Latn"))
 
         contacts = Contacts(self.tenant_id)
@@ -100,7 +100,7 @@ class VoiceSession:
 
     def get_consent_text(self, lang: str = "en", clinic_name: str | None = None) -> str:
         """Retrieve the DPDP Act voice consent script for call start."""
-        clinic = clinic_name or getattr(self, "clinic_name", "the clinic")
+        clinic = clinic_name or getattr(self, "clinic_name", "our business")
         if lang == "hi":
             return f"{clinic} में कॉल करने के लिए धन्यवाद। इस कॉल का उत्तर हमारी AI रिसेप्शनिस्ट वाणी द्वारा दिया जा रहा है। अपॉइंटमेंट बुक करने के लिए, हम आपके फ़ोन नंबर और बातचीत को प्रोसेस करते हैं। गुणवत्ता और सुरक्षा के लिए, इस कॉल को DPDP एक्ट के तहत रिकॉर्ड किया जा सकता है। जारी रखने के लिए कृपया लाइन पर बने रहें या 1 दबाएं। यदि आप सहमत नहीं हैं, तो कॉल काटकर हमारे व्हाट्सएप असिस्टेंट द्वारा बुक कर सकते हैं।"
         elif lang == "hi-Latn":

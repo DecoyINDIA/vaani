@@ -1,6 +1,6 @@
 """Node 3 — input scope gate (TRD §4.2, gate 1).
 
-Routes by intent. medical_question / out_of_scope / abuse / complaint never reach
+Routes by intent. restricted_advice / out_of_scope / abuse / complaint never reach
 the LLM responder — they go to static templates + escalate flags. This is the
 first of the two mandatory gates that make Meta-policy compliance a code path.
 """
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 async def scope_gate(state: AgentState) -> dict[str, Any]:
     """Node 3 — input scope gate (TRD §4.2, gate 1).
 
-    Routes by intent. medical_question / out_of_scope / abuse / complaint never reach
+    Routes by intent. restricted_advice / out_of_scope / abuse / complaint never reach
     the LLM responder — they go to static templates + escalate flags.
     """
     intent_val = state.get("intent", "out_of_scope")
@@ -85,12 +85,12 @@ async def scope_gate(state: AgentState) -> dict[str, Any]:
                 "response": get_template("de_escalation", lang)
             }
 
-    # 3. Medical question -> static refusal + escalate to staff
-    if intent_val == "medical_question":
-        logger.info("Medical question detected. Refusing and escalating.")
+    # 3. Restricted advice (per-tenant topics) -> static refusal + escalate to staff
+    if intent_val == "restricted_advice":
+        logger.info("Restricted-advice request detected. Refusing and escalating.")
         return {
             "escalate": True,
-            "response": get_template("medical_refusal", lang)
+            "response": get_template("restricted_advice_refusal", lang)
         }
 
     if intent_val == "human_request":

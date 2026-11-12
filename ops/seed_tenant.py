@@ -30,6 +30,15 @@ async def seed_demo_async() -> None:
         "_id": tenant_id,
         "name": "Sharma Dental Clinic",
         "vertical": "clinic",
+        # Demo tenant only: this is where a business is described to the agent.
+        # Any kind of business works; omit the block for neutral defaults.
+        "business_profile": {
+            "business_type": "dental clinic",
+            "customer_term": "patient",
+            "staff_term": "doctor",
+            "restricted_topics": ["medical advice, diagnosis or medicine recommendations"],
+            "restricted_examples": ["mere daant me dard hai kaunsi dawai lu?"],
+        },
         "wa_number": "919999999999",
         "voice_number": "919999999998",
         "plan": "starter",

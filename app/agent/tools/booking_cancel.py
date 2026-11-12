@@ -55,7 +55,7 @@ async def booking_cancel(
             
             if waitlist_entries:
                 logger.info(f"Found {len(waitlist_entries)} active waitlist entries for backfill.")
-                # Send slot offer to all waitlisted patients
+                # Send slot offer to all waitlisted customers
                 for entry in waitlist_entries:
                     contact_id = entry.get("contact_id")
                     

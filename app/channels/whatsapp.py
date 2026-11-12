@@ -4,7 +4,8 @@ Meta policy: free-form replies ONLY inside the 24h customer-service window;
 outside it, pre-approved utility templates only. Tracks last-inbound ts per
 contact; an out-of-window free-form send must RAISE and force the template path.
 Template pack registry lives here (booking_confirm, *_reminder_*, payment_link,
-escalation_alert_staff, weekly_summary_owner, consent_notice, missed_call_bridge).
+escalation_alert_staff, weekly_summary_owner, daily_brief_owner, consent_notice,
+missed_call_bridge).
 All sends route through app.audit (choke point).
 """
 
@@ -38,6 +39,7 @@ TEMPLATE_PACK: frozenset[str] = frozenset(
         "payment_link",
         "escalation_alert_staff",
         "weekly_summary_owner",
+        "daily_brief_owner",
         "consent_notice",
         "missed_call_bridge",
     }
@@ -60,6 +62,15 @@ TEMPLATE_CONTRACTS: dict[str, tuple[str, ...]] = {
         "confirmed_count",
         "recovered_count",
         "revenue_str",
+    ),
+    "daily_brief_owner": (
+        "owner_name",
+        "date_str",
+        "convs_count",
+        "confirmed_count",
+        "recovered_count",
+        "revenue_str",
+        "open_escalations",
     ),
     "missed_call_bridge": ("clinic_name",),
 }

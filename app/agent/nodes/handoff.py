@@ -1,6 +1,6 @@
 """Node 7 — handoff manager (TRD §4.4).
 
-Triggers: human_request, 2x low-confidence, medical/complaint, abuse. Sets
+Triggers: human_request, 2x low-confidence, restricted advice/complaint, abuse. Sets
 conversations.state = human, silences the bot for that thread, fires a WhatsApp
 template alert to on-duty staff (<=30s), starts SLA timers. "Resolve & return"
 flips state back to bot with a context summary injected. All transitions audited.
@@ -57,7 +57,7 @@ async def handoff(state: AgentState) -> dict[str, Any]:
     )
 
     safety_response = state.get("response") if intent_val in {
-        "medical_question",
+        "restricted_advice",
         "complaint",
         "abuse",
     } else None

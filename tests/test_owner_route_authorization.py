@@ -52,6 +52,7 @@ STAFF_ROUTES: tuple[RouteCase, ...] = (
 )
 
 OWNER_ONLY_ROUTES: tuple[RouteCase, ...] = (
+    ("POST", "/api/voice/calls", {"phone_number": "+919876543210"}),
     (
         "PUT",
         "/api/settings",

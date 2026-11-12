@@ -180,7 +180,7 @@ async def test_llm_failures_create_real_handoff(
         {"tenant_id": "t_test", "conversation_id": conversation_id}
     )
     assert result["escalate"] is True
-    assert "clinic staff" in result["response"]
+    assert "our team" in result["response"]
     assert escalation["reason"].endswith("llm_unavailable")
     conversation = await get_db()["conversations"].find_one({"_id": conversation_id})
     assert conversation["state"] == "human"

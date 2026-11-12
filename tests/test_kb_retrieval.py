@@ -216,4 +216,4 @@ async def test_missing_faq_fact_skips_responder_and_hands_off(monkeypatch: Any) 
     escalate.assert_awaited_once()
     responder_llm.assert_not_awaited()
     assert result["escalate"] is True
-    assert "clinic staff" in result["response"]
+    assert "our team" in result["response"]

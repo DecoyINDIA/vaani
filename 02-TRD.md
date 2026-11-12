@@ -82,21 +82,24 @@
 ## 3. Data Model (MongoDB collections)
 
 ```
-tenants        { _id, name, vertical, wa_number, voice_number, plan, status,
+tenants        { _id, name, vertical?, business_profile?, wa_number, voice_number, plan, status,
                  locale_default, business_hours[], holiday_calendar[],  // national + state festival closures, owner-editable
                  gstin?, landmark_line, location_pin, created_at }
+               // business_profile { business_type, customer_term, staff_term, restricted_topics[], restricted_examples[], avg_booking_value? (INR; prices recovered bookings in reports) }
+               // — all optional; industry-neutral defaults apply when absent. Implemented in app/agent/profile.py.
+               // `vertical` is a legacy label and is not read by the agent.
 users          { _id, tenant_id, role: owner|staff, phone, wa_id, name, notif_prefs }
 contacts       { _id, tenant_id, wa_id, phone, name?, lang_pref, consent:
                  { status, ts, notice_version }, tags[], created_at,
                  profile: { preferred_practitioner?, last_service?, last_visit?,
-                            visit_cadence_days?, csat_avg? } }   // patient memory (F-20)
+                            visit_cadence_days?, csat_avg? } }   // returning-customer memory (F-20)
 conversations  { _id, tenant_id, contact_id, channel: wa|voice, state:
                  bot|human|closed, assigned_to?, started_at, last_msg_at }
 messages       { _id, tenant_id, conversation_id, direction, type, text,
                  media_ref?, lang, intent?, confidence?, latency_ms, ts }
 kb_entries     { _id, tenant_id, kind: field|faq, key?, question?, answer,
                  embedding, version, updated_by, ts }
-practitioners  { _id, tenant_id, name, services[], schedule_template }
+practitioners  { _id, tenant_id, name, services[], schedule_template }   // staff members or bookable resources; collection name kept, rename deferred (needs a data migration)
 slots          { _id, tenant_id, practitioner_id, start, end, status:
                  open|held|booked|blocked, hold_expiry?, version }   // optimistic lock
 bookings       { _id, tenant_id, slot_id, contact_id, service, status:
@@ -121,10 +124,11 @@ prompt_registry{ _id, node, lang, version, hash, eval_report_ref, active, ts }
 ## 4. Agent Design
 
 ### 4.1 Intent taxonomy (closed set — compliance boundary)
-`greet, faq_hours, faq_location, faq_services, faq_fees, faq_doctor, book, reschedule, cancel, booking_status, payment_query, reminder_response, human_request, complaint, medical_question, smalltalk_min, out_of_scope, abuse`
+`greet, faq_hours, faq_location, faq_services, faq_fees, faq_staff, book, reschedule, cancel, booking_status, payment_query, reminder_response, human_request, complaint, restricted_advice, smalltalk_min, out_of_scope, abuse`
 
 Rules baked into graph:
-- `medical_question` → templated refusal + booking offer + escalate flag. Never generated freeform.
+- `restricted_advice` → templated refusal + booking offer + escalate flag. Never generated freeform. What counts as restricted comes from the tenant's `business_profile.restricted_topics`; the default list is medical, legal and financial advice. The legacy labels `medical_question` and `faq_doctor` are still accepted from the model and mapped to `restricted_advice` and `faq_staff`.
+- Prompts and reply wording are built from the tenant's `business_profile` at request time; static templates are industry-neutral.
 - `out_of_scope` → static template + capability menu. **LLM responder node is never invoked.**
 - `complaint`/`abuse` → escalate after one templated de-escalation.
 - `smalltalk_min` → single canned pleasantry, then redirect to menu (prevents open-domain drift).
@@ -164,7 +168,7 @@ GET  /api/metrics/summary?period=           GET  /api/audit/export?from=&to=
 ### 5.3 Outbound messaging rules (Meta policy)
 - Free-form replies only inside the 24-hour customer service window.
 - Outside window: pre-approved **utility** templates only (booking confirmation, reminders, payment link). No marketing templates in v1.
-- Template pack (submit Week 2): `booking_confirm`, `booking_reminder_24h`, `booking_reminder_2h`, `payment_link`, `escalation_alert_staff`, `weekly_summary_owner`, `consent_notice`, `missed_call_bridge` (F-16, utility category — opt-in gated).
+- Template pack (submit Week 2): `booking_confirm`, `booking_reminder_24h`, `booking_reminder_2h`, `payment_link`, `escalation_alert_staff`, `weekly_summary_owner`, `daily_brief_owner` (draft, not yet submitted), `consent_notice`, `missed_call_bridge` (F-16, utility category — opt-in gated).
 - **Interactive messages (v2):** inside the 24h window, reply buttons and list messages are ordinary service messages — they are the **default booking UX** (F-18: list picker for slots, buttons for Confirm/Change/Cancel), not an enhancement. WhatsApp Flows (F-19) for the native booking form; Flow JSON versioned in repo, tested in draft mode before publish. CSAT prompt (F-21) sent in-window immediately on resolution — no template needed. Mark-as-read + typing indicator fired ≤1s after every inbound (perceived-latency budget).
 
 ## 6. Non-Functional Requirements
@@ -204,22 +208,22 @@ Voice (Pro): STT+TTS+LLM+telephony ≈ ₹2.5–4.0/min → 300 included minutes
 
 ## 9. Resilience — Degradation Ladder (never go silent)
 
-A top-1% agent's failure mode is graceful, honest, and fast. Every dependency has a scripted fallback; the patient always gets something useful within the latency budget. "Sorry, try later" is a P1 bug; silence is a P0 bug.
+A top-1% agent's failure mode is graceful, honest, and fast. Every dependency has a scripted fallback; the customer always gets something useful within the latency budget. "Sorry, try later" is a P1 bug; silence is a P0 bug.
 
 | Failure | Degradation step |
 |---------|------------------|
 | Primary LLM slow/down | OpenRouter failover to second provider (ADR-02) → if both down, **menu mode**: static capability menu + button-driven booking. Menu mode needs no LLM at all — the list picker (F-18) + slots/booking tools are fully deterministic, so bookings keep flowing during an LLM outage. |
 | Classifier down | Keyword/regex pre-router covers the top intents (book, cancel, hours, fees, human); everything else → handoff. |
-| Atlas Search degraded | KB falls back to exact-field lookup for structured fields (hours, fees, address); free-text FAQs answer "I'll check with the clinic" + escalate. |
+| Atlas Search degraded | KB falls back to exact-field lookup for structured fields (hours, fees, address); free-text FAQs answer "I'll check with our team" + escalate. |
 | Redis down | Webhook still 200-acks; messages persist to a Mongo fallback queue; workers drain on recovery. A message is never dropped. |
 | Meta send API down | Retry with backoff; >5 min sustained → owner alerted out-of-band per runbook. |
-| Voice vendor down (P2) | Calls forward straight to the owner's phone, as if Vaani weren't there — the clinic loses nothing it didn't already lack. |
+| Voice vendor down (P2) | Calls forward straight to the owner's phone, as if Vaani weren't there — the business loses nothing it didn't already lack. |
 
 Circuit breakers per vendor (open after 5 consecutive failures, half-open probe at 30s). Degraded state is visible on the dashboard and in the daily health/cost report. **Chaos drill before pilot:** kill each dependency in staging once, verify the ladder holds; scripted in `ops/`.
 
 ## 10. Quality Flywheel (the compounding moat)
 
-The eval suite (§6) is the gate; the flywheel is what makes it compound. This — not features — is the durable answer to copycat risk (R7): anyone can wrap the same APIs; nobody else has the labeled vernacular clinic corpus.
+The eval suite (§6) is the gate; the flywheel is what makes it compound. This — not features — is the durable answer to copycat risk (R7): anyone can wrap the same APIs; nobody else has the labeled vernacular corpus across local trades.
 
 1. **Auto-capture:** every escalation, every 👎 CSAT (F-21), every output-gate rejection, plus a 5% random sample, auto-create `eval_candidates` rows. Zero manual collection.
 2. **Label loop:** weekly 30-min labeling ritual (Subham + native speakers as needed) converts candidates → eval-set entries. Target: eval set grows ≥50 utterances/week during pilot.

@@ -1,6 +1,6 @@
 # Project Vaani — internal planning index
 
-Vernacular AI front-desk agent (WhatsApp + voice) for Indian appointment-driven SMBs. v1 vertical: clinics.
+Vernacular AI agents (WhatsApp + voice) for Indian small and medium businesses: a Front-desk agent (reception + follow-up/recall) and a Reporting agent (daily owner brief). Any appointment-driven trade, Bhubaneswar first; each business is configured through a per-tenant `business_profile`.
 
 Planning pack — read [00-overview.md](../00-overview.md) first.
 

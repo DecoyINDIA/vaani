@@ -7,9 +7,10 @@ WebSocket /webhooks/exotel/stream — bidirectional real-time audio stream.
 from __future__ import annotations
 
 import logging
+import re
 import secrets
 from datetime import UTC, datetime, timedelta
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -77,7 +78,7 @@ def _grant_signature(
 
 
 async def issue_stream_grant(
-    tenant_id: str, call_sid: str, caller_phone: str
+    tenant_id: str, call_sid: str, caller_phone: str, *, ttl_seconds: int = 60
 ) -> str | None:
     """Create or replay one short-lived, one-use grant for a verified call."""
     grants = VoiceGrants(tenant_id)
@@ -91,7 +92,7 @@ async def issue_stream_grant(
         expires_at = int(existing["expires_at"].replace(tzinfo=UTC).timestamp())
         nonce = str(existing["nonce"])
     else:
-        expires = now + timedelta(seconds=60)
+        expires = now + timedelta(seconds=ttl_seconds)
         expires_at = int(expires.replace(tzinfo=UTC).timestamp())
         nonce = secrets.token_urlsafe(24)
         await grants.insert_one(
@@ -143,6 +144,90 @@ async def resolve_voice_tenant(voice_number: str) -> str:
     if not tenant:
         raise ValueError(f"Unknown voice_number: {voice_number}")
     return str(tenant["_id"])
+
+
+def _public_voice_urls(
+    tenant_id: str, grant_id: str, caller_phone: str, token: str
+) -> tuple[str, str]:
+    base_url = settings.voice_public_base_url.rstrip("/")
+    parsed = urlsplit(base_url)
+    if parsed.scheme != "https" or not parsed.netloc or parsed.query or parsed.fragment:
+        raise RuntimeError("VOICE_PUBLIC_BASE_URL must be a public HTTPS origin")
+    stream_url = (
+        f"wss://{parsed.netloc}/webhooks/stream/{quote(tenant_id)}/{quote(grant_id)}"
+        f"?token={quote(token)}&caller_phone={quote(caller_phone)}"
+    )
+    return stream_url, f"{base_url}/webhooks/exotel/status"
+
+
+async def start_outbound_call(tenant_id: str, caller_phone: str) -> dict[str, str]:
+    """Dial one customer and connect the answered call to Vaani's voice stream."""
+    if not re.fullmatch(r"\+[1-9]\d{7,14}", caller_phone):
+        raise ValueError("Destination must be an E.164 phone number")
+    if await is_suppressed(tenant_id, caller_phone):
+        raise PermissionError("Destination is suppressed")
+
+    tenant = await Tenants.find_by_id(tenant_id)
+    voice_number = str((tenant or {}).get("voice_number", "")).strip()
+    if not voice_number:
+        raise RuntimeError("Tenant has no Exotel voice number")
+    if not all(
+        (
+            settings.exotel_sid,
+            settings.exotel_api_key,
+            settings.exotel_api_token,
+            settings.exotel_subdomain,
+        )
+    ):
+        raise RuntimeError("Exotel credentials are not configured")
+
+    grant_id = f"out_{secrets.token_urlsafe(18)}"
+    token = await issue_stream_grant(
+        tenant_id, grant_id, caller_phone, ttl_seconds=300
+    )
+    if not token:
+        raise RuntimeError("Could not create outbound stream grant")
+
+    try:
+        stream_url, status_url = _public_voice_urls(
+            tenant_id, grant_id, caller_phone, token
+        )
+        host = (
+            settings.exotel_subdomain.removeprefix("https://")
+            .removeprefix("http://")
+            .rstrip("/")
+        )
+        endpoint = f"https://{host}/v1/Accounts/{settings.exotel_sid}/Calls/connect"
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                endpoint,
+                auth=(settings.exotel_api_key, settings.exotel_api_token),
+                data={
+                    "From": caller_phone,
+                    "CallerId": voice_number,
+                    "StreamUrl": stream_url,
+                    "StreamType": "bidirectional",
+                    "Record": "false",
+                    "TimeLimit": "900",
+                    "StatusCallback": status_url,
+                    "StatusCallbackEvents[]": "terminal",
+                },
+                timeout=15.0,
+            )
+        if response.status_code < 200 or response.status_code >= 300:
+            raise RuntimeError(f"Exotel outbound call failed with HTTP {response.status_code}")
+        body = response.json()
+        call = body.get("Call") if isinstance(body, dict) else None
+        if not isinstance(call, dict):
+            raise RuntimeError("Exotel outbound call returned no call")
+        call_sid = call.get("Sid")
+        if not isinstance(call_sid, str) or not call_sid:
+            raise RuntimeError("Exotel outbound call returned no call SID")
+        status = call.get("Status", "queued")
+        return {"call_sid": call_sid, "status": str(status)}
+    except (httpx.HTTPError, ValueError, RuntimeError):
+        await VoiceGrants(tenant_id).delete_many({"call_sid": grant_id})
+        raise
 
 
 def _verified_conversation_duration(call: dict[str, object]) -> int | None:
@@ -330,7 +415,7 @@ async def missed_call(request: Request) -> Response:
             tenant_id=tenant_id,
             wa_id=str(from_number),
             template="missed_call_bridge",
-            variables={"clinic_name": str((tenant or {}).get("name", "the clinic"))},
+            variables={"clinic_name": str((tenant or {}).get("name", "our business"))},
             operation_key=operation_key,
         )
         await audit.record(
@@ -389,10 +474,26 @@ async def call_status(request: Request) -> Response:
         except ValueError:
             return JSONResponse({"detail": "Invalid callback duration"}, status_code=400)
 
-    try:
-        tenant_id = await resolve_voice_tenant(to_number)
-    except ValueError:
+    direction = str(verified.get("Direction", "")).lower()
+    candidate_numbers = [to_number]
+    if direction == "outbound-api":
+        candidate_numbers = [
+            str(verified.get("PhoneNumberSid", "")),
+            str(fields.get("PhoneNumberSid", "")),
+            from_number,
+            to_number,
+        ]
+    tenant_ids: set[str] = set()
+    for number in candidate_numbers:
+        if not number:
+            continue
+        try:
+            tenant_ids.add(await resolve_voice_tenant(number))
+        except ValueError:
+            continue
+    if len(tenant_ids) != 1:
         return JSONResponse({"detail": "Tenant not found"}, status_code=404)
+    tenant_id = tenant_ids.pop()
     tenant = await Tenants.find_by_id(tenant_id)
     timezone = ZoneInfo(str((tenant or {}).get("timezone", "Asia/Kolkata")))
     occurred_at = _provider_end_time(verified.get("EndTime"), timezone)
@@ -440,7 +541,8 @@ async def websocket_stream(
         return
 
     await websocket.accept()
-    session = VoiceSession(tenant_id, call_sid, caller_phone=verified_caller)
+    active_call_sid = call_sid
+    session = VoiceSession(tenant_id, active_call_sid, caller_phone=verified_caller)
     await session.initialize()
     tenant = await Tenants.find_by_id(tenant_id)
     if not tenant or not tenant.get("voice_number"):
@@ -497,9 +599,23 @@ async def websocket_stream(
             if event_name == "start":
                 if stream_sid is not None:
                     raise ValueError("duplicate start")
+                if call_sid.startswith("out_"):
+                    start = event.get("start")
+                    if not isinstance(start, dict) or not isinstance(start.get("call_sid"), str):
+                        raise ValueError("missing outbound call SID")
+                    provider_call_sid = start["call_sid"]
+                    verified = await verify_exotel_call(
+                        provider_call_sid,
+                        expected_to=str(start.get("to", "")),
+                        expected_from=str(start.get("from", "")),
+                    )
+                    if not verified or str(verified.get("Direction", "")).lower() != "outbound-api":
+                        raise ValueError("unverified outbound call")
+                    active_call_sid = provider_call_sid
+                    session.call_sid = provider_call_sid
                 stream_sid, sample_rate = validate_start(
                     event,
-                    call_sid=call_sid,
+                    call_sid=active_call_sid,
                     account_sid=settings.exotel_sid,
                     caller_phone=verified_caller,
                     called_number=str(tenant["voice_number"]),
@@ -547,7 +663,7 @@ async def websocket_stream(
                 stop = event.get("stop")
                 if (
                     not isinstance(stop, dict)
-                    or stop.get("call_sid") != call_sid
+                    or stop.get("call_sid") != active_call_sid
                     or stop.get("account_sid") != settings.exotel_sid
                 ):
                     raise ValueError("invalid stop event")
@@ -555,9 +671,11 @@ async def websocket_stream(
             else:
                 raise ValueError(f"unsupported Exotel event: {event_name}")
     except WebSocketDisconnect:
-        logger.info("WebSocket stream disconnected for call %s", call_sid)
+        logger.info("WebSocket stream disconnected for call %s", active_call_sid)
     except ValueError as e:
-        logger.warning("Rejected malformed Exotel stream event for %s: %s", call_sid, e)
+        logger.warning(
+            "Rejected malformed Exotel stream event for %s: %s", active_call_sid, e
+        )
         await websocket.close(code=4002)
     except Exception as e:
         logger.error("Error in WebSocket stream loop: %s", e, exc_info=True)

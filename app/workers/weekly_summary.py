@@ -15,7 +15,8 @@ from zoneinfo import ZoneInfo
 
 from app import audit
 from app.channels.whatsapp import send_template
-from app.models.collections import Bookings, Conversations, Tenants, Users
+from app.models.collections import Tenants, Users
+from app.reporting import avg_booking_value, window_metrics
 
 logger = logging.getLogger(__name__)
 
@@ -43,41 +44,17 @@ async def _send_tenant_summary(tenant: dict[str, Any], now: datetime) -> None:
     local_start = local_now - timedelta(days=7)
     start_date = local_start.astimezone(UTC).replace(tzinfo=None)
     end_date = now.astimezone(UTC).replace(tzinfo=None)
-    convs_count = await Conversations(tenant_id).count_documents(
-        {"started_at": {"$gte": start_date, "$lte": end_date}}
-    )
-    bookings = [
-        booking
-        async for booking in Bookings(tenant_id).find(
-            {
-                "status": {"$in": ["confirmed", "completed"]},
-                "ts": {"$gte": start_date, "$lte": end_date},
-            }
-        )
-    ]
-    recovered_count = 0
-    for booking in bookings:
-        booking_ts = booking.get("ts")
-        outside_hours = False
-        if isinstance(booking_ts, datetime):
-            booking_local = booking_ts.replace(tzinfo=UTC).astimezone(timezone)
-            outside_hours = (
-                booking_local.weekday() == 6
-                or booking_local.hour < 9
-                or booking_local.hour >= 18
-            )
-        if outside_hours or booking.get("source") == "voice":
-            recovered_count += 1
+    metrics = await window_metrics(tenant, start_date, end_date)
 
     variables = {
-        "owner_name": str(tenant.get("name", "Doctor")),
+        "owner_name": str(tenant.get("name", "Owner")),
         "date_range_str": (
             f"{local_start.strftime('%b %d')} - {local_now.strftime('%b %d')}"
         ),
-        "convs_count": str(convs_count),
-        "confirmed_count": str(len(bookings)),
-        "recovered_count": str(recovered_count),
-        "revenue_str": f"Rs. {recovered_count * 1000}",
+        "convs_count": str(metrics["conversations"]),
+        "confirmed_count": str(metrics["confirmed"]),
+        "recovered_count": str(metrics["recovered"]),
+        "revenue_str": f"Rs. {metrics['recovered'] * avg_booking_value(tenant)}",
     }
     await send_template(
         tenant_id=tenant_id,

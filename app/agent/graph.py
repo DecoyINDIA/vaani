@@ -5,7 +5,7 @@ Node order:
                 -> output_gate -> handoff
 
 Compliance-by-topology (06-engineering-plan §0, rule 3): the `responder` node is
-UNREACHABLE for `out_of_scope` / `medical_question` intents by graph structure —
+UNREACHABLE for `out_of_scope` / `restricted_advice` intents by graph structure —
 those route to static templates, never the LLM. Scope enforcement is a code path,
 not a prompt (TRD §4.2, two mandatory gates).
 
