@@ -15,6 +15,7 @@ from typing import Any
 
 from app import audit
 from app.agent.graph import build_graph
+from app.agent.render import strip_citations
 from app.agent.tools.booking_cancel import booking_cancel
 from app.agent.tools.booking_create import booking_create
 from app.agent.tools.booking_move import booking_move
@@ -513,7 +514,7 @@ async def process_event(fields: dict[str, Any]) -> None:
         "text": text,
     }
     result = await app.ainvoke(state)
-    response = result.get("response", "")
+    response = strip_citations(result.get("response", ""))
 
     intent = result.get("intent")
     if intent == "booking_status":
