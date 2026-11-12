@@ -183,6 +183,17 @@ async def test_interactive_booking_is_committed_before_success_and_patient_scope
         patient,
         {"type": "text", "text": {"body": "cancel my appointment"}},
     )
+    await _process(
+        "journey-message-5-confirm",
+        patient,
+        {
+            "type": "interactive",
+            "interactive": {
+                "type": "button_reply",
+                "button_reply": {"id": "cancel:confirm", "title": "Yes, cancel"},
+            },
+        },
+    )
     assert (await db["bookings"].find_one({"_id": booking["_id"]}))["status"] == "cancelled"
     assert (await db["slots"].find_one({"_id": "journey-slot-2"}))["status"] == "open"
 

@@ -10,7 +10,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from app import audit
@@ -23,6 +23,7 @@ from app.booking.timefmt import format_local, tenant_timezone
 from app.channels.whatsapp import (
     WindowClosedError,
     send_booking_confirmation,
+    send_cancel_confirmation,
     send_freeform,
     send_slot_picker,
 )
@@ -193,6 +194,65 @@ async def _record_flow_interactive(
         },
         upsert=True,
     )
+
+
+async def _handle_cancel_action(
+    *,
+    tenant_id: str,
+    wa_id: str,
+    contact_id: str,
+    conversation_id: str,
+    conversation_db_id: Any,
+    message_id: str | None,
+    text: str,
+    action_id: str,
+) -> bool:
+    if action_id not in {"cancel:confirm", "cancel:keep"}:
+        return False
+    conv = await Conversations(tenant_id).find_one({"_id": conversation_db_id})
+    flow = (conv or {}).get("cancel_flow")
+    if not isinstance(flow, dict) or flow.get("stage") != "awaiting_confirmation":
+        return False
+
+    await _store_inbound(tenant_id, conversation_id, text, message_id, action_id=action_id)
+    created_at = flow.get("created_at")
+    expired = False
+    if isinstance(created_at, datetime):
+        expired = _now() - created_at > timedelta(minutes=30)
+
+    if action_id == "cancel:keep" or expired:
+        await Conversations(tenant_id).update_one(
+            {"_id": conversation_db_id, "state": "bot"},
+            {"$unset": {"cancel_flow": ""}},
+        )
+        await _send_flow_text(
+            tenant_id=tenant_id,
+            wa_id=wa_id,
+            conversation_id=conversation_id,
+            text="Okay, your appointment is unchanged.",
+            operation_key=f"cancel-keep:{message_id or conversation_id}",
+        )
+        return True
+
+    booking_id = str(flow.get("booking_id", ""))
+    when = str(flow.get("when", "your appointment"))
+    result = await booking_cancel(tenant_id, booking_id, contact_id=contact_id)
+    await Conversations(tenant_id).update_one(
+        {"_id": conversation_db_id, "state": "bot"},
+        {"$set": {"cancel_flow.stage": "completed"}},
+    )
+    if result.get("status") == "success":
+        reply_text = f"Your appointment on {when} has been cancelled."
+    else:
+        reply_text = "I could not cancel that appointment. Please contact the clinic."
+    await _send_flow_text(
+        tenant_id=tenant_id,
+        wa_id=wa_id,
+        conversation_id=conversation_id,
+        text=reply_text,
+        operation_key=f"cancel-result:{conversation_id}:{booking_id}",
+    )
+    return True
 
 
 async def _handle_booking_action(
@@ -495,6 +555,18 @@ async def process_event(fields: dict[str, Any]) -> None:
         )
         return
 
+    if await _handle_cancel_action(
+        tenant_id=tenant_id,
+        wa_id=wa_id,
+        contact_id=contact_id,
+        conversation_id=conversation_id,
+        conversation_db_id=conversation_db_id,
+        message_id=str(message_id) if message_id else None,
+        text=text,
+        action_id=str(parsed.get("action_id", "")),
+    ):
+        return
+
     if await _handle_booking_action(
         tenant_id=tenant_id,
         wa_id=wa_id,
@@ -546,14 +618,53 @@ async def process_event(fields: dict[str, Any]) -> None:
             }
         )
         if booking:
-            cancellation = await booking_cancel(
-                tenant_id, str(booking["_id"]), contact_id=contact_id
+            slot = await Slots(tenant_id).find_one(
+                {"_id": {"$in": mongo_id_candidates(str(booking["slot_id"]))}}
             )
-            response = (
-                "Your appointment has been cancelled."
-                if cancellation.get("status") == "success"
-                else "I could not cancel that appointment. Please contact us directly."
+            tenant = await Tenants.find_by_id(tenant_id)
+            start = slot.get("start") if slot else None
+            if isinstance(start, datetime):
+                when = format_local(start, tenant_timezone(tenant))
+            else:
+                when = "your appointment"
+
+            await Conversations(tenant_id).update_one(
+                {"_id": conversation_db_id, "state": "bot"},
+                {
+                    "$set": {
+                        "cancel_flow": {
+                            "stage": "awaiting_confirmation",
+                            "booking_id": str(booking["_id"]),
+                            "when": when,
+                            "created_at": _now(),
+                        }
+                    }
+                },
             )
+            await _store_inbound(
+                tenant_id,
+                conversation_id,
+                text,
+                message_id,
+                intent="cancel",
+                confidence=result.get("confidence"),
+            )
+            prompt = f"Cancel your appointment on {when}?"
+            operation_key = f"cancel-confirm:{message_id or conversation_id}"
+            send_res = await send_cancel_confirmation(
+                tenant_id,
+                wa_id,
+                prompt=prompt,
+                operation_key=operation_key,
+            )
+            await _record_flow_interactive(
+                tenant_id=tenant_id,
+                conversation_id=conversation_id,
+                operation_key=operation_key,
+                flow="cancel_confirmation",
+                result=send_res,
+            )
+            return
         else:
             response = "I could not find an active appointment for this WhatsApp number."
     elif intent in {"book", "reschedule"}:
