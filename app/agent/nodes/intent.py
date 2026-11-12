@@ -82,6 +82,58 @@ def build_system_prompt(profile: BusinessProfile) -> str:
     )
 
 
+def build_intent_prompts(
+    text: str,
+    lang: str,
+    business_type: str = "clinic",
+    *,
+    profile: BusinessProfile | None = None,
+) -> tuple[str, str]:
+    """Pure prompt builder for intent classification."""
+    if profile is None:
+        profile = BusinessProfile(name="our business", business_type=business_type)
+    system_prompt = build_system_prompt(profile)
+    user_prompt = f"Language detected: {lang}\nUser message: '{text}'"
+    return system_prompt, user_prompt
+
+
+def parse_intent_response(raw: str) -> tuple[str, float]:
+    """Parse raw LLM response into (intent, confidence).
+
+    Strips code fences, parses JSON, and validates against TAXONOMY.
+    Returns ("out_of_scope", 0.0) for unknown labels.
+    Raises ValueError on malformed / unparseable output.
+    """
+    cleaned = raw.strip()
+    if cleaned.startswith("```json"):
+        cleaned = cleaned[7:]
+    elif cleaned.startswith("```"):
+        cleaned = cleaned[3:]
+    if cleaned.endswith("```"):
+        cleaned = cleaned[:-3]
+    cleaned = cleaned.strip()
+
+    try:
+        data = json.loads(cleaned)
+    except Exception as exc:
+        raise ValueError(f"Unparseable intent response: {exc}") from exc
+
+    if not isinstance(data, dict):
+        raise ValueError("Intent response is not a JSON object")
+
+    detected_intent = str(data.get("intent", "")).strip()
+    detected_intent = LEGACY_INTENT_ALIASES.get(detected_intent, detected_intent)
+    try:
+        confidence = float(data.get("confidence", 0.0))
+    except (ValueError, TypeError):
+        confidence = 0.0
+
+    if detected_intent not in TAXONOMY:
+        return "out_of_scope", 0.0
+
+    return detected_intent, confidence
+
+
 async def intent(state: AgentState) -> dict[str, Any]:
     """Node 2 — intent classifier (TRD §4.1/§4.2 input gate).
 
@@ -97,9 +149,10 @@ async def intent(state: AgentState) -> dict[str, Any]:
     # Setup model (use settings configuration or default to gemini-2.5-flash-lite)
     model = settings.llm_model_classifier or "google/gemini-2.5-flash-lite"
 
-    system_prompt = build_system_prompt(await load_profile(state.get("tenant_id") or ""))
-
-    prompt = f"Language detected: {lang}\nUser message: '{text}'"
+    profile = await load_profile(state.get("tenant_id") or "")
+    system_prompt, prompt = build_intent_prompts(
+        text, lang, profile.business_type, profile=profile
+    )
 
     try:
         response_text = await query_llm(
@@ -111,24 +164,7 @@ async def intent(state: AgentState) -> dict[str, Any]:
             node="intent",
             tenant_id=state.get("tenant_id") or "",
         )
-        
-        # Clean up JSON delimiters if LLM wrapped in markdown codeblock
-        cleaned = response_text.strip()
-        if cleaned.startswith("```json"):
-            cleaned = cleaned[7:]
-        if cleaned.endswith("```"):
-            cleaned = cleaned[:-3]
-        cleaned = cleaned.strip()
-
-        data = json.loads(cleaned)
-        detected_intent = data.get("intent", "").strip()
-        detected_intent = LEGACY_INTENT_ALIASES.get(detected_intent, detected_intent)
-        confidence = float(data.get("confidence", 0.0))
-
-        if detected_intent not in TAXONOMY:
-            detected_intent = "out_of_scope"
-            confidence = 0.0
-
+        detected_intent, confidence = parse_intent_response(response_text)
         return {"intent": detected_intent, "confidence": confidence}
     except Exception as e:
         logger.error("Intent classification failed: %s", type(e).__name__)

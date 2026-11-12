@@ -23,6 +23,35 @@ from app.models.collections import Contacts, Conversations, Messages, Practition
 logger = logging.getLogger(__name__)
 
 
+def build_responder_prompts(
+    *,
+    tenant_name: str,
+    lang: str,
+    grounded_facts: str,
+    history: str,
+    text: str,
+    extra_context: str = "",
+    customer_term: str = "customer",
+) -> tuple[str, str]:
+    """Pure prompt builder for grounded responder."""
+    grounded_facts_str = grounded_facts.strip() or "No grounded facts found."
+    system_prompt = (
+        f"You are an empathetic, professional AI receptionist at {tenant_name}.\n"
+        f"Answer the {customer_term}'s query in their detected language ({lang}) using ONLY the provided Grounded Facts.\n\n"
+        "Grounded Facts:\n"
+        f"{grounded_facts_str}\n\n"
+        "Strict Citation Rule:\n"
+        f"Any factual claim you make (such as fees, timings, address, services, staff names) MUST be directly followed by its source reference from the Grounded Facts in brackets, e.g. [source_ref: hours_faq] or [source_ref: slots_list]. If no facts are provided, state that you don't know and will connect the {customer_term} to our team. Do not make up any facts.\n\n"
+        "Tone and register:\n"
+        "Always default to a respectful register (using 'आप' / 'ଆପଣ', never informal 'tum'/'tu'). Keep answers short and direct for chat interfaces."
+    )
+    if extra_context:
+        system_prompt += f"\n\n{extra_context.strip()}"
+
+    user_prompt = f"Conversation History:\n{history}\n\nCustomer latest message: '{text}'"
+    return system_prompt, user_prompt
+
+
 async def responder(state: AgentState) -> dict[str, Any]:
     """Node 5 — responder (TRD §4.2).
 
@@ -106,17 +135,7 @@ async def responder(state: AgentState) -> dict[str, Any]:
     name = tenant_profile["name"]
 
     # 4. Construct Prompt
-    system_prompt = (
-        f"You are an empathetic, professional AI receptionist at {name}.\n"
-        f"Answer the {customer}'s query in their detected language ({lang}) using ONLY the provided Grounded Facts.\n\n"
-        "Grounded Facts:\n"
-        f"{grounded_facts_str}\n\n"
-        "Strict Citation Rule:\n"
-        f"Any factual claim you make (such as fees, timings, address, services, staff names) MUST be directly followed by its source reference from the Grounded Facts in brackets, e.g. [source_ref: hours_faq] or [source_ref: slots_list]. If no facts are provided, state that you don't know and will connect the {customer} to our team. Do not make up any facts.\n\n"
-        "Tone and register:\n"
-        "Always default to a respectful register (using 'आप' / 'ଆପଣ', never informal 'tum'/'tu'). Keep answers short and direct for chat interfaces."
-    )
-
+    extra_contexts = []
     if contact:
         customer_name = contact.get("name")
         profile = contact.get("profile", {})
@@ -135,21 +154,31 @@ async def responder(state: AgentState) -> dict[str, Any]:
         # Check intent to offer one-tap rebook
         if state.get("intent") == "book" and last_service and pref_prac_name:
             greeting_name = f" {customer_name} Ji" if customer_name else ""
-            system_prompt += (
-                f"\n\nReturning Customer Event: This is a returning {customer}{greeting_name}. "
+            extra_contexts.append(
+                f"Returning Customer Event: This is a returning {customer}{greeting_name}. "
                 f"Their preferred {business.staff_term} is {pref_prac_name} and last service was {last_service}. "
                 f"Offer the {customer} a one-tap rebook: ask if they want to book the same {last_service} with {pref_prac_name}."
             )
         elif customer_name:
-            system_prompt += f"\n\nPersonalization: Greet the {customer} by their name '{customer_name} Ji' politely."
+            extra_contexts.append(f"Personalization: Greet the {customer} by their name '{customer_name} Ji' politely.")
 
     if resolution_summary:
-        system_prompt += (
-            f"\n\nAdditional Context: Staff has just returned the conversation. "
+        extra_contexts.append(
+            f"Additional Context: Staff has just returned the conversation. "
             f"Resolution summary: {resolution_summary}. Acknowledge this resolution context gracefully if the {customer} follows up."
         )
 
-    prompt = f"Conversation History:\n{history_str}\n\nCustomer latest message: '{text}'"
+    extra_context_str = "\n\n".join(extra_contexts)
+
+    system_prompt, prompt = build_responder_prompts(
+        tenant_name=name,
+        lang=lang,
+        grounded_facts=grounded_facts_str,
+        history=history_str,
+        text=text,
+        extra_context=extra_context_str,
+        customer_term=customer,
+    )
 
     # Use settings configuration or default to gemini-2.5-flash
     model = settings.llm_model_responder or "google/gemini-2.5-flash"
