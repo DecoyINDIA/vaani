@@ -306,3 +306,70 @@ def test_contact_key_resolution() -> None:
     # 4. Unknown payload
     assert inbound._contact_key("t1", {}) == "t1:unknown"
     assert inbound._contact_key("t1", {}, message_id="custom_mid") == "t1:custom_mid"
+
+
+async def test_twenty_conversation_concurrency_soak() -> None:
+    """INT-2 Checkpoint: 20 concurrent conversations across 20 distinct patients with multiple messages."""
+    tenant_id = "t_conc"
+    patients = [f"9198000000{i:02d}" for i in range(20)]
+    base_time = datetime.now(UTC).replace(tzinfo=None) - timedelta(minutes=10)
+
+    # Seed 2 sequential messages per patient (40 total)
+    for p_idx, p_num in enumerate(patients):
+        m1 = f"wamid.soak.{p_idx}.1"
+        m2 = f"wamid.soak.{p_idx}.2"
+        await Messages.accept_inbound_unscoped(
+            m1, tenant_id, _wa_payload(p_num, f"msg1 from {p_num}", m1)
+        )
+        await Messages.accept_inbound_unscoped(
+            m2, tenant_id, _wa_payload(p_num, f"msg2 from {p_num}", m2)
+        )
+        await get_db()["messages"].update_one(
+            {"_id": m1},
+            {"$set": {"accepted_at": base_time + timedelta(seconds=p_idx * 2)}},
+        )
+        await get_db()["messages"].update_one(
+            {"_id": m2},
+            {"$set": {"accepted_at": base_time + timedelta(seconds=p_idx * 2 + 1)}},
+        )
+
+    lock = asyncio.Lock()
+    current_concurrent = 0
+    max_concurrent = 0
+    patient_processed: dict[str, list[str]] = {p: [] for p in patients}
+
+    async def fake_process(fields: dict) -> None:
+        nonlocal current_concurrent, max_concurrent
+        async with lock:
+            current_concurrent += 1
+            if current_concurrent > max_concurrent:
+                max_concurrent = current_concurrent
+        await asyncio.sleep(0.01)
+        async with lock:
+            current_concurrent -= 1
+            payload = json.loads(fields["payload"])
+            sender = payload["entry"][0]["changes"][0]["value"]["messages"][0]["from"]
+            patient_processed[sender].append(fields["message_id"])
+
+    with patch.object(settings, "worker_concurrency", 8):
+        with patch.object(inbound, "process_event", side_effect=fake_process):
+            await inbound._process_fallback_queue()
+
+    # All 20 patients had both messages processed in exact arrival order
+    for p_idx, p_num in enumerate(patients):
+        m1 = f"wamid.soak.{p_idx}.1"
+        m2 = f"wamid.soak.{p_idx}.2"
+        assert patient_processed[p_num] == [m1, m2]
+
+    # High concurrency observed across distinct patients
+    assert max_concurrent >= 6
+
+    # Zero failed messages
+    failed_count = await get_db()["messages"].count_documents({"status": "failed"})
+    assert failed_count == 0
+
+    # All 40 completed
+    completed_count = await get_db()["messages"].count_documents(
+        {"tenant_id": tenant_id, "processed_at": {"$type": "date"}}
+    )
+    assert completed_count == 40
