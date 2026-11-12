@@ -7,6 +7,9 @@ from pathlib import Path
 
 os.environ.setdefault("USE_MOCK_ADAPTERS", "true")
 os.environ.setdefault("JWT_SECRET", "test-only-jwt-secret-at-least-32-bytes")
+os.environ.setdefault("ENABLE_VOICE", "true")
+os.environ.setdefault("ENABLE_PAYMENTS", "true")
+os.environ.setdefault("ENABLE_BILLING", "true")
 
 # Ensure dashboard/dist exists so app.main mounts the dashboard SPA
 _dist = Path(__file__).parent.parent / "dashboard" / "dist"
