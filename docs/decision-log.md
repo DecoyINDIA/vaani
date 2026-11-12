@@ -536,6 +536,46 @@ This decision separates implementation completion from external acceptance. Miss
 - PENDING EXTERNAL GATES:
   - Native-speaker human review and sign-off on Hindi and Odia strings in `docs/i18n-review.md`.
 
+## 2026-11-12 — W2-03: Structured understand with conversation context and WhatsApp responder skip
+- STATUS: Completed
+- COMMIT: 774036f
+- PACKET: vaani-master-plan/06-AGENT_TASKS/W2-03-structured-understand.md
+- SUBSYSTEMS TOUCHED:
+  - `app/agent/state.py` — added req_date, req_time, practitioner_hint, service_hint
+  - `app/agent/nodes/intent.py` — structured understand with JSON output contract, date range validation [today, today+90], time validation, and last 6 messages conversation context
+  - `app/booking/relative_date.py` — added resolve_or_none; refactored resolve to delegate
+  - `app/agent/nodes/tool_router.py` — prefers req_date, falls back to resolve_or_none, then today; prefers parser on keyword disagreement; sorts slots by req_time
+  - `app/agent/graph.py` — routes to END after tool_router when channel is "wa" and intent in {book, reschedule, cancel, booking_status}; voice routes to responder
+  - `app/workers/inbound.py` — handles empty slot result for book/reschedule with localized booking.no_slots message
+  - `app/i18n/strings.py` & `docs/i18n-review.md` — added booking.no_slots in en, hi, hi-Latn, and or
+  - `evals/run_real_eval.py` — added model_date_accuracy metric
+  - `tests/test_understand.py` — new tests for understanding parser, prompt builder, mock coupling, date priorities, slot sorting, single LLM call on WhatsApp, and no-slots messaging
+- SUMMARY:
+  Extended intent classification into a structured understand node that extracts intent, dates, times, and entity hints using the last 6 messages of conversation context. WhatsApp booking flows now terminate directly after tool_router to save LLM tokens and latency, while voice channel retains responder text generation. Keyword date parser acts as a validator and fallback. Independent safety review verified: (a) scope_gate still precedes every route to responder, (b) no new edge reaches responder for gated intents, and (c) model date is range-validated.
+- TESTS RUN:
+  - `uv run pytest -q tests/test_understand.py tests/test_inbound_loop.py tests/test_booking_journey.py` (16 passed)
+  - `uv run pytest -q tests/test_business_profile.py tests/test_no_tenant_literals.py` (7 passed)
+  - `uv run ruff check .` (0 errors)
+  - `uv run mypy app` (0 errors across 73 source files)
+  - `uv run pytest -q` (327 passed, 4 skipped)
+  - `git grep -nE 'db\[[^]]+\]\.(find|insert|update|delete)' app/ ':!app/models/'` (exit code 1, 0 matches)
+  - `uv run python evals/run_evals.py --ci --report artifacts/mock-eval-report.json` (25/25 passed, 100% accuracy)
+- RESULTS:
+  - All 9 understand tests passed.
+  - Confirmed exactly 1 query_llm call for WhatsApp booking, and 2 for voice.
+  - Full pytest suite: 327 passed, 4 skipped (9 new tests added).
+  - Mock evals: 25/25 passed.
+  - Zero tenant-isolation violations.
+- DEVIATIONS FROM PACKET: none
+- REMAINING ISSUES: none
+- EVIDENCE:
+  - `tests/test_understand.py` validating parser, routing, slot sorting, and LLM call counts.
+  - `artifacts/mock-eval-report.json` showing 25/25 pass.
+- PENDING EXTERNAL GATES:
+  - Credentialed before/after W2-03 real-model evaluation comparison reports on OpenRouter models (`evals/run_real_eval.py`).
+  - Native-speaker human review and sign-off on Hindi and Odia strings in `docs/i18n-review.md`.
+
+
 
 
 
