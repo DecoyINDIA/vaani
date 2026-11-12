@@ -38,6 +38,7 @@ from app.gateway.middleware import get_redis
 from app.i18n import normalize_lang, t
 from app.models.base import mongo_id_candidates
 from app.models.collections import Bookings, Contacts, Conversations, Messages, Slots, Tenants
+from app.workers.scheduler import run_scheduler_background  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
@@ -1274,73 +1275,11 @@ async def _process_fallback_queue(
         logger.error("Failed to process fallback queue: %s", e, exc_info=True)
 
 
-async def run_scheduler_background() -> None:
-    """Background task to run reminders, daily briefs and weekly summaries on schedule."""
-    logger.info("Starting background scheduler...")
-    from app.booking.engine import run_schedule_expansion
-    from app.models.collections import OutboundIntents
-    from app.workers.billing import run_monthly_invoices
-    from app.workers.daily_brief import run_daily_briefs
-    from app.workers.escalations import run_escalation_slas
-    from app.workers.reminders import run_reminders
-    from app.workers.weekly_summary import run_weekly_summaries
-
-    while True:
-        try:
-            reconciled = await OutboundIntents.mark_stale_sending_unknown_unscoped()
-            if reconciled:
-                logger.warning("Marked %d interrupted outbound sends unknown", reconciled)
-                await audit.record(
-                    "system",
-                    actor="system",
-                    event_type="operational_alert",
-                    payload={"kind": "unknown_delivery", "reconciled_count": reconciled},
-                )
-        except Exception as e:
-            logger.error("Background scheduler error in send reconciliation: %s", e)
-
-        # Run reminders every 15 minutes
-        try:
-            await run_schedule_expansion()
-        except Exception as e:
-            logger.error("Background scheduler error in slot expansion: %s", e, exc_info=True)
-
-        try:
-            logger.info("Background scheduler: running reminders scan...")
-            await run_reminders()
-        except Exception as e:
-            logger.error("Background scheduler error in reminders: %s", e, exc_info=True)
-
-        try:
-            await run_escalation_slas()
-        except Exception as e:
-            logger.error("Background scheduler error in escalation SLAs: %s", e, exc_info=True)
-
-        try:
-            await run_monthly_invoices()
-        except Exception as e:
-            logger.error("Background scheduler error in billing: %s", e, exc_info=True)
-
-        try:
-            await run_daily_briefs()
-        except Exception as e:
-            logger.error("Background scheduler error in daily briefs: %s", e, exc_info=True)
-
-        try:
-            await run_weekly_summaries()
-        except Exception as e:
-            logger.error("Background scheduler error in weekly summaries: %s", e, exc_info=True)
-
-        await asyncio.sleep(15 * 60)  # Check every 15 minutes
-
-
 async def run(iterations: int | None = None) -> None:
     """Consume the inbound stream. `iterations=None` runs forever (worker mode)."""
     settings.validate_runtime()
     r: Any = get_redis()  # redis-py stream ops are dynamically typed
     group_ready = False
-
-    scheduler_task = asyncio.create_task(run_scheduler_background())
 
     async def _refresh_heartbeat() -> None:
         try:
@@ -1348,83 +1287,80 @@ async def run(iterations: int | None = None) -> None:
         except Exception:
             pass
 
-    try:
-        count = 0
-        while iterations is None or count < iterations:
-            count += 1
+    count = 0
+    while iterations is None or count < iterations:
+        count += 1
 
-            # Process any fallback queue messages from MongoDB
-            await _process_fallback_queue(heartbeat_cb=_refresh_heartbeat)
+        # Process any fallback queue messages from MongoDB
+        await _process_fallback_queue(heartbeat_cb=_refresh_heartbeat)
 
-            try:
-                if not group_ready:
-                    await _ensure_group(r)
-                    group_ready = True
-                    logger.info("Inbound worker consuming %s as %s/%s", STREAM, GROUP, CONSUMER)
-                await _refresh_heartbeat()
-            except Exception as e:
-                logger.warning("Redis unavailable; continuing MongoDB recovery scan: %s", e)
-                await asyncio.sleep(1)
-                continue
+        try:
+            if not group_ready:
+                await _ensure_group(r)
+                group_ready = True
+                logger.info("Inbound worker consuming %s as %s/%s", STREAM, GROUP, CONSUMER)
+            await _refresh_heartbeat()
+        except Exception as e:
+            logger.warning("Redis unavailable; continuing MongoDB recovery scan: %s", e)
+            await asyncio.sleep(1)
+            continue
 
-            # Reclaim stalled/failed pending messages, dead-lettering the exhausted ones.
-            try:
-                _, claimed, _ = await r.xautoclaim(
-                    STREAM, GROUP, CONSUMER, min_idle_time=_IDLE_RECLAIM_MS, start_id="0"
-                )
-                if claimed:
-                    async def _handle_claimed(item: tuple[str, dict[str, Any]]) -> None:
-                        msg_id, fields = item
-                        try:
-                            pending = await r.xpending_range(STREAM, GROUP, msg_id, msg_id, 1)
-                            deliveries = (
-                                int(pending[0]["times_delivered"]) if pending else MAX_DELIVERIES
-                            )
-                        except Exception:
-                            deliveries = MAX_DELIVERIES
-                        await _handle(r, msg_id, fields, deliveries)
-
-                    await _run_grouped(
-                        claimed,
-                        key=_stream_item_key,
-                        handler=_handle_claimed,
-                        limit=settings.worker_concurrency,
-                        on_group_done=_refresh_heartbeat,
-                    )
-            except Exception as e:
-                logger.debug("xautoclaim skipped: %s", e)
-
-            read_count = max(10, 2 * settings.worker_concurrency)
-            try:
-                resp = await r.xreadgroup(
-                    GROUP, CONSUMER, {STREAM: ">"}, count=read_count, block=5000
-                )
-            except Exception as e:
-                # Transient network/timeout on the blocking read must not kill the
-                # consumer loop — log and retry rather than crash-looping the process.
-                logger.warning("xreadgroup failed, retrying: %s", e)
-                continue
-
-            if not resp:
-                continue
-
-            all_entries: list[tuple[str, dict[str, Any]]] = []
-            for _stream, entries in resp:
-                all_entries.extend(entries)
-
-            if all_entries:
-                async def _handle_stream_entry(item: tuple[str, dict[str, Any]]) -> None:
-                    await _handle(r, item[0], item[1], deliveries=1)
+        # Reclaim stalled/failed pending messages, dead-lettering the exhausted ones.
+        try:
+            _, claimed, _ = await r.xautoclaim(
+                STREAM, GROUP, CONSUMER, min_idle_time=_IDLE_RECLAIM_MS, start_id="0"
+            )
+            if claimed:
+                async def _handle_claimed(item: tuple[str, dict[str, Any]]) -> None:
+                    msg_id, fields = item
+                    try:
+                        pending = await r.xpending_range(STREAM, GROUP, msg_id, msg_id, 1)
+                        deliveries = (
+                            int(pending[0]["times_delivered"]) if pending else MAX_DELIVERIES
+                        )
+                    except Exception:
+                        deliveries = MAX_DELIVERIES
+                    await _handle(r, msg_id, fields, deliveries)
 
                 await _run_grouped(
-                    all_entries,
+                    claimed,
                     key=_stream_item_key,
-                    handler=_handle_stream_entry,
+                    handler=_handle_claimed,
                     limit=settings.worker_concurrency,
                     on_group_done=_refresh_heartbeat,
                 )
-    finally:
-        scheduler_task.cancel()
+        except Exception as e:
+            logger.debug("xautoclaim skipped: %s", e)
+
+        read_count = max(10, 2 * settings.worker_concurrency)
+        try:
+            resp = await r.xreadgroup(
+                GROUP, CONSUMER, {STREAM: ">"}, count=read_count, block=5000
+            )
+        except Exception as e:
+            # Transient network/timeout on the blocking read must not kill the
+            # consumer loop — log and retry rather than crash-looping the process.
+            logger.warning("xreadgroup failed, retrying: %s", e)
+            continue
+
+        if not resp:
+            continue
+
+        all_entries: list[tuple[str, dict[str, Any]]] = []
+        for _stream, entries in resp:
+            all_entries.extend(entries)
+
+        if all_entries:
+            async def _handle_stream_entry(item: tuple[str, dict[str, Any]]) -> None:
+                await _handle(r, item[0], item[1], deliveries=1)
+
+            await _run_grouped(
+                all_entries,
+                key=_stream_item_key,
+                handler=_handle_stream_entry,
+                limit=settings.worker_concurrency,
+                on_group_done=_refresh_heartbeat,
+            )
 
 
 def main() -> None:

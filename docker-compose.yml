@@ -27,6 +27,20 @@ services:
       timeout: 5s
       retries: 3
 
+  # Note: do not scale scheduler above one replica (single instance required for scheduling).
+  scheduler:
+    build: .
+    command: python -m app.workers.scheduler
+    env_file: .env
+    depends_on:
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-m", "app.workers.healthcheck", "vaani:scheduler:heartbeat", "900"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+
   redis:
     image: redis:7-alpine
     volumes:

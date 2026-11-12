@@ -151,6 +151,7 @@ async def run_schedule_expansion(
         local_date = now.astimezone(timezone).date().isoformat()
         job_id = f"slot-expansion:{tenant_id}:{local_date}"
         jobs = JobRuns(tenant_id)
+        now_utc_naive = now.astimezone(datetime.UTC).replace(tzinfo=None)
         try:
             await jobs.insert_one(
                 {
@@ -158,12 +159,24 @@ async def run_schedule_expansion(
                     "job": "slot_expansion",
                     "key": local_date,
                     "state": "running",
-                    "started_at": now.astimezone(datetime.UTC).replace(tzinfo=None),
+                    "started_at": now_utc_naive,
                 }
             )
         except DuplicateKeyError:
-            stats["skipped"] += 1
-            continue
+            stale_before = now_utc_naive - timedelta(minutes=30)
+            taken = await jobs.find_one_and_update(
+                {
+                    "_id": job_id,
+                    "$or": [
+                        {"state": "failed"},
+                        {"state": "running", "started_at": {"$lt": stale_before}},
+                    ],
+                },
+                {"$set": {"state": "running", "started_at": now_utc_naive}, "$inc": {"retries": 1}},
+            )
+            if not taken:
+                stats["skipped"] += 1
+                continue
         try:
             practitioners = await Practitioners(tenant_id).find({}).to_list(length=100)
             for practitioner in practitioners:

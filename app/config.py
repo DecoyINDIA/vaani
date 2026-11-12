@@ -80,6 +80,7 @@ class Settings(BaseSettings):
 
     # --- Ops ---
     worker_concurrency: int = 8
+    scheduler_interval_seconds: int = 300
     audit_log_retention_days: int = 90
     media_purge_days: int = 30
 
