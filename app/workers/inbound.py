@@ -41,6 +41,13 @@ CONSUMER = "worker-1"
 MAX_DELIVERIES = 3  # dead-letter after 3 failed attempts (kill-safe reprocessing)
 _IDLE_RECLAIM_MS = 60_000  # reclaim messages stalled longer than 60s
 
+UNSUPPORTED_TYPES: frozenset[str] = frozenset(
+    {"audio", "image", "video", "document", "sticker", "location", "contacts"}
+)
+UNSUPPORTED_REPLY = (
+    "Sorry, I can only read text messages right now. Please type your question and I will help."
+)
+
 
 def _now() -> datetime:
     return datetime.now(UTC).replace(tzinfo=None)
@@ -111,12 +118,20 @@ async def _resolve_conversation(
     )
     if convo:
         state = "bot" if convo["state"] == "open" else str(convo["state"])
+        update_fields: dict[str, Any] = {"last_msg_at": _now()}
         if convo["state"] == "open":
-            await conversations.update_one({"_id": convo["_id"]}, {"$set": {"state": "bot"}})
+            update_fields["state"] = "bot"
+        await conversations.update_one({"_id": convo["_id"]}, {"$set": update_fields})
         return str(convo["_id"]), state, convo["_id"], contact_id
 
     result = await conversations.insert_one(
-        {"contact_id": contact_id, "channel": "wa", "state": "bot", "started_at": _now()}
+        {
+            "contact_id": contact_id,
+            "channel": "wa",
+            "state": "bot",
+            "started_at": _now(),
+            "last_msg_at": _now(),
+        }
     )
     return str(result.inserted_id), "bot", result.inserted_id, contact_id
 
@@ -130,11 +145,13 @@ async def _store_inbound(
     action_id: str = "",
     intent: str | None = None,
     confidence: float | None = None,
+    message_type: str | None = None,
 ) -> None:
+    msg_type = message_type or ("interactive" if action_id else "text")
     document = {
         "conversation_id": conversation_id,
         "direction": "inbound",
-        "type": "interactive" if action_id else "text",
+        "type": msg_type,
         "text": text,
         "action_id": action_id or None,
         "intent": intent,
@@ -465,8 +482,35 @@ async def process_event(fields: dict[str, Any]) -> None:
     payload = json.loads(fields["payload"])
 
     parsed = _parse_message(payload)
-    if not parsed or not parsed["text"]:
-        logger.info("Skipping non-text / unparseable inbound event")
+    if not parsed:
+        return
+
+    if not parsed["text"]:
+        msg_type = parsed.get("message_type", "")
+        if msg_type in UNSUPPORTED_TYPES:
+            wa_id = parsed["wa_id"]
+            message_id = fields.get("message_id")
+            conversation_id, conversation_state, conversation_db_id, contact_id = (
+                await _resolve_conversation(tenant_id, wa_id, parsed["profile_name"])
+            )
+            await _store_inbound(
+                tenant_id,
+                conversation_id,
+                "",
+                message_id,
+                message_type=msg_type,
+            )
+            if conversation_state == "human":
+                return
+            await _send_flow_text(
+                tenant_id,
+                wa_id,
+                conversation_id,
+                UNSUPPORTED_REPLY,
+                f"unsupported:{message_id or conversation_id}",
+            )
+            return
+        logger.info("Skipping non-text / unsupported inbound event of type: %s", msg_type)
         return
 
     wa_id, text = parsed["wa_id"], parsed["text"]
