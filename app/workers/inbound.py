@@ -10,8 +10,10 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from app import audit
 from app.agent.graph import build_graph
@@ -29,6 +31,7 @@ from app.channels.whatsapp import (
 )
 from app.config import settings
 from app.gateway.middleware import get_redis
+from app.i18n import normalize_lang, t
 from app.models.base import mongo_id_candidates
 from app.models.collections import Bookings, Contacts, Conversations, Messages, Slots, Tenants
 
@@ -44,9 +47,46 @@ _IDLE_RECLAIM_MS = 60_000  # reclaim messages stalled longer than 60s
 UNSUPPORTED_TYPES: frozenset[str] = frozenset(
     {"audio", "image", "video", "document", "sticker", "location", "contacts"}
 )
-UNSUPPORTED_REPLY = (
-    "Sorry, I can only read text messages right now. Please type your question and I will help."
-)
+UNSUPPORTED_REPLY = t("media.unsupported", "en")
+
+
+def _render_slot_label(value: Any, tz: ZoneInfo, lang: str) -> str:
+    """Format stored slot instant to localized label, or return unchanged if already formatted."""
+    if not isinstance(value, str):
+        return str(value)
+    try:
+        dt = datetime.fromisoformat(value)
+        return format_local(dt, tz, lang=lang)
+    except (ValueError, TypeError):
+        return value
+
+
+async def _conversation_lang(tenant_id: str, conversation_db_id: Any, contact_id: str) -> str:
+    """Resolve active conversation language: conversation -> contact -> tenant -> 'en'."""
+    try:
+        conv = await Conversations(tenant_id).find_one({"_id": conversation_db_id})
+        if conv and conv.get("lang"):
+            return normalize_lang(conv["lang"])
+    except Exception:
+        pass
+
+    try:
+        contact = await Contacts(tenant_id).find_one(
+            {"_id": {"$in": mongo_id_candidates(contact_id)}}
+        )
+        if contact and contact.get("lang_pref"):
+            return normalize_lang(contact["lang_pref"])
+    except Exception:
+        pass
+
+    try:
+        tenant = await Tenants.find_by_id(tenant_id)
+        if tenant and tenant.get("locale_default"):
+            return normalize_lang(tenant["locale_default"])
+    except Exception:
+        pass
+
+    return "en"
 
 
 def _now() -> datetime:
@@ -237,6 +277,8 @@ async def _handle_cancel_action(
     if isinstance(created_at, datetime):
         expired = _now() - created_at > timedelta(minutes=30)
 
+    lang = await _conversation_lang(tenant_id, conversation_db_id, contact_id)
+
     if action_id == "cancel:keep" or expired:
         await Conversations(tenant_id).update_one(
             {"_id": conversation_db_id, "state": "bot"},
@@ -246,7 +288,7 @@ async def _handle_cancel_action(
             tenant_id=tenant_id,
             wa_id=wa_id,
             conversation_id=conversation_id,
-            text="Okay, your appointment is unchanged.",
+            text=t("cancel.kept", lang),
             operation_key=f"cancel-keep:{message_id or conversation_id}",
         )
         return True
@@ -259,9 +301,9 @@ async def _handle_cancel_action(
         {"$set": {"cancel_flow.stage": "completed"}},
     )
     if result.get("status") == "success":
-        reply_text = f"Your appointment on {when} has been cancelled."
+        reply_text = t("cancel.done", lang, when=when)
     else:
-        reply_text = "I could not cancel that appointment. Please contact the clinic."
+        reply_text = t("cancel.failed", lang)
     await _send_flow_text(
         tenant_id=tenant_id,
         wa_id=wa_id,
@@ -288,6 +330,10 @@ async def _handle_booking_action(
     if not isinstance(flow, dict) or not action_id:
         return False
 
+    tenant = await Tenants.find_by_id(tenant_id)
+    tenant_tz = tenant_timezone(tenant)
+    lang = await _conversation_lang(tenant_id, conversation_db_id, contact_id)
+
     if action_id.startswith("slot:") and flow.get("stage") == "choose_slot":
         slot_id = action_id.removeprefix("slot:")
         slots = flow.get("slots", {})
@@ -300,7 +346,7 @@ async def _handle_booking_action(
                 tenant_id,
                 wa_id,
                 conversation_id,
-                "That appointment is no longer in this selection. Please choose again.",
+                t("booking.stale_selection", lang),
                 f"booking-stale:{message_id or conversation_id}",
             )
             return True
@@ -313,14 +359,21 @@ async def _handle_booking_action(
             tenant_id, conversation_id, text, message_id, action_id=action_id
         )
         confirmation_key = f"booking-confirm-picker:{conversation_id}:{slot_id}"
+        when_str = _render_slot_label(selected, tenant_tz, lang)
+        confirmation_prompt = t(
+            "booking.confirm_prompt",
+            lang,
+            service=flow.get("service", "Consultation"),
+            practitioner=flow.get("practitioner_name") or "our team",
+            when=when_str,
+        )
         confirmation = await send_booking_confirmation(
             tenant_id,
             wa_id,
-            prompt=(
-                f"Confirm {flow.get('service', 'Consultation')} with "
-                f"{flow.get('practitioner_name') or 'our team'} on {selected}?"
-            ),
+            prompt=confirmation_prompt,
             operation_key=confirmation_key,
+            confirm_title=t("ui.confirm", lang),
+            again_title=t("ui.choose_again", lang),
         )
         await _record_flow_interactive(
             tenant_id,
@@ -334,8 +387,8 @@ async def _handle_booking_action(
     if action_id == "booking:cancel":
         slots = flow.get("slots", {})
         picker_slots = [
-            {"slot_id": str(slot_id), "label": str(label)}
-            for slot_id, label in slots.items()
+            {"slot_id": str(s_id), "label": _render_slot_label(label, tenant_tz, lang)}
+            for s_id, label in slots.items()
         ] if isinstance(slots, dict) else []
         await Conversations(tenant_id).update_one(
             {"_id": conversation_db_id, "state": "bot"},
@@ -348,9 +401,11 @@ async def _handle_booking_action(
         repick = await send_slot_picker(
             tenant_id,
             wa_id,
-            prompt="Please choose another appointment time.",
+            prompt=t("booking.repick_prompt", lang),
             slots=picker_slots,
             operation_key=repick_key,
+            button_label=t("ui.choose_time", lang),
+            section_title=t("ui.slots_title", lang),
         )
         await _record_flow_interactive(
             tenant_id,
@@ -386,8 +441,10 @@ async def _handle_booking_action(
             tenant_id, conversation_id, text, message_id, action_id=action_id
         )
         if result.get("status") == "success":
-            verb = "rescheduled" if flow.get("kind") == "move" else "booked"
-            response = f"Your appointment is {verb} for {flow['slots'][slot_id]}."
+            slot_val = flow.get("slots", {}).get(slot_id, "")
+            when_str = _render_slot_label(slot_val, tenant_tz, lang)
+            response_key = "booking.rescheduled" if flow.get("kind") == "move" else "booking.booked"
+            response = t(response_key, lang, when=when_str)
             result_key = f"booking-result:{request_id}"
             await _send_flow_text(
                 tenant_id,
@@ -415,15 +472,18 @@ async def _handle_booking_action(
             }
             if remaining_slots:
                 recovery_key = f"booking-recovery:{request_id}"
+                recovery_picker_slots = [
+                    {"slot_id": key, "label": _render_slot_label(value, tenant_tz, lang)}
+                    for key, value in remaining_slots.items()
+                ]
                 recovery = await send_slot_picker(
                     tenant_id,
                     wa_id,
-                    prompt="That slot was just taken. Please choose another appointment time.",
-                    slots=[
-                        {"slot_id": key, "label": value}
-                        for key, value in remaining_slots.items()
-                    ],
+                    prompt=t("booking.slot_taken_repick", lang),
+                    slots=recovery_picker_slots,
                     operation_key=recovery_key,
+                    button_label=t("ui.choose_time", lang),
+                    section_title=t("ui.slots_title", lang),
                 )
                 await _record_flow_interactive(
                     tenant_id,
@@ -438,10 +498,7 @@ async def _handle_booking_action(
                     tenant_id,
                     wa_id,
                     conversation_id,
-                    (
-                        "That slot was just taken and no other offered time remains. "
-                        "Please ask for another date."
-                    ),
+                    t("booking.slot_taken_none", lang),
                     f"booking-recovery:{request_id}",
                 )
                 next_stage = "needs_new_search"
@@ -461,7 +518,8 @@ async def _handle_booking_action(
         result = flow.get("result", {})
         if isinstance(result, dict) and result.get("status") == "success":
             slot_id = str(flow.get("slot_id", ""))
-            when = str(flow.get("slots", {}).get(slot_id, "the selected time"))
+            slot_val = flow.get("slots", {}).get(slot_id, "the selected time")
+            when_str = _render_slot_label(slot_val, tenant_tz, lang)
             await _store_inbound(
                 tenant_id, conversation_id, text, message_id, action_id=action_id
             )
@@ -469,7 +527,7 @@ async def _handle_booking_action(
                 tenant_id,
                 wa_id,
                 conversation_id,
-                f"Your appointment is already confirmed for {when}.",
+                t("booking.already_confirmed", lang, when=when_str),
                 f"booking-repeat:{message_id or conversation_id}:{slot_id}",
             )
             return True
@@ -517,11 +575,12 @@ async def _process_event_inner(
             )
             if conversation_state == "human":
                 return
+            lang = await _conversation_lang(tenant_id, conversation_db_id, contact_id)
             await _send_flow_text(
                 tenant_id,
                 wa_id,
                 conversation_id,
-                UNSUPPORTED_REPLY,
+                t("media.unsupported", lang),
                 f"unsupported:{message_id or conversation_id}",
             )
             return
@@ -585,10 +644,11 @@ async def _process_event_inner(
             intent="opt_out",
         )
         reply_key = f"optout:{message_id or conversation_id}"
+        lang = await _conversation_lang(tenant_id, conversation_db_id, contact_id)
         await send_freeform(
             tenant_id,
             wa_id,
-            "You have been unsubscribed from automated reminders. Reply START to opt back in.",
+            t("optout.done", lang),
             operation_key=reply_key,
         )
         return
@@ -606,10 +666,11 @@ async def _process_event_inner(
             intent="opt_in",
         )
         reply_key = f"optin:{message_id or conversation_id}"
+        lang = await _conversation_lang(tenant_id, conversation_db_id, contact_id)
         await send_freeform(
             tenant_id,
             wa_id,
-            "You have re-subscribed to appointment reminders. How can I help you today?",
+            t("optin.done", lang),
             operation_key=reply_key,
         )
         return
@@ -648,6 +709,22 @@ async def _process_event_inner(
     result = await app.ainvoke(state)
     response = strip_citations(result.get("response", ""))
 
+    detected = normalize_lang(result.get("lang"))
+    has_non_latin = bool(re.search(r"[^\x00-\x7F]", text))
+    has_min_words = len(text.split()) >= 3
+    if has_non_latin or has_min_words:
+        lang = detected
+        await Conversations(tenant_id).update_one(
+            {"_id": conversation_db_id},
+            {"$set": {"lang": lang}},
+        )
+        await Contacts(tenant_id).update_one(
+            {"_id": {"$in": mongo_id_candidates(contact_id)}},
+            {"$set": {"lang_pref": lang}},
+        )
+    else:
+        lang = await _conversation_lang(tenant_id, conversation_db_id, contact_id)
+
     intent = result.get("intent")
     if intent == "booking_status":
         booking = await Bookings(tenant_id).find_one(
@@ -661,14 +738,20 @@ async def _process_event_inner(
                 {"_id": {"$in": mongo_id_candidates(str(booking["slot_id"]))}}
             )
             start = slot.get("start") if slot else None
+            tenant = await Tenants.find_by_id(tenant_id)
+            tenant_tz = tenant_timezone(tenant)
             if isinstance(start, datetime):
-                tenant = await Tenants.find_by_id(tenant_id)
-                when = format_local(start, tenant_timezone(tenant))
+                when = format_local(start, tenant_tz, lang=lang)
             else:
                 when = "unknown time"
-            response = f"Your appointment is {booking['status']} for {when}."
+            status_val = str(booking.get("status", "confirmed"))
+            try:
+                status_word = t(f"status.word.{status_val}", lang)
+            except KeyError:
+                status_word = status_val
+            response = t("status.found", lang, status=status_word, when=when)
         else:
-            response = "I could not find an active appointment for this WhatsApp number."
+            response = t("status.none", lang)
     elif intent == "cancel":
         booking = await Bookings(tenant_id).find_one(
             {
@@ -681,9 +764,10 @@ async def _process_event_inner(
                 {"_id": {"$in": mongo_id_candidates(str(booking["slot_id"]))}}
             )
             tenant = await Tenants.find_by_id(tenant_id)
+            tenant_tz = tenant_timezone(tenant)
             start = slot.get("start") if slot else None
             if isinstance(start, datetime):
-                when = format_local(start, tenant_timezone(tenant))
+                when = format_local(start, tenant_tz, lang=lang)
             else:
                 when = "your appointment"
 
@@ -708,13 +792,15 @@ async def _process_event_inner(
                 intent="cancel",
                 confidence=result.get("confidence"),
             )
-            prompt = f"Cancel your appointment on {when}?"
+            prompt = t("cancel.prompt", lang, when=when)
             operation_key = f"cancel-confirm:{message_id or conversation_id}"
             send_res = await send_cancel_confirmation(
                 tenant_id,
                 wa_id,
                 prompt=prompt,
                 operation_key=operation_key,
+                yes_title=t("ui.cancel_yes", lang),
+                keep_title=t("ui.cancel_keep", lang),
             )
             await _record_flow_interactive(
                 tenant_id=tenant_id,
@@ -725,7 +811,7 @@ async def _process_event_inner(
             )
             return
         else:
-            response = "I could not find an active appointment for this WhatsApp number."
+            response = t("status.none", lang)
     elif intent in {"book", "reschedule"}:
         slot_result = next(
             (
@@ -744,16 +830,18 @@ async def _process_event_inner(
                 }
             )
             if not existing_booking:
-                response = "I could not find an active appointment to reschedule."
+                response = t("reschedule.none", lang)
         if slot_result and (intent == "book" or existing_booking):
+            tenant = await Tenants.find_by_id(tenant_id)
+            tenant_tz = tenant_timezone(tenant)
             picker_slots = []
             stored_slots: dict[str, str] = {}
             for slot in slot_result["result"][:10]:
-                start = datetime.fromisoformat(str(slot["start"]))
-                label = start.strftime("%a %d %b, %I:%M %p")
                 slot_id = str(slot["slot_id"])
+                start_raw = str(slot["start"])
+                stored_slots[slot_id] = start_raw
+                label = _render_slot_label(start_raw, tenant_tz, lang)
                 picker_slots.append({"slot_id": slot_id, "label": label})
-                stored_slots[slot_id] = label
             flow = {
                 "stage": "choose_slot",
                 "kind": "move" if intent == "reschedule" else "create",
@@ -777,15 +865,21 @@ async def _process_event_inner(
                 confidence=result.get("confidence"),
             )
             picker_key = f"booking-picker:{message_id or conversation_id}"
+            picker_prompt = t(
+                "booking.picker_prompt",
+                lang,
+                service=flow["service"],
+                practitioner=flow["practitioner_name"],
+                date=flow["date"],
+            )
             picker = await send_slot_picker(
                 tenant_id,
                 wa_id,
-                prompt=(
-                    f"Choose a {flow['service']} time with "
-                    f"{flow['practitioner_name']} on {flow['date']}."
-                ),
+                prompt=picker_prompt,
                 slots=picker_slots,
                 operation_key=picker_key,
+                button_label=t("ui.choose_time", lang),
+                section_title=t("ui.slots_title", lang),
             )
             await _record_flow_interactive(
                 tenant_id,
