@@ -19,6 +19,7 @@ from app.agent.render import strip_citations
 from app.agent.tools.booking_cancel import booking_cancel
 from app.agent.tools.booking_create import booking_create
 from app.agent.tools.booking_move import booking_move
+from app.booking.timefmt import format_local, tenant_timezone
 from app.channels.whatsapp import (
     WindowClosedError,
     send_booking_confirmation,
@@ -28,7 +29,7 @@ from app.channels.whatsapp import (
 from app.config import settings
 from app.gateway.middleware import get_redis
 from app.models.base import mongo_id_candidates
-from app.models.collections import Bookings, Contacts, Conversations, Messages, Slots
+from app.models.collections import Bookings, Contacts, Conversations, Messages, Slots, Tenants
 
 logger = logging.getLogger(__name__)
 
@@ -529,7 +530,11 @@ async def process_event(fields: dict[str, Any]) -> None:
                 {"_id": {"$in": mongo_id_candidates(str(booking["slot_id"]))}}
             )
             start = slot.get("start") if slot else None
-            when = start.isoformat() if isinstance(start, datetime) else "unknown time"
+            if isinstance(start, datetime):
+                tenant = await Tenants.find_by_id(tenant_id)
+                when = format_local(start, tenant_timezone(tenant))
+            else:
+                when = "unknown time"
             response = f"Your appointment is {booking['status']} for {when}."
         else:
             response = "I could not find an active appointment for this WhatsApp number."
