@@ -1,0 +1,418 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 480" width="100%" height="100%" role="img" aria-label="Vaani Product in Action: 4-Step Atomic WhatsApp Booking">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bg-grad-action" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#183F35" />
+      <stop offset="60%" stop-color="#12352D" />
+      <stop offset="100%" stop-color="#0E2822" />
+    </linearGradient>
+
+    <!-- WhatsApp Header Gradient -->
+    <linearGradient id="wa-header" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#183F35" />
+      <stop offset="100%" stop-color="#1D6D56" />
+    </linearGradient>
+
+    <!-- Active Button Gradient -->
+    <linearGradient id="active-tap-btn" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1D6D56" />
+      <stop offset="100%" stop-color="#144C3C" />
+    </linearGradient>
+
+    <!-- Amber Glow -->
+    <radialGradient id="amber-radial" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#F59E0B" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Card Shadow -->
+    <filter id="shadow-soft" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+
+    <filter id="chat-shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.12" />
+    </filter>
+
+    <filter id="tap-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="glow" />
+      <feMerge>
+        <feMergeNode in="glow" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <style>
+    <![CDATA[
+    text {
+      font-family: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    /* Overall Timeline: 16s Loop */
+    /* Step 1: Customer Input (0s - 15.5s) */
+    .step1-anim {
+      animation: animStep1 16s ease-out infinite;
+    }
+    @keyframes animStep1 {
+      0%, 1% { opacity: 0; transform: translateY(10px); }
+      4%, 94% { opacity: 1; transform: translateY(0); }
+      97%, 100% { opacity: 0; }
+    }
+
+    /* Typing Dots (2.2s - 4.5s) */
+    .typing-anim {
+      animation: animTypingBox 16s ease-out infinite;
+    }
+    @keyframes animTypingBox {
+      0%, 12% { opacity: 0; transform: translateY(6px); }
+      14%, 26% { opacity: 1; transform: translateY(0); }
+      28%, 100% { opacity: 0; }
+    }
+    .tdot { animation: dotBounce 1.2s infinite ease-in-out; }
+    .tdot2 { animation-delay: 0.2s; }
+    .tdot3 { animation-delay: 0.4s; }
+    @keyframes dotBounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+      40% { transform: translateY(-4px); opacity: 1; }
+    }
+
+    /* Step 2: Slot Picker Offer (4.5s - 15.5s) */
+    .step2-anim {
+      animation: animStep2 16s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+    @keyframes animStep2 {
+      0%, 27% { opacity: 0; transform: translateY(12px); }
+      30%, 94% { opacity: 1; transform: translateY(0); }
+      97%, 100% { opacity: 0; }
+    }
+
+    /* Step 3: Tap Finger & Ripple on 5:30 PM (7.5s - 10s) */
+    .tap-indicator-anim {
+      animation: animTapFinger 16s ease-in-out infinite;
+    }
+    @keyframes animTapFinger {
+      0%, 46% { opacity: 0; transform: scale(0.6) translate(140px, 195px); }
+      48%, 54% { opacity: 1; transform: scale(1) translate(140px, 195px); }
+      58%, 100% { opacity: 0; transform: scale(1.1) translate(140px, 195px); }
+    }
+    .tap-ring-anim {
+      animation: animTapRing 16s ease-out infinite;
+    }
+    @keyframes animTapRing {
+      0%, 47% { opacity: 0; r: 10; }
+      48% { opacity: 0.8; r: 12; stroke-width: 2.5; }
+      55% { opacity: 0; r: 28; stroke-width: 0.5; }
+      56%, 100% { opacity: 0; }
+    }
+
+    /* Step 3 Response: Customer Selection & 120s Lock (8.5s - 15.5s) */
+    .step3-anim {
+      animation: animStep3 16s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+    @keyframes animStep3 {
+      0%, 53% { opacity: 0; transform: translateY(10px); }
+      56%, 94% { opacity: 1; transform: translateY(0); }
+      97%, 100% { opacity: 0; }
+    }
+
+    /* Step 4: Final Confirmation Card (11s - 15.5s) */
+    .step4-anim {
+      animation: animStep4 16s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+    @keyframes animStep4 {
+      0%, 68% { opacity: 0; transform: translateY(12px); }
+      71%, 94% { opacity: 1; transform: translateY(0); }
+      97%, 100% { opacity: 0; }
+    }
+
+    /* Left Stepper Indicator Lights */
+    .step-indicator-1 { animation: indStep1 16s infinite; }
+    .step-indicator-2 { animation: indStep2 16s infinite; }
+    .step-indicator-3 { animation: indStep3 16s infinite; }
+    .step-indicator-4 { animation: indStep4 16s infinite; }
+
+    @keyframes indStep1 {
+      0%, 27% { stroke: #22C55E; fill: rgba(34, 197, 94, 0.2); }
+      28%, 100% { stroke: #475569; fill: none; }
+    }
+    @keyframes indStep2 {
+      0%, 27% { stroke: #475569; fill: none; }
+      28%, 53% { stroke: #22C55E; fill: rgba(34, 197, 94, 0.2); }
+      54%, 100% { stroke: #475569; fill: none; }
+    }
+    @keyframes indStep3 {
+      0%, 53% { stroke: #475569; fill: none; }
+      54%, 68% { stroke: #F59E0B; fill: rgba(245, 158, 11, 0.2); }
+      69%, 100% { stroke: #475569; fill: none; }
+    }
+    @keyframes indStep4 {
+      0%, 68% { stroke: #475569; fill: none; }
+      69%, 95% { stroke: #22C55E; fill: rgba(34, 197, 94, 0.2); }
+      96%, 100% { stroke: #475569; fill: none; }
+    }
+
+    /* Atomic Lock Pulsing */
+    .lock-pulse {
+      animation: lockPulsing 1.8s infinite ease-in-out;
+    }
+    @keyframes lockPulsing {
+      0%, 100% { opacity: 0.85; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.02); }
+    }
+
+    /* Reduced Motion */
+    @media (prefers-reduced-motion: reduce) {
+      .step1-anim, .step2-anim, .step3-anim, .step4-anim {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+      }
+      .typing-anim, .tap-indicator-anim, .tap-ring-anim {
+        display: none !important;
+      }
+      .step-indicator-1, .step-indicator-2, .step-indicator-3, .step-indicator-4, .lock-pulse {
+        animation: none !important;
+      }
+    }
+    ]]>
+  </style>
+
+  <!-- Frame Background -->
+  <rect width="860" height="480" rx="20" fill="url(#bg-grad-action)" />
+
+  <!-- Background Grid Pattern -->
+  <g opacity="0.06" stroke="#FFFFFF" stroke-width="1">
+    <line x1="330" y1="0" x2="330" y2="480" stroke-dasharray="3 6" />
+    <line x1="0" y1="240" x2="860" y2="240" stroke-dasharray="3 6" />
+  </g>
+
+  <!-- ==================================================== -->
+  <!-- LEFT COLUMN: Workflow Breakdown & Live Architecture  -->
+  <!-- ==================================================== -->
+  <g transform="translate(36, 36)">
+    <!-- Section Eyebrow -->
+    <rect x="0" y="0" width="200" height="22" rx="11" fill="rgba(217,119,54,0.18)" stroke="#D97736" stroke-width="1" />
+    <text x="100" y="15" font-size="10.5" font-weight="700" fill="#F59E0B" text-anchor="middle">
+      CONVERSATIONAL ENGINE
+    </text>
+
+    <!-- Main Title -->
+    <text x="0" y="52" font-size="24" font-weight="800" fill="#FFFFFF" letter-spacing="-0.5">
+      Product in Action
+    </text>
+    <text x="0" y="74" font-size="13" font-weight="500" fill="#A0C9B9">
+      Natural Hinglish to Confirmed Booking in 4 Steps
+    </text>
+
+    <!-- 4-Step Architecture Stepper -->
+    <g transform="translate(0, 102)">
+      <!-- Stepper Vertical Connecting Track -->
+      <line x1="12" y1="16" x2="12" y2="210" stroke="rgba(255,255,255,0.15)" stroke-width="2" />
+
+      <!-- Step 1 -->
+      <g transform="translate(0, 0)">
+        <circle class="step-indicator-1" cx="12" cy="14" r="9" stroke="#22C55E" stroke-width="2" fill="none" />
+        <text x="12" y="18" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
+        <text x="32" y="14" font-size="12.5" font-weight="700" fill="#FFFFFF">Customer Text / Voice</text>
+        <text x="32" y="29" font-size="10.5" fill="#94A3B8">"Kal shaam ko doctor se milna hai"</text>
+      </g>
+
+      <!-- Step 2 -->
+      <g transform="translate(0, 58)">
+        <circle class="step-indicator-2" cx="12" cy="14" r="9" stroke="#475569" stroke-width="2" fill="none" />
+        <text x="12" y="18" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
+        <text x="32" y="14" font-size="12.5" font-weight="700" fill="#FFFFFF">Smart Slot Picker</text>
+        <text x="32" y="29" font-size="10.5" fill="#94A3B8">3 conflict-free interactive tap buttons</text>
+      </g>
+
+      <!-- Step 3 -->
+      <g transform="translate(0, 116)">
+        <circle class="step-indicator-3" cx="12" cy="14" r="9" stroke="#475569" stroke-width="2" fill="none" />
+        <text x="12" y="18" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
+        <text x="32" y="14" font-size="12.5" font-weight="700" fill="#FFFFFF">120s Atomic Lock</text>
+        <text x="32" y="29" font-size="10.5" fill="#94A3B8">Guarantees zero double-booking</text>
+      </g>
+
+      <!-- Step 4 -->
+      <g transform="translate(0, 174)">
+        <circle class="step-indicator-4" cx="12" cy="14" r="9" stroke="#475569" stroke-width="2" fill="none" />
+        <text x="12" y="18" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">4</text>
+        <text x="32" y="14" font-size="12.5" font-weight="700" fill="#FFFFFF">Landmark Confirmation</text>
+        <text x="32" y="29" font-size="10.5" fill="#94A3B8">Directions, calendar sync &amp; reminder</text>
+      </g>
+    </g>
+
+    <!-- Bottom Stat Pill -->
+    <g transform="translate(0, 350)">
+      <rect width="265" height="38" rx="10" fill="#14362E" stroke="rgba(160,201,185,0.25)" stroke-width="1" />
+      <text x="14" y="24" font-size="11.5" font-weight="700" fill="#22C55E">⚡ 1.8s avg reply</text>
+      <text x="110" y="24" font-size="11.5" font-weight="500" fill="#A0C9B9">· 0 staff taps needed</text>
+    </g>
+  </g>
+
+  <!-- ==================================================== -->
+  <!-- RIGHT COLUMN: Frame-by-Frame WhatsApp Simulation     -->
+  <!-- ==================================================== -->
+  <g transform="translate(345, 24)" filter="url(#shadow-soft)">
+    <!-- WhatsApp Device Window (width 485, height 432) -->
+    <rect width="485" height="432" rx="20" fill="#EFECE6" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+
+    <!-- Subtle Doodle Canvas -->
+    <g opacity="0.035" stroke="#183F35" stroke-width="1.2" fill="none">
+      <circle cx="60" cy="80" r="16" />
+      <rect x="380" y="100" width="22" height="22" rx="4" />
+      <path d="M120 220 Q140 200 160 220 T200 240" />
+      <circle cx="410" cy="280" r="14" />
+      <path d="M90 350 L105 375 L75 375 Z" />
+    </g>
+
+    <!-- WhatsApp Header -->
+    <path d="M0 20A20 20 0 0 1 20 0h445a20 20 0 0 1 20 20v44H0z" fill="url(#wa-header)" />
+    
+    <!-- Avatar -->
+    <circle cx="36" cy="32" r="16" fill="#1D6D56" stroke="rgba(255,255,255,0.25)" stroke-width="1" />
+    <text x="36" y="38" font-size="14" font-weight="800" fill="#FFFFFF" text-anchor="middle">वा</text>
+
+    <!-- Header Text -->
+    <text x="62" y="27" font-size="13.5" font-weight="700" fill="#FFFFFF">Dr. Sharma Dental Clinic</text>
+    <circle cx="66" cy="40" r="3.5" fill="#22C55E" />
+    <text x="74" y="43" font-size="10" font-weight="500" fill="#A0C9B9">Vaani AI Front Desk · Always Active</text>
+
+    <!-- Verified Badge -->
+    <g transform="translate(228, 16)">
+      <circle cx="6" cy="6" r="6" fill="#22C55E" />
+      <path d="M3.5 6 L5.2 7.7 L8.5 4.4" stroke="#FFFFFF" stroke-width="1.2" fill="none" />
+    </g>
+
+    <!-- Audio / Call Buttons -->
+    <g transform="translate(420, 24)" stroke="#FFFFFF" stroke-width="1.6" fill="none" stroke-linecap="round">
+      <path d="M0 3 C3 3 4 4.5 3.5 6 L2.5 7.5 C4 9.5 6 11.5 8 13 L9.5 12 C11 11.5 12.5 12.5 12.5 15.5 C12.5 17.5 10.5 19 8 19 C2 19 -3 13 -3 7 C-3 4.5 -1.5 3 0 3 Z" transform="translate(4, -2) scale(0.8)" />
+      <circle cx="28" cy="4" r="1" fill="#FFFFFF" />
+      <circle cx="28" cy="9" r="1" fill="#FFFFFF" />
+      <circle cx="28" cy="14" r="1" fill="#FFFFFF" />
+    </g>
+
+    <!-- Security & AI Notice -->
+    <g transform="translate(24, 72)">
+      <rect width="437" height="18" rx="4" fill="rgba(24,63,53,0.06)" />
+      <text x="218" y="13" font-size="9" font-weight="600" fill="#183F35" text-anchor="middle">
+        🔒 Messages end-to-end encrypted · Vaani AI Assistant disclosed
+      </text>
+    </g>
+
+    <!-- ==================================================== -->
+    <!-- CHAT CONTAINER MESSAGES                               -->
+    <!-- ==================================================== -->
+
+    <!-- STEP 1: Customer Message Bubble -->
+    <g class="step1-anim" transform="translate(0, 98)">
+      <!-- Right-aligned green bubble -->
+      <path d="M185 0 H451 A10 10 0 0 1 461 10 V36 A10 10 0 0 1 451 46 H185 A10 10 0 0 1 175 36 V10 A10 10 0 0 1 185 0 Z" fill="#DCF8C6" filter="url(#chat-shadow)" />
+      <text x="190" y="22" font-size="12.5" font-weight="500" fill="#111827">Kal shaam ko doctor se milna hai</text>
+      <text x="408" y="38" font-size="9" fill="#6B7280">5:42 PM</text>
+      <!-- Double Blue Ticks -->
+      <path d="M430 33 L434 37 L440 30 M435 33 L439 37 L445 30" stroke="#3B82F6" stroke-width="1.3" fill="none" stroke-linecap="round" />
+    </g>
+
+    <!-- TYPING INDICATOR (During Step 1 -> Step 2) -->
+    <g class="typing-anim" transform="translate(24, 154)">
+      <rect width="66" height="28" rx="14" fill="#FFFFFF" filter="url(#chat-shadow)" />
+      <circle class="tdot" cx="40" cy="168" r="3.2" fill="#1D6D56" />
+      <circle class="tdot tdot2" cx="52" cy="168" r="3.2" fill="#1D6D56" />
+      <circle class="tdot tdot3" cx="64" cy="168" r="3.2" fill="#1D6D56" />
+    </g>
+
+    <!-- STEP 2: Vaani Smart Slot Picker Bubble -->
+    <g class="step2-anim" transform="translate(24, 152)">
+      <rect width="437" height="114" rx="12" fill="#FFFFFF" filter="url(#chat-shadow)" />
+      
+      <text x="16" y="24" font-size="12" font-weight="700" fill="#183F35">Namaste! 🙏</text>
+      <text x="16" y="42" font-size="12" font-weight="500" fill="#334155">
+        Kal यानी शनिवार ke liye ye 3 slots khali hain:
+      </text>
+
+      <!-- Slot Buttons Group -->
+      <g transform="translate(16, 56)">
+        <!-- Slot 1: 5:00 PM -->
+        <g>
+          <rect width="124" height="34" rx="17" fill="#F0FDF4" stroke="#1D6D56" stroke-width="1.2" />
+          <text x="62" y="21" font-size="12" font-weight="700" fill="#1D6D56" text-anchor="middle">5:00 PM</text>
+        </g>
+
+        <!-- Slot 2: 5:30 PM (The target of tap) -->
+        <g id="slot-target-btn" transform="translate(138, 0)">
+          <rect width="130" height="34" rx="17" fill="url(#active-tap-btn)" stroke="#F59E0B" stroke-width="1.8" filter="url(#tap-glow)" />
+          <text x="65" y="21" font-size="12" font-weight="700" fill="#FFFFFF" text-anchor="middle">5:30 PM ✨</text>
+        </g>
+
+        <!-- Slot 3: 6:15 PM -->
+        <g transform="translate(282, 0)">
+          <rect width="124" height="34" rx="17" fill="#F0FDF4" stroke="#1D6D56" stroke-width="1.2" />
+          <text x="62" y="21" font-size="12" font-weight="700" fill="#1D6D56" text-anchor="middle">6:15 PM</text>
+        </g>
+      </g>
+
+      <!-- Timestamp -->
+      <text x="390" y="104" font-size="8.5" fill="#94A3B8">5:42 PM</text>
+    </g>
+
+    <!-- STEP 3: Tap Finger & Ripple Animation over 5:30 PM -->
+    <g class="tap-indicator-anim" transform="translate(224, 222)">
+      <circle class="tap-ring-anim" cx="0" cy="0" r="16" fill="none" stroke="#F59E0B" />
+      <!-- Finger Pointer Glyph -->
+      <g transform="translate(-10, -10)">
+        <path d="M12 2 C13 2 14 3 14 4.5 L14 13 L16 11.5 C17.5 10 19.5 11 19.5 13 L17 19 C15.5 22 13 24 9 24 C5 24 3 21 3 17 L3 10 C3 8.5 4 7.5 5 7.5 C6 7.5 7 8.5 7 10 L7 4.5 C7 3 8 2 9 2 C10 2 11 3 11 4.5 L11 2 C11 0.8 12 0.8 12 2 Z" fill="#F59E0B" stroke="#B45309" stroke-width="1" />
+      </g>
+    </g>
+
+    <!-- STEP 3 RESULT: Customer Tap Choice + 120s Lock Badge -->
+    <g class="step3-anim" transform="translate(0, 274)">
+      <!-- Right Customer Selection -->
+      <path d="M305 0 H451 A10 10 0 0 1 461 10 V32 A10 10 0 0 1 451 42 H305 A10 10 0 0 1 295 32 V10 A10 10 0 0 1 305 0 Z" fill="#DCF8C6" filter="url(#chat-shadow)" />
+      <text x="312" y="20" font-size="12" font-weight="700" fill="#111827">5:30 PM please ✅</text>
+      <text x="410" y="34" font-size="8.5" fill="#6B7280">5:42 PM</text>
+      <!-- Ticks -->
+      <path d="M432 30 L435 33 L440 27 M436 30 L439 33 L444 27" stroke="#3B82F6" stroke-width="1.3" fill="none" stroke-linecap="round" />
+
+      <!-- Glowing 120s Atomic Lock Pill -->
+      <g class="lock-pulse" transform="translate(24, 6)">
+        <rect width="250" height="30" rx="15" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.2" />
+        <circle cx="16" cy="15" r="5" fill="#D97736" />
+        <text x="28" y="19" font-size="10.5" font-weight="800" fill="#92400E">
+          🔒 120s Atomic Slot Lock Acquired
+        </text>
+      </g>
+    </g>
+
+    <!-- STEP 4: Instant Booking Confirmation Card -->
+    <g class="step4-anim" transform="translate(24, 324)">
+      <rect width="437" height="96" rx="12" fill="#FFFFFF" stroke="#22C55E" stroke-width="1.8" filter="url(#shadow-soft)" />
+      
+      <!-- Card Top Ribbon -->
+      <path d="M0 12A12 12 0 0 1 12 0h413a12 12 0 0 1 12 12v18H0z" fill="#183F35" />
+      <text x="14" y="19" font-size="11" font-weight="800" fill="#FFFFFF">✅ APPOINTMENT CONFIRMED · SATURDAY 5:30 PM</text>
+      <text x="375" y="19" font-size="10" font-weight="700" fill="#A0C9B9">#VN-9281</text>
+
+      <!-- Details -->
+      <text x="14" y="44" font-size="11.5" font-weight="700" fill="#0F172A">
+        Dr. Sharma Dental Care · Dr. Rohit Sharma (BDS, MDS)
+      </text>
+      
+      <!-- Landmark Directions -->
+      <text x="14" y="62" font-size="11" font-weight="600" fill="#D97736">
+        📍 Landmark: Bapuji Nagar, SBI Bank ke theek samne
+      </text>
+
+      <!-- Calendar Sync Badge -->
+      <g transform="translate(14, 72)">
+        <rect width="180" height="18" rx="4" fill="#F0FDF4" stroke="#22C55E" stroke-width="0.8" />
+        <text x="9" y="13" font-size="9" font-weight="700" fill="#166534">
+          📅 Synced to Clinic &amp; Google Calendar
+        </text>
+      </g>
+
+      <text x="390" y="86" font-size="8.5" fill="#94A3B8">5:43 PM</text>
+    </g>
+  </g>
+</svg>

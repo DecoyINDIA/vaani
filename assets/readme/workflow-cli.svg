@@ -1,0 +1,314 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 360" width="100%" height="auto" role="img" aria-label="Vaani CLI Workflow and Developer Setup">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="termBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0E2822" />
+      <stop offset="60%" stop-color="#0B1E19" />
+      <stop offset="100%" stop-color="#071411" />
+    </linearGradient>
+
+    <!-- Header Gradient -->
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#143A30" />
+      <stop offset="100%" stop-color="#0F2B24" />
+    </linearGradient>
+
+    <!-- Window Border Glow -->
+    <filter id="winShadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.6" />
+    </filter>
+
+    <filter id="cursorGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <!-- Scanline Subtle Overlay -->
+    <pattern id="scanlines" width="100" height="4" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="0" x2="100" y2="0" stroke="#1D6D56" stroke-width="0.3" stroke-opacity="0.15" />
+    </pattern>
+  </defs>
+
+  <style>
+    <![CDATA[
+    .font-mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; }
+    .font-sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+
+    /* Blinking Cursor */
+    .cursor-blink {
+      animation: blink 0.8s steps(2, start) infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* Terminal Step Reveal Animations (16s cycle) */
+    .step-1-cmd  { animation: animStep1Cmd 16s ease-in-out infinite; }
+    .step-1-out  { animation: animStep1Out 16s ease-in-out infinite; }
+    .step-2-cmd  { animation: animStep2Cmd 16s ease-in-out infinite; }
+    .step-2-out  { animation: animStep2Out 16s ease-in-out infinite; }
+    .step-3-cmd  { animation: animStep3Cmd 16s ease-in-out infinite; }
+    .step-3-out  { animation: animStep3Out 16s ease-in-out infinite; }
+    .step-4-cmd  { animation: animStep4Cmd 16s ease-in-out infinite; }
+    .step-4-out  { animation: animStep4Out 16s ease-in-out infinite; }
+    .step-5-cmd  { animation: animStep5Cmd 16s ease-in-out infinite; }
+    .step-5-out  { animation: animStep5Out 16s ease-in-out infinite; }
+    .step-final  { animation: animStepFinal 16s ease-in-out infinite; }
+
+    /* 0% to ~9% Step 1 */
+    @keyframes animStep1Cmd {
+      0% { opacity: 0; transform: translateY(2px); }
+      2% { opacity: 1; transform: translateY(0); }
+      96% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    @keyframes animStep1Out {
+      0%, 7% { opacity: 0; }
+      9% { opacity: 1; }
+      96% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* 14% to ~27% Step 2 */
+    @keyframes animStep2Cmd {
+      0%, 14% { opacity: 0; }
+      17% { opacity: 1; }
+      96% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    @keyframes animStep2Out {
+      0%, 23% { opacity: 0; }
+      26% { opacity: 1; }
+      96% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* 31% to ~44% Step 3 */
+    @keyframes animStep3Cmd {
+      0%, 31% { opacity: 0; }
+      34% { opacity: 1; }
+      96% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    @keyframes animStep3Out {
+      0%, 40% { opacity: 0; }
+      43% { opacity: 1; }
+      96% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* 48% to ~61% Step 4 */
+    @keyframes animStep4Cmd {
+      0%, 48% { opacity: 0; }
+      51% { opacity: 1; }
+      96% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    @keyframes animStep4Out {
+      0%, 57% { opacity: 0; }
+      60% { opacity: 1; }
+      96% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* 65% to ~85% Step 5 */
+    @keyframes animStep5Cmd {
+      0%, 65% { opacity: 0; }
+      68% { opacity: 1; }
+      96% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    @keyframes animStep5Out {
+      0%, 74% { opacity: 0; }
+      77% { opacity: 1; }
+      96% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* Final idle prompt */
+    @keyframes animStepFinal {
+      0%, 82% { opacity: 0; }
+      85% { opacity: 1; }
+      96% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* Status dot pulsing */
+    .status-ping {
+      animation: pingDot 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+    }
+    @keyframes pingDot {
+      0% { r: 3.5px; opacity: 1; }
+      50% { r: 5.5px; opacity: 0.5; }
+      100% { r: 3.5px; opacity: 1; }
+    }
+
+    /* Reduced Motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+      }
+      .cursor-blink { opacity: 1 !important; }
+    }
+    ]]>
+  </style>
+
+  <!-- Outer Window Frame with Shadow -->
+  <rect x="6" y="6" width="828" height="348" rx="10" fill="url(#termBg)" stroke="#1D6D56" stroke-width="1.5" filter="url(#winShadow)" />
+  <rect x="6" y="6" width="828" height="348" rx="10" fill="url(#scanlines)" />
+
+  <!-- ==================== TITLE BAR ==================== -->
+  <g id="window-chrome">
+    <rect x="6" y="6" width="828" height="34" rx="10" fill="url(#headerGrad)" />
+    <!-- Flatten bottom border of titlebar -->
+    <rect x="6" y="30" width="828" height="10" fill="url(#headerGrad)" />
+    <line x1="6" y1="40" x2="834" y2="40" stroke="#1D6D56" stroke-width="1" />
+
+    <!-- macOS Traffic Light Buttons -->
+    <circle cx="26" cy="23" r="5.5" fill="#EF4444" stroke="#DC2626" stroke-width="0.5" />
+    <circle cx="44" cy="23" r="5.5" fill="#F59E0B" stroke="#D97706" stroke-width="0.5" />
+    <circle cx="62" cy="23" r="5.5" fill="#10B981" stroke="#059669" stroke-width="0.5" />
+
+    <!-- Terminal Window Title -->
+    <g transform="translate(420, 24)">
+      <text text-anchor="middle" class="font-mono" font-size="11.5" font-weight="600" fill="#EFECE6" letter-spacing="0.3">vaani-core: dev-terminal ~ bash (zsh)</text>
+    </g>
+
+    <!-- Right-aligned Environment Pill -->
+    <rect x="656" y="14" width="166" height="18" rx="9" fill="#0C201B" stroke="#1D6D56" stroke-width="0.8" />
+    <circle cx="667" cy="23" r="3.5" fill="#10B981" class="status-ping" />
+    <text x="677" y="26" class="font-mono" font-size="9" font-weight="600" fill="#A0C9B9">Python 3.11 • uv v0.5</text>
+  </g>
+
+  <!-- ==================== TERMINAL BODY ==================== -->
+  <g id="terminal-content" transform="translate(24, 62)">
+
+    <!-- LINE 1: git clone -->
+    <g class="step-1-cmd" transform="translate(0, 0)">
+      <text class="font-mono" font-size="12">
+        <tspan fill="#10B981" font-weight="700">❯</tspan>
+        <tspan fill="#D97736" font-weight="700"> git</tspan>
+        <tspan fill="#EFECE6"> clone https://github.com/DecoyINDIA/vaani.git &amp;&amp; cd vaani</tspan>
+      </text>
+    </g>
+    <g class="step-1-out" transform="translate(0, 18)">
+      <text class="font-mono" font-size="11" fill="#A0C9B9">
+        <tspan fill="#64748B">remote: </tspan>Enumerating objects: 1240, done. | Total 1240 (delta 812) [1.4 MB/s]
+      </text>
+    </g>
+
+    <!-- LINE 2: uv sync -->
+    <g class="step-2-cmd" transform="translate(0, 48)">
+      <text class="font-mono" font-size="12">
+        <tspan fill="#10B981" font-weight="700">vaani ❯</tspan>
+        <tspan fill="#D97736" font-weight="700"> uv</tspan>
+        <tspan fill="#EFECE6"> sync </tspan>
+        <tspan fill="#A0C9B9">--frozen</tspan>
+      </text>
+    </g>
+    <g class="step-2-out" transform="translate(0, 66)">
+      <text class="font-mono" font-size="11">
+        <tspan fill="#10B981" font-weight="700">✓</tspan>
+        <tspan fill="#EFECE6"> Resolved </tspan>
+        <tspan fill="#F59E0B" font-weight="600">48 packages</tspan>
+        <tspan fill="#EFECE6"> in 420ms | Installed 48 packages in 1.12s</tspan>
+      </text>
+    </g>
+
+    <!-- LINE 3: npm run build -->
+    <g class="step-3-cmd" transform="translate(0, 96)">
+      <text class="font-mono" font-size="12">
+        <tspan fill="#10B981" font-weight="700">vaani ❯</tspan>
+        <tspan fill="#D97736" font-weight="700"> npm</tspan>
+        <tspan fill="#A0C9B9"> --prefix dashboard</tspan>
+        <tspan fill="#EFECE6"> run build</tspan>
+      </text>
+    </g>
+    <g class="step-3-out" transform="translate(0, 114)">
+      <text class="font-mono" font-size="11">
+        <tspan fill="#10B981" font-weight="700">✓</tspan>
+        <tspan fill="#EFECE6"> Built Vite bundle in </tspan>
+        <tspan fill="#A0C9B9">1.84s</tspan>
+        <tspan fill="#64748B"> (dist/assets/index-D8x2a.js: </tspan>
+        <tspan fill="#10B981" font-weight="600">234 kB gzip</tspan>
+        <tspan fill="#64748B">)</tspan>
+      </text>
+    </g>
+
+    <!-- LINE 4: pytest -->
+    <g class="step-4-cmd" transform="translate(0, 144)">
+      <text class="font-mono" font-size="12">
+        <tspan fill="#10B981" font-weight="700">vaani ❯</tspan>
+        <tspan fill="#D97736" font-weight="700"> uv</tspan>
+        <tspan fill="#EFECE6"> run pytest </tspan>
+        <tspan fill="#A0C9B9">-q</tspan>
+      </text>
+    </g>
+    <g class="step-4-out" transform="translate(0, 162)">
+      <text class="font-mono" font-size="11">
+        <tspan fill="#10B981" font-weight="700">✓ 386 passed</tspan>
+        <tspan fill="#EFECE6"> in 17.69s (</tspan>
+        <tspan fill="#F59E0B" font-weight="700">100% test integrity</tspan>
+        <tspan fill="#EFECE6"> • 0 flaky • 0 skipped)</tspan>
+      </text>
+    </g>
+
+    <!-- LINE 5: uvicorn startup -->
+    <g class="step-5-cmd" transform="translate(0, 192)">
+      <text class="font-mono" font-size="12">
+        <tspan fill="#10B981" font-weight="700">vaani ❯</tspan>
+        <tspan fill="#D97736" font-weight="700"> uv</tspan>
+        <tspan fill="#EFECE6"> run uvicorn app.main:app </tspan>
+        <tspan fill="#A0C9B9">--port 8000</tspan>
+      </text>
+    </g>
+    <g class="step-5-out" transform="translate(0, 210)">
+      <text class="font-mono" font-size="11">
+        <tspan fill="#10B981" font-weight="700">INFO:</tspan>
+        <tspan fill="#EFECE6">     Application startup complete. Ready on </tspan>
+        <tspan fill="#38BDF8" text-decoration="underline">http://localhost:8000</tspan>
+      </text>
+    </g>
+
+    <!-- Active Final Prompt with Blinking Cursor -->
+    <g class="step-final" transform="translate(0, 238)">
+      <text class="font-mono" font-size="12">
+        <tspan fill="#10B981" font-weight="700">vaani (main) ❯ </tspan>
+        <tspan fill="#10B981" class="cursor-blink" filter="url(#cursorGlow)">█</tspan>
+      </text>
+    </g>
+  </g>
+
+  <!-- ==================== BOTTOM STATUS BAR ==================== -->
+  <g id="terminal-footer" transform="translate(6, 318)">
+    <line x1="0" y1="0" x2="828" y2="0" stroke="#1D6D56" stroke-width="1" stroke-opacity="0.8" />
+    <rect x="0" y="1" width="828" height="29" rx="0" fill="#0C201B" />
+
+    <!-- Left Status Badge -->
+    <g transform="translate(16, 18)">
+      <circle cx="4" cy="0" r="3.5" fill="#10B981" />
+      <text x="14" y="3" class="font-mono" font-size="9.5" font-weight="600" fill="#A0C9B9">PORT: 8000 [LISTENING]</text>
+    </g>
+
+    <!-- Center Sandbox Status -->
+    <g transform="translate(330, 18)">
+      <text class="font-mono" font-size="9.5" fill="#EFECE6">
+        <tspan fill="#64748B">STATE: </tspan>
+        <tspan fill="#10B981">HEALTHY</tspan>
+        <tspan fill="#64748B"> • MEM: </tspan>
+        <tspan fill="#A0C9B9">64.2 MB</tspan>
+        <tspan fill="#64748B"> • LATENCY: </tspan>
+        <tspan fill="#F59E0B">p50 &lt; 3s</tspan>
+      </text>
+    </g>
+
+    <!-- Right Quick Link -->
+    <g transform="translate(730, 18)">
+      <rect x="-8" y="-10" width="88" height="18" rx="4" fill="#183F35" stroke="#1D6D56" stroke-width="0.7" />
+      <text x="36" y="3" text-anchor="middle" class="font-mono" font-size="9" font-weight="700" fill="#10B981">GET /docs</text>
+    </g>
+  </g>
+</svg>

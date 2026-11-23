@@ -1,0 +1,479 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" width="100%" height="100%" role="img" aria-label="Vaani Cinematic Hero: The AI Front Desk for Indian SMBs">
+  <defs>
+    <!-- Background Gradients -->
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#183F35" />
+      <stop offset="50%" stop-color="#13362E" />
+      <stop offset="100%" stop-color="#0E2822" />
+    </linearGradient>
+
+    <radialGradient id="emerald-glow" cx="20%" cy="25%" r="60%">
+      <stop offset="0%" stop-color="#1D6D56" stop-opacity="0.45" />
+      <stop offset="60%" stop-color="#183F35" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#0E2822" stop-opacity="0" />
+    </radialGradient>
+
+    <radialGradient id="amber-glow" cx="80%" cy="80%" r="50%">
+      <stop offset="0%" stop-color="#D97736" stop-opacity="0.25" />
+      <stop offset="70%" stop-color="#F59E0B" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#0E2822" stop-opacity="0" />
+    </radialGradient>
+
+    <linearGradient id="brand-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="45%" stop-color="#FFFFFF" />
+      <stop offset="75%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#D97736" />
+    </linearGradient>
+
+    <linearGradient id="phone-frame" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2D4D43" />
+      <stop offset="50%" stop-color="#18332B" />
+      <stop offset="100%" stop-color="#0B1A16" />
+    </linearGradient>
+
+    <linearGradient id="accent-coral" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#D97736" />
+    </linearGradient>
+
+    <linearGradient id="badge-green" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1D6D56" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#134738" stop-opacity="0.9" />
+    </linearGradient>
+
+    <!-- Filters for Glow & Shadow -->
+    <filter id="emblem-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="card-shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.45" />
+    </filter>
+
+    <filter id="float-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <style>
+    <![CDATA[
+    /* Typography & Core Styles */
+    text {
+      font-family: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    /* Soundwave Ripple Animations */
+    .sound-ripple {
+      transform-origin: 180px 85px;
+      animation: ripplePulse 4s cubic-bezier(0.2, 0.8, 0.4, 1) infinite;
+    }
+    .ripple-2 { animation-delay: 1.2s; }
+    .ripple-3 { animation-delay: 2.4s; }
+
+    @keyframes ripplePulse {
+      0% {
+        r: 35;
+        opacity: 0.6;
+        stroke-width: 2.5;
+      }
+      50% {
+        opacity: 0.25;
+        stroke-width: 1.5;
+      }
+      100% {
+        r: 130;
+        opacity: 0;
+        stroke-width: 0.5;
+      }
+    }
+
+    /* Floating Badges Animation */
+    .float-badge-1 {
+      animation: floatMotion1 5s ease-in-out infinite alternate;
+    }
+    .float-badge-2 {
+      animation: floatMotion2 6s ease-in-out infinite alternate;
+    }
+    .float-badge-3 {
+      animation: floatMotion3 5.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes floatMotion1 {
+      0% { transform: translateY(0px) rotate(0deg); }
+      100% { transform: translateY(-7px) rotate(0.5deg); }
+    }
+    @keyframes floatMotion2 {
+      0% { transform: translateY(0px) rotate(0deg); }
+      100% { transform: translateY(6px) rotate(-0.5deg); }
+    }
+    @keyframes floatMotion3 {
+      0% { transform: translateY(0px) rotate(0deg); }
+      100% { transform: translateY(-5px) rotate(0.4deg); }
+    }
+
+    /* Live Status Pulse Indicator */
+    .status-pulse {
+      animation: pulseGlow 2s infinite ease-in-out;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.3); }
+    }
+
+    /* Audio Equalizer Bars */
+    .eq-bar {
+      animation: eqDance 1.2s ease-in-out infinite alternate;
+      transform-origin: bottom;
+    }
+    .eq-1 { animation-delay: 0.1s; }
+    .eq-2 { animation-delay: 0.3s; }
+    .eq-3 { animation-delay: 0.5s; }
+    .eq-4 { animation-delay: 0.2s; }
+    .eq-5 { animation-delay: 0.4s; }
+
+    @keyframes eqDance {
+      0% { height: 4px; y: 16px; }
+      100% { height: 18px; y: 2px; }
+    }
+
+    /* Phone Screen Messages Sequential Fade */
+    .chat-step {
+      opacity: 0;
+      animation-duration: 12s;
+      animation-iteration-count: infinite;
+      animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #chat-msg-1 {
+      animation-name: animChat1;
+    }
+    #chat-msg-typing {
+      animation-name: animTyping;
+    }
+    #chat-msg-2 {
+      animation-name: animChat2;
+    }
+    #chat-msg-3 {
+      animation-name: animChat3;
+    }
+
+    @keyframes animChat1 {
+      0%, 2% { opacity: 0; transform: translateY(10px); }
+      6%, 92% { opacity: 1; transform: translateY(0); }
+      96%, 100% { opacity: 0; }
+    }
+    @keyframes animTyping {
+      0%, 8% { opacity: 0; transform: translateY(6px); }
+      11%, 19% { opacity: 1; transform: translateY(0); }
+      22%, 100% { opacity: 0; }
+    }
+    @keyframes animChat2 {
+      0%, 22% { opacity: 0; transform: translateY(10px); }
+      26%, 92% { opacity: 1; transform: translateY(0); }
+      96%, 100% { opacity: 0; }
+    }
+    @keyframes animChat3 {
+      0%, 45% { opacity: 0; transform: translateY(10px); }
+      50%, 92% { opacity: 1; transform: translateY(0); }
+      96%, 100% { opacity: 0; }
+    }
+
+    /* Typing Dots Animation */
+    .typing-dot {
+      animation: dotBounce 1.2s infinite ease-in-out;
+    }
+    .td-2 { animation-delay: 0.2s; }
+    .td-3 { animation-delay: 0.4s; }
+    @keyframes dotBounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+      40% { transform: translateY(-4px); opacity: 1; }
+    }
+
+    /* Multilingual Badge Shimmer */
+    .shimmer-text {
+      animation: langShimmer 8s infinite ease-in-out;
+    }
+    @keyframes langShimmer {
+      0%, 25% { opacity: 1; }
+      28%, 32% { opacity: 0.3; }
+      35%, 60% { opacity: 1; }
+      63%, 67% { opacity: 0.3; }
+      70%, 100% { opacity: 1; }
+    }
+
+    /* Accessibility: Reduced Motion */
+    @media (prefers-reduced-motion: reduce) {
+      .sound-ripple, .float-badge-1, .float-badge-2, .float-badge-3,
+      .status-pulse, .eq-bar, .typing-dot, .shimmer-text {
+        animation: none !important;
+      }
+      .chat-step {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+      }
+      #chat-msg-typing {
+        display: none;
+      }
+    }
+    ]]>
+  </style>
+
+  <!-- Deep Canvas Background -->
+  <rect width="900" height="520" rx="24" fill="url(#bg-grad)" />
+  <rect width="900" height="520" rx="24" fill="url(#emerald-glow)" />
+  <rect width="900" height="520" rx="24" fill="url(#amber-glow)" />
+
+  <!-- Subtle Ambient Grid Accents -->
+  <g opacity="0.07" stroke="#FFFFFF" stroke-width="1">
+    <line x1="60" y1="0" x2="60" y2="520" stroke-dasharray="4 6" />
+    <line x1="480" y1="0" x2="480" y2="520" stroke-dasharray="4 6" />
+    <line x1="0" y1="120" x2="900" y2="120" stroke-dasharray="4 6" />
+    <line x1="0" y1="420" x2="900" y2="420" stroke-dasharray="4 6" />
+  </g>
+
+  <!-- Animated Soundwave Ripples from Brand Core -->
+  <g opacity="0.7">
+    <circle class="sound-ripple" cx="180" cy="85" r="45" fill="none" stroke="#A0C9B9" />
+    <circle class="sound-ripple ripple-2" cx="180" cy="85" r="45" fill="none" stroke="#1D6D56" />
+    <circle class="sound-ripple ripple-3" cx="180" cy="85" r="45" fill="none" stroke="#D97736" />
+  </g>
+
+  <!-- ==================================================== -->
+  <!-- LEFT COLUMN: Brand Story, Typography, Value Badges -->
+  <!-- ==================================================== -->
+  <g transform="translate(54, 46)">
+    <!-- Top Pill: Omnichannel Status Bar -->
+    <g class="float-badge-1">
+      <rect x="0" y="0" width="270" height="30" rx="15" fill="#13382F" stroke="rgba(160,201,185,0.25)" stroke-width="1" />
+      <circle cx="16" cy="15" r="5" fill="#22C55E" />
+      <circle class="status-pulse" cx="16" cy="15" r="5" fill="#22C55E" opacity="0.6" />
+      <text x="30" y="19" font-size="11.5" font-weight="700" fill="#EFECE6" letter-spacing="0.4">24/7 ALWAYS ANSWERED</text>
+      <rect x="186" y="6" width="74" height="18" rx="9" fill="#1D6D56" />
+      <text x="223" y="19" font-size="10" font-weight="700" fill="#A0C9B9" text-anchor="middle">VOICE + WA</text>
+    </g>
+
+    <!-- Brand Emblem Lockup -->
+    <g transform="translate(0, 48)">
+      <!-- Glowing Devanagari 'वा' Emblem -->
+      <g filter="url(#emblem-glow)">
+        <rect x="0" y="0" width="56" height="56" rx="16" fill="#1D6D56" stroke="rgba(245,158,11,0.4)" stroke-width="1.5" />
+        <circle cx="28" cy="28" r="23" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1" />
+        <text x="28" y="38" font-size="30" font-weight="800" fill="#FFFFFF" text-anchor="middle">वा</text>
+      </g>
+
+      <!-- Brand Name & Category -->
+      <text x="70" y="32" font-size="32" font-weight="800" fill="#FFFFFF" letter-spacing="-0.5">Vaani</text>
+      <rect x="172" y="14" width="128" height="22" rx="6" fill="rgba(217,119,54,0.15)" stroke="#D97736" stroke-width="1" />
+      <text x="236" y="29" font-size="10.5" font-weight="700" fill="#F59E0B" text-anchor="middle">WARM INTELLIGENCE</text>
+      <text x="72" y="50" font-size="12" font-weight="600" fill="#A0C9B9" letter-spacing="0.2">The AI Front Desk for Indian SMBs</text>
+    </g>
+
+    <!-- Main Headline -->
+    <g transform="translate(0, 138)">
+      <text x="0" y="32" font-size="38" font-weight="800" fill="#FFFFFF" letter-spacing="-0.8">Your business,</text>
+      <text x="0" y="74" font-size="38" font-weight="800" fill="url(#accent-coral)" letter-spacing="-0.8">always answered.</text>
+      
+      <text x="0" y="112" font-size="15" font-weight="500" fill="#CBD5E1" line-height="1.5">
+        Every phone call answered. Every appointment secured.
+      </text>
+      <text x="0" y="134" font-size="15" font-weight="500" fill="#A0C9B9">
+        Zero conflicts. Zero hallucinations. Full owner control.
+      </text>
+    </g>
+
+    <!-- Multilingual Accent Pill & Voice Waveform -->
+    <g transform="translate(0, 304)">
+      <rect x="0" y="0" width="370" height="42" rx="21" fill="rgba(29,109,86,0.3)" stroke="rgba(160,201,185,0.3)" stroke-width="1" />
+      
+      <!-- Mini Equalizer -->
+      <g transform="translate(16, 12)">
+        <rect class="eq-bar eq-1" x="0" y="4" width="3" height="12" rx="1.5" fill="#D97736" />
+        <rect class="eq-bar eq-2" x="5" y="2" width="3" height="16" rx="1.5" fill="#F59E0B" />
+        <rect class="eq-bar eq-3" x="10" y="6" width="3" height="10" rx="1.5" fill="#A0C9B9" />
+        <rect class="eq-bar eq-4" x="15" y="1" width="3" height="18" rx="1.5" fill="#22C55E" />
+        <rect class="eq-bar eq-5" x="20" y="5" width="3" height="12" rx="1.5" fill="#D97736" />
+      </g>
+
+      <text class="shimmer-text" x="50" y="26" font-size="12.5" font-weight="700" fill="#FFFFFF">
+        हिन्दी <tspan fill="#A0C9B9">·</tspan> ଓଡ଼ିଆ <tspan fill="#A0C9B9">·</tspan> Hinglish <tspan fill="#A0C9B9">·</tspan> English
+      </text>
+      <text x="272" y="26" font-size="11" font-weight="600" fill="#F59E0B">p50 ≤ 3s</text>
+    </g>
+
+    <!-- Key Trust Signals Grid -->
+    <g transform="translate(0, 362)">
+      <!-- Badge 1: DPDP 2025 -->
+      <g class="float-badge-2" transform="translate(0, 0)">
+        <rect width="180" height="36" rx="18" fill="url(#badge-green)" stroke="rgba(255,255,255,0.12)" stroke-width="1" filter="url(#float-shadow)" />
+        <!-- Shield Icon -->
+        <path d="M18 11 L26 8 L34 11 C34 19 26 24 26 24 C26 24 18 19 18 11 Z" fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        <text x="42" y="22" font-size="11" font-weight="700" fill="#FFFFFF">DPDP 2025 Ready</text>
+      </g>
+
+      <!-- Badge 2: 0 Double Bookings -->
+      <g class="float-badge-3" transform="translate(192, 0)">
+        <rect width="180" height="36" rx="18" fill="url(#badge-green)" stroke="rgba(255,255,255,0.12)" stroke-width="1" filter="url(#float-shadow)" />
+        <!-- Lock Icon -->
+        <rect x="19" y="14" width="12" height="10" rx="2" fill="none" stroke="#F59E0B" stroke-width="2" />
+        <path d="M22 14 V10 A3 3 0 0 1 28 10 V14" fill="none" stroke="#F59E0B" stroke-width="2" />
+        <text x="39" y="22" font-size="11" font-weight="700" fill="#FFFFFF">0 Double Bookings</text>
+      </g>
+
+      <!-- Sub-caption -->
+      <text x="4" y="62" font-size="11.5" font-weight="500" fill="#788A82">
+        Clinics · Salons · Diagnostic Labs · Coaching · SMB Studios
+      </text>
+    </g>
+  </g>
+
+  <!-- ==================================================== -->
+  <!-- RIGHT COLUMN: Interactive Smartphone Frame Showcase -->
+  <!-- ==================================================== -->
+  <g transform="translate(485, 26)" filter="url(#card-shadow)">
+    <!-- Smartphone Outer Metal Edge -->
+    <rect width="365" height="465" rx="36" fill="url(#phone-frame)" stroke="rgba(160,201,185,0.3)" stroke-width="2" />
+
+    <!-- Smartphone Screen Bezel -->
+    <rect x="7" y="7" width="351" height="451" rx="30" fill="#0C1D18" />
+
+    <!-- Speaker Grill & Front Camera Hole -->
+    <rect x="142" y="15" width="60" height="5" rx="2.5" fill="#1D3830" />
+    <circle cx="214" cy="17.5" r="3.5" fill="#132620" />
+    <circle cx="214" cy="17.5" r="1.5" fill="#1D6D56" />
+
+    <!-- Phone Screen Content (WhatsApp Aesthetic Canvas) -->
+    <g transform="translate(12, 30)">
+      <!-- Screen Background -->
+      <rect width="341" height="420" rx="22" fill="#EFECE6" />
+
+      <!-- Subtle WhatsApp Chat Doodle Background Pattern -->
+      <g opacity="0.04" stroke="#183F35" stroke-width="1.2" fill="none">
+        <circle cx="40" cy="80" r="14" />
+        <path d="M280 140 Q290 120 310 140 T330 160" />
+        <rect x="50" y="240" width="20" height="20" rx="4" />
+        <path d="M160 320 L170 340 L150 340 Z" />
+        <circle cx="290" cy="360" r="18" />
+      </g>
+
+      <!-- WhatsApp App Header -->
+      <path d="M0 22A22 22 0 0 1 22 0h297a22 22 0 0 1 22 22v46H0z" fill="#183F35" />
+      
+      <!-- Back Arrow -->
+      <path d="M16 35 L24 27 M16 35 L24 43" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" fill="none" />
+
+      <!-- Clinic Avatar with 'वा' mark -->
+      <circle cx="44" cy="35" r="16" fill="#1D6D56" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+      <text x="44" y="41" font-size="14" font-weight="800" fill="#FFFFFF" text-anchor="middle">वा</text>
+
+      <!-- Status & Name -->
+      <text x="68" y="28" font-size="13" font-weight="700" fill="#FFFFFF">Dr. Sharma Dental Care</text>
+      <circle cx="72" cy="42" r="3.5" fill="#22C55E" />
+      <text x="80" y="45" font-size="10.5" font-weight="500" fill="#A0C9B9">Vaani AI · Online &amp; Booking Live</text>
+
+      <!-- Call & Video Icons -->
+      <g transform="translate(275, 26)" stroke="#FFFFFF" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <!-- Phone Receiver -->
+        <path d="M4 1.5 C7 1.5 8 3 7.5 4.5 L6.5 6 C8 8 10 10 12 11.5 L13.5 10.5 C15 10 16.5 11 16.5 14 C16.5 16 14.5 17.5 12 17.5 C6 17.5 0.5 12 0.5 6 C0.5 3.5 2 1.5 4 1.5 Z" />
+        <!-- Info Dots -->
+        <circle cx="34" cy="4" r="1" fill="#FFFFFF" />
+        <circle cx="34" cy="9.5" r="1" fill="#FFFFFF" />
+        <circle cx="34" cy="15" r="1" fill="#FFFFFF" />
+      </g>
+
+      <!-- Security / AI Disclosure Banner -->
+      <g transform="translate(20, 76)">
+        <rect width="301" height="20" rx="4" fill="rgba(24,63,53,0.08)" />
+        <text x="150" y="14" font-size="9" font-weight="600" fill="#183F35" text-anchor="middle">
+          🔒 AI Assistant disclosed · Verified Clinic Schedule
+        </text>
+      </g>
+
+      <!-- CHAT MESSAGE 1: Customer (Hindi Inquiry) -->
+      <g id="chat-msg-1" class="chat-step" transform="translate(0, 104)">
+        <!-- Message Bubble (Right-aligned, soft green) -->
+        <path d="M60 0 H311 A10 10 0 0 1 321 10 V40 A10 10 0 0 1 311 50 H60 A10 10 0 0 1 50 40 V10 A10 10 0 0 1 60 0 Z" fill="#DCF8C6" filter="url(#float-shadow)" />
+        <text x="66" y="22" font-size="12" font-weight="500" fill="#111827">Kal shaam ko doctor se milna hai,</text>
+        <text x="66" y="38" font-size="12" font-weight="500" fill="#111827">teeth cleaning ke liye slot milega?</text>
+        <text x="282" y="44" font-size="9" fill="#6B7280">5:18 PM</text>
+        <!-- Blue Double Checkmark -->
+        <path d="M304 39 L308 43 L314 36 M308 39 L312 43 L318 36" stroke="#3B82F6" stroke-width="1.4" fill="none" stroke-linecap="round" />
+      </g>
+
+      <!-- TYPING INDICATOR -->
+      <g id="chat-msg-typing" class="chat-step" transform="translate(20, 164)">
+        <rect width="64" height="28" rx="14" fill="#FFFFFF" filter="url(#float-shadow)" />
+        <circle class="typing-dot" cx="36" cy="178" r="3" fill="#1D6D56" />
+        <circle class="typing-dot td-2" cx="48" cy="178" r="3" fill="#1D6D56" />
+        <circle class="typing-dot td-3" cx="60" cy="178" r="3" fill="#1D6D56" />
+      </g>
+
+      <!-- CHAT MESSAGE 2: Vaani AI Smart Slot Picker -->
+      <g id="chat-msg-2" class="chat-step" transform="translate(20, 164)">
+        <!-- Main Bubble (Left-aligned, crisp white) -->
+        <rect width="301" height="136" rx="14" fill="#FFFFFF" filter="url(#float-shadow)" />
+        
+        <text x="14" y="22" font-size="11.5" font-weight="700" fill="#183F35">Namaste Amit ji! 🙏</text>
+        <text x="14" y="39" font-size="11.5" font-weight="500" fill="#334155">Kal यानी शनिवार ko cleaning ke 3 slots khali hain:</text>
+
+        <!-- Tap-Button 1: 5:00 PM -->
+        <g transform="translate(14, 52)">
+          <rect width="82" height="32" rx="16" fill="#F0FDF4" stroke="#1D6D56" stroke-width="1.2" />
+          <text x="41" y="20" font-size="11" font-weight="700" fill="#1D6D56" text-anchor="middle">5:00 PM</text>
+        </g>
+
+        <!-- Tap-Button 2: 5:30 PM (Selected / Active Glowing) -->
+        <g transform="translate(104, 52)">
+          <rect width="88" height="32" rx="16" fill="#183F35" stroke="#F59E0B" stroke-width="1.5" />
+          <text x="44" y="20" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">5:30 PM ✨</text>
+        </g>
+
+        <!-- Tap-Button 3: 6:15 PM -->
+        <g transform="translate(200, 52)">
+          <rect width="82" height="32" rx="16" fill="#F0FDF4" stroke="#1D6D56" stroke-width="1.2" />
+          <text x="41" y="20" font-size="11" font-weight="700" fill="#1D6D56" text-anchor="middle">6:15 PM</text>
+        </g>
+
+        <!-- Subtext: 120s Atomic Lock Active -->
+        <g transform="translate(14, 96)">
+          <rect width="273" height="24" rx="6" fill="#FEF3C7" stroke="#F59E0B" stroke-width="0.8" />
+          <circle cx="24" cy="12" r="4" fill="#D97736" />
+          <text x="34" y="16" font-size="10" font-weight="700" fill="#92400E">
+            ⚡ 120s Atomic Lock: Slot reserved during tap
+          </text>
+        </g>
+
+        <text x="254" y="130" font-size="8.5" fill="#94A3B8">5:18 PM</text>
+      </g>
+
+      <!-- CHAT MESSAGE 3: Booking Confirmed Card -->
+      <g id="chat-msg-3" class="chat-step" transform="translate(20, 310)">
+        <rect width="301" height="96" rx="12" fill="#FFFFFF" stroke="#22C55E" stroke-width="1.5" filter="url(#float-shadow)" />
+        
+        <!-- Header Ribbon -->
+        <path d="M0 12A12 12 0 0 1 12 0h277a12 12 0 0 1 12 12v18H0z" fill="#183F35" />
+        <text x="14" y="19" font-size="11" font-weight="700" fill="#FFFFFF">✅ APPOINTMENT CONFIRMED</text>
+        <text x="240" y="19" font-size="10" font-weight="700" fill="#A0C9B9">#VN-8429</text>
+
+        <!-- Details -->
+        <text x="14" y="44" font-size="11" font-weight="700" fill="#0F172A">Tomorrow (Sat) at 5:30 PM</text>
+        <text x="14" y="60" font-size="10.5" font-weight="500" fill="#475569">Dr. Sharma Dental · Cleaning &amp; Checkup</text>
+        <text x="14" y="76" font-size="10" font-weight="600" fill="#D97736">📍 Bapuji Nagar, SBI Bank ke theek samne</text>
+
+        <text x="254" y="90" font-size="8.5" fill="#94A3B8">5:19 PM</text>
+      </g>
+
+      <!-- Interactive Quick Bottom Bar -->
+      <g transform="translate(0, 412)">
+        <rect width="341" height="8" fill="#183F35" />
+      </g>
+    </g>
+
+    <!-- Bottom Home Indicator Bar -->
+    <rect x="135" y="454" width="95" height="4" rx="2" fill="rgba(255,255,255,0.4)" />
+  </g>
+</svg>
