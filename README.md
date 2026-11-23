@@ -1,34 +1,120 @@
 <p align="center">
-  <img src="assets/hero.svg" alt="Vaani: an AI front desk that books appointments on WhatsApp and voice" width="800">
+  <img src="assets/hero.svg" alt="Vaani: Your business, always answered. AI front desk that books appointments on WhatsApp and voice" width="800">
 </p>
 
-<h1 align="center">Your most honest employee. Working 24/7.</h1>
+<h1 align="center">Vaani — Your business, always answered.</h1>
 
-<p align="center"><em>Never calls in sick, never misses a message, never makes up an answer.</em></p>
+<p align="center"><em>Every call answered. Every booking secured. In the language your customers speak.</em></p>
 
-Vaani is an AI front office for small and medium businesses: clinics, salons, coaching centres, studios, service shops and more. It answers your customers on **WhatsApp and voice**, in the language they speak, books the appointment, and follows up, while your team focuses on the work that matters. Each business is set up with its own details, so nothing is built for one trade only.
+<p align="center">
+  <strong>WhatsApp & Voice Front Office for Indian Small and Medium Businesses</strong><br>
+  Clinics · Salons · Coaching Centres · Studios · Service Garages
+</p>
 
-## What your business gets
+---
 
-- **More booked appointments.** Every message and missed call gets an instant reply, day or night, so fewer clients drift to a competitor.
-- **A calmer front desk.** Routine questions (timings, fees, directions, rescheduling) are handled for you. Your staff only step in when a person is really needed.
-- **Fewer no-shows.** Clients get confirmations and reminders automatically, and cancelled slots can be offered to others.
-- **Clients feel at home.** Natural conversation in their own language, booking in a couple of taps instead of typing back and forth.
-- **Answers you can trust.** Vaani replies only from the facts your business approves. If it isn't sure, it hands the chat to your team rather than guessing.
-- **Follow-ups that don't depend on you remembering.** Reminders, no-show recovery and offers of cancelled slots. Recalling past customers is *in development*.
-- **A morning brief.** A short WhatsApp summary of yesterday: bookings, missed contacts and what needs your decision. *Built and being prepared for launch; it needs a WhatsApp message template approved first.*
-- **Privacy by design.** Each business's data stays separate, and Vaani is built around India's DPDP rules.
+## The Emotional Promise
 
-## How it works
+Your customers are heard. Your appointments are handled. **You remain in control.**
 
-1. **Share your details:** timings, services, fees, FAQs.
-2. **Connect your WhatsApp number.**
-3. **Go live.** Vaani starts booking, and your dashboard shows every appointment it handled.
+Vaani is an AI-powered front office employee built for everyday Indian small and medium businesses. It answers customer calls and WhatsApp messages in **Hindi, Odia, Hinglish, and English**, books appointments with atomic conflict prevention, sends automatic reminders, and provides the business owner with a **morning brief** summarizing yesterday’s revenue and bookings.
 
-## Get in touch
+Vaani always discloses that it is an AI assistant. It never pretends to be human, and it never guesses a fact — answering strictly from approved business records with verified human escalation.
 
-Interested in a pilot for your business? Contact **Subham Jena, Xolver** at [subhamjena.j@gmail.com](mailto:subhamjena.j@gmail.com).
+---
 
-> Vaani is in active development and is being prepared for pilot customers. It is not yet generally available.
+## Two Agents, One Cohesive System
 
-<sub>Engineering and planning docs: [internal overview](docs/internal-overview.md) · License: Proprietary, Xolver / Subham Jena. All rights reserved.</sub>
+```
+  ┌────────────────────────────────────────────────────────┐
+  │                 CUSTOMER INTERACTION                   │
+  │     WhatsApp Messages  ·  Inbound & Missed Calls       │
+  └──────────────────────────┬─────────────────────────────┘
+                             │
+                             ▼
+  ┌────────────────────────────────────────────────────────┐
+  │                   FRONT-DESK AGENT                     │
+  │  • Answers in Hindi, Odia, Hinglish & English          │
+  │  • 2-Tap Booking via List Messages & Reply Buttons    │
+  │  • Missed-Call-to-WhatsApp Bridge (F-16)               │
+  │  • Reminders, Rescheduling & Waitlist Auto-Backfill    │
+  │  • UPI Payment Links (Razorpay)                        │
+  │  • 1-Tap Human Takeover & Seamless Return              │
+  └──────────────────────────┬─────────────────────────────┘
+                             │
+                             ▼
+  ┌────────────────────────────────────────────────────────┐
+  │                   REPORTING AGENT                      │
+  │  • Daily WhatsApp Brief at 08:00 AM (F-13)             │
+  │  • Recovered Bookings & After-Hours Revenue Ticker     │
+  │  • Escalations Needing Owner Decision                  │
+  └────────────────────────────────────────────────────────┘
+```
+
+---
+
+## What Makes Vaani Different
+
+1. **Taps Over Typing (2-Tap Booking):** No endless conversational back-and-forth. Slot selection is presented as native WhatsApp list messages and reply buttons.
+2. **The Missed-Call-to-WhatsApp Bridge:** When the business phone line is busy or engaged, Vaani immediately opens a WhatsApp conversation offering open slots within 30 seconds.
+3. **Zero Hallucination Guarantee:** Dual-scope compliance gates and discrete token verification block fabricated pricing, unauthorized discounts, or incorrect business hours. If an answer isn't in approved knowledge, Vaani offers an appointment or routes to staff.
+4. **Cultural & Language Fluency:** Natively understands colloquial Hindi, Odia, Hinglish, and English with relative date understanding (*"kal/parso"*) and landmark-based directions.
+5. **Radical Owner Control:** A modern, distraction-free control desk providing a real-time schedule, 1-tap customer takeover, and knowledge verification sandbox.
+6. **Built for India’s DPDP Act:** Strict tenant isolation, privacy notice consent recording, and statutory data retention compliance.
+
+---
+
+## The Owner Workspace
+
+The redesigned **Vaani Business Desk** gives owners a calm, unified command center:
+
+- **Today:** Yesterday’s WhatsApp Morning Brief preview, real-time pulse stats, and urgent handoff queue.
+- **Conversations:** Live WhatsApp inbox with language tags, sentiment indicators, and 1-tap staff takeover.
+- **Appointments:** Visual schedule cards with 120s atomic hold verification and waitlist backfill monitoring.
+- **Vaani’s Brain:** Approved business knowledge base, landmark instructions, and an interactive **"Test Vaani" sandbox** to test answers before customer traffic arrives.
+- **Performance:** End-to-end confirmed bookings counter, recovered after-hours revenue tracker, and 1-tap CSAT metrics.
+
+---
+
+## Architecture & Technology Stack
+
+- **Backend:** FastAPI (Python 3.12+), LangGraph/StateGraph agent core, MongoDB replica set (atomic transactions), Redis durable queue.
+- **Telephony & Speech:** Exotel AgentStream WebSockets, Sarvam Saaras v4 STT & Bulbul v3 TTS.
+- **Messaging:** Meta WhatsApp Cloud API (Utility & Service templates).
+- **Frontend Desk:** React 18, Vite, TypeScript, Tailwind CSS, Warm Intelligence design tokens.
+- **Quality Gates:** 191 offline CI tests, 500-concurrent-claim race test validation, Trivy container security scans.
+
+---
+
+## Getting Started
+
+### Prerequisites
+- Node.js 22+ & npm
+- Python 3.12+ & `uv`
+- MongoDB & Redis (or Docker Compose)
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/DecoyINDIA/vaani.git
+cd vaani
+
+# 2. Install backend dependencies
+uv sync
+
+# 3. Build the owner dashboard
+npm --prefix dashboard install
+npm --prefix dashboard run build
+
+# 4. Run tests
+uv run pytest -q
+
+# 5. Start development server
+uv run uvicorn app.main:app --reload --port 8000
+```
+
+---
+
+## License & Attribution
+
+Proprietary. Developed by **Subham Jena, Xolver**. All rights reserved.  
+In active development for pilot deployments in Bhubaneswar and Tier-1/2 Indian hubs.
