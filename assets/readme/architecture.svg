@@ -1,530 +1,615 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 440" width="100%" height="auto" role="img" aria-label="Vaani Technical Architecture Diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 440" width="100%" height="auto" role="img" aria-label="Vaani Liquid Glass Technical Architecture Diagram">
   <defs>
-    <!-- Gradients -->
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0E2822" />
-      <stop offset="50%" stop-color="#12352C" />
-      <stop offset="100%" stop-color="#091A16" />
+    <!-- Background & Canvas Gradients -->
+    <linearGradient id="deepCanvas" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#081A15" />
+      <stop offset="50%" stop-color="#0B231D" />
+      <stop offset="100%" stop-color="#05120E" />
     </linearGradient>
 
-    <linearGradient id="coreCardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#143D32" />
-      <stop offset="100%" stop-color="#0D2620" />
+    <!-- Liquid Glass Surface Gradient -->
+    <linearGradient id="glassCardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#19483D" stop-opacity="0.75" />
+      <stop offset="50%" stop-color="#10332B" stop-opacity="0.85" />
+      <stop offset="100%" stop-color="#0A221C" stop-opacity="0.95" />
     </linearGradient>
 
-    <linearGradient id="accentGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+    <!-- Liquid Glass Refractive Rim / Specular Border -->
+    <linearGradient id="specularRim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.6" />
+      <stop offset="25%" stop-color="#10B981" stop-opacity="0.8" />
+      <stop offset="70%" stop-color="#1D6D56" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.15" />
+    </linearGradient>
+
+    <!-- Gold / Amber Specular Rim -->
+    <linearGradient id="specularGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.7" />
+      <stop offset="30%" stop-color="#F59E0B" stop-opacity="0.85" />
+      <stop offset="70%" stop-color="#D97736" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0.2" />
+    </linearGradient>
+
+    <!-- Laser Beam Gradient for Perimeter Tracers -->
+    <linearGradient id="laserBeamGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10B981" stop-opacity="0" />
+      <stop offset="50%" stop-color="#10B981" stop-opacity="1" />
+      <stop offset="85%" stop-color="#34D399" stop-opacity="1" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="1" />
+    </linearGradient>
+
+    <linearGradient id="sheenLinear" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0" />
+      <stop offset="45%" stop-color="#FFFFFF" stop-opacity="0" />
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.22" />
+      <stop offset="55%" stop-color="#FFFFFF" stop-opacity="0" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Pipeline Conduit Glow -->
+    <linearGradient id="pipeGlow" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#10B981" />
-      <stop offset="50%" stop-color="#A0C9B9" />
-      <stop offset="100%" stop-color="#D97736" />
+      <stop offset="50%" stop-color="#34D399" />
+      <stop offset="100%" stop-color="#F59E0B" />
     </linearGradient>
 
-    <linearGradient id="wireGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#1D6D56" />
-      <stop offset="50%" stop-color="#10B981" />
-      <stop offset="100%" stop-color="#D97736" />
-    </linearGradient>
-
-    <linearGradient id="dbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#16382E" />
-      <stop offset="100%" stop-color="#0E241E" />
-    </linearGradient>
-
-    <!-- Filters for glowing elements -->
-    <filter id="glowGreen" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="3" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    <!-- Filters: Neon Glow & Glass Blur -->
+    <filter id="neonLaser" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 2 0" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
     </filter>
 
-    <filter id="glowAmber" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="3" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    <filter id="auroraBlur" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="40" />
     </filter>
 
-    <filter id="boxShadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.5" />
+    <filter id="glassShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000000" flood-opacity="0.65" />
     </filter>
 
-    <!-- Background Pattern -->
-    <pattern id="archGrid" width="24" height="24" patternUnits="userSpaceOnUse">
-      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#1D6D56" stroke-width="0.6" stroke-opacity="0.18" />
+    <!-- Tech Grid Pattern -->
+    <pattern id="matrixGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#1D6D56" stroke-width="0.5" stroke-opacity="0.2" />
+      <circle cx="0" cy="0" r="0.8" fill="#10B981" fill-opacity="0.3" />
     </pattern>
-
-    <!-- Marker Arrowheads -->
-    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M 0 1 L 8 5 L 0 9 z" fill="#10B981" />
-    </marker>
-    <marker id="arrowAmber" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M 0 1 L 8 5 L 0 9 z" fill="#D97736" />
-    </marker>
   </defs>
 
   <style>
     <![CDATA[
-    /* Typography and Core Styles */
     .font-sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
     .font-mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; }
 
-    /* Flowing Packet Animations */
-    .packet-path {
-      stroke-dasharray: 8 12;
-      animation: dashFlow 20s linear infinite;
+    /* ================= GSAP & REACT-BITS INSPIRED KINETICS ================= */
+
+    /* Living Aurora Glows */
+    .aurora-orb-1 {
+      animation: auroraMove1 12s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
     }
-    @keyframes dashFlow {
-      to { stroke-dashoffset: -400; }
+    @keyframes auroraMove1 {
+      0% { transform: translate(120px, 80px) scale(1); opacity: 0.35; }
+      50% { transform: translate(320px, 140px) scale(1.25); opacity: 0.55; }
+      100% { transform: translate(220px, 60px) scale(0.9); opacity: 0.4; }
     }
 
-    .packet-fast {
-      stroke-dasharray: 6 10;
-      animation: dashFlowFast 8s linear infinite;
+    .aurora-orb-2 {
+      animation: auroraMove2 14s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
     }
-    @keyframes dashFlowFast {
-      to { stroke-dashoffset: -320; }
+    @keyframes auroraMove2 {
+      0% { transform: translate(700px, 260px) scale(1.1); opacity: 0.3; }
+      50% { transform: translate(520px, 200px) scale(1.3); opacity: 0.5; }
+      100% { transform: translate(660px, 320px) scale(0.95); opacity: 0.35; }
     }
 
-    /* Signal Packet Orbs */
-    .signal-orb-1 {
-      animation: moveOrb1 4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+    /* Perimeter Border Laser Beam Tracers (React-Bits) */
+    .laser-border-tracer {
+      stroke-dasharray: 100 700;
+      animation: tracePerimeter 8s linear infinite;
     }
-    @keyframes moveOrb1 {
+    @keyframes tracePerimeter {
+      0% { stroke-dashoffset: 800; }
+      100% { stroke-dashoffset: 0; }
+    }
+
+    /* Conduit Data Pulse Flow */
+    .conduit-flow {
+      stroke-dasharray: 8 14;
+      animation: flowForward 6s linear infinite;
+    }
+    @keyframes flowForward {
+      to { stroke-dashoffset: -220; }
+    }
+
+    /* High-Speed Signal Packets */
+    .signal-packet-1 {
+      animation: sendPacket1 3.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+    @keyframes sendPacket1 {
       0% { transform: translate(146px, 172px); opacity: 0; }
-      10% { opacity: 1; }
-      90% { opacity: 1; }
+      8% { opacity: 1; }
+      88% { opacity: 1; }
       100% { transform: translate(758px, 172px); opacity: 0; }
     }
 
-    .signal-orb-2 {
-      animation: moveOrb2 4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite 2s;
+    .signal-packet-2 {
+      animation: sendPacket2 3.8s cubic-bezier(0.16, 1, 0.3, 1) infinite 1.9s;
     }
-    @keyframes moveOrb2 {
+    @keyframes sendPacket2 {
       0% { transform: translate(146px, 172px); opacity: 0; }
-      10% { opacity: 1; }
-      90% { opacity: 1; }
+      8% { opacity: 1; }
+      88% { opacity: 1; }
       100% { transform: translate(758px, 172px); opacity: 0; }
     }
 
-    .signal-db-down {
-      animation: moveDbDown 3s ease-in-out infinite;
+    /* Downward Branch Packets */
+    .packet-down-db {
+      animation: branchDb 3.2s cubic-bezier(0.16, 1, 0.3, 1) infinite 0.5s;
     }
-    @keyframes moveDbDown {
-      0% { transform: translate(565px, 276px); opacity: 0; }
+    @keyframes branchDb {
+      0% { transform: translate(400px, 260px); opacity: 0; }
       20% { opacity: 1; }
       80% { opacity: 1; }
-      100% { transform: translate(380px, 304px); opacity: 0; }
+      100% { transform: translate(320px, 310px); opacity: 0; }
     }
 
-    .signal-llm-down {
-      animation: moveLlmDown 2.5s ease-in-out infinite 0.7s;
+    .packet-down-llm {
+      animation: branchLlm 2.8s cubic-bezier(0.16, 1, 0.3, 1) infinite 1.2s;
     }
-    @keyframes moveLlmDown {
-      0% { transform: translate(640px, 276px); opacity: 0; }
+    @keyframes branchLlm {
+      0% { transform: translate(640px, 260px); opacity: 0; }
       20% { opacity: 1; }
       80% { opacity: 1; }
-      100% { transform: translate(690px, 304px); opacity: 0; }
+      100% { transform: translate(690px, 310px); opacity: 0; }
     }
 
-    /* Status Pulse animations */
-    .pulse-live {
-      animation: pulseGlow 2s ease-in-out infinite alternate;
+    /* 45-Degree Glass Sheen Sweep (Liquid-Glass) */
+    .sheen-card {
+      animation: sheenSweep 6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
     }
-    @keyframes pulseGlow {
-      0% { fill-opacity: 0.4; r: 3.5px; }
-      100% { fill-opacity: 1; r: 5px; }
-    }
-
-    .pulse-ring {
-      animation: ringExpand 2s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
-    }
-    @keyframes ringExpand {
-      0% { r: 4px; opacity: 0.9; stroke-width: 1.5px; }
-      100% { r: 12px; opacity: 0; stroke-width: 0.5px; }
+    @keyframes sheenSweep {
+      0%, 15% { transform: translateX(-300px) rotate(25deg); opacity: 0; }
+      35% { opacity: 0.8; }
+      55%, 100% { transform: translateX(500px) rotate(25deg); opacity: 0; }
     }
 
-    /* LangGraph Node Sequential Illumination */
-    .node-seq-1 { animation: nodePulse 3.5s ease-in-out infinite 0.0s; }
-    .node-seq-2 { animation: nodePulse 3.5s ease-in-out infinite 0.5s; }
-    .node-seq-3 { animation: nodePulse 3.5s ease-in-out infinite 1.0s; }
-    .node-seq-4 { animation: nodePulse 3.5s ease-in-out infinite 1.5s; }
-    .node-seq-5 { animation: nodePulse 3.5s ease-in-out infinite 2.0s; }
-    .node-seq-6 { animation: nodePulse 3.5s ease-in-out infinite 2.5s; }
-    .node-seq-7 { animation: nodePulse 3.5s ease-in-out infinite 3.0s; }
+    /* LangGraph 7-Node Sequential Micro-Oscillation (GSAP Timeline) */
+    .node-1 { animation: nodeGlow 4.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite 0.0s; }
+    .node-2 { animation: nodeGlow 4.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite 0.6s; }
+    .node-3 { animation: nodeGlow 4.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite 1.2s; }
+    .node-4 { animation: nodeGlow 4.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite 1.8s; }
+    .node-5 { animation: nodeGlow 4.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite 2.4s; }
+    .node-6 { animation: nodeGlow 4.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite 3.0s; }
+    .node-7 { animation: nodeGlow 4.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite 3.6s; }
 
-    @keyframes nodePulse {
-      0%, 100% { stroke: #1D6D56; stroke-width: 1; }
-      20% { stroke: #10B981; stroke-width: 1.8; fill: #1D5444; }
-      40% { stroke: #1D6D56; stroke-width: 1; }
+    @keyframes nodeGlow {
+      0%, 100% { stroke: #1D6D56; stroke-width: 1; fill: #0F2D25; }
+      22% { stroke: #10B981; stroke-width: 1.8; fill: #174E40; filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.6)); }
+      44% { stroke: #1D6D56; stroke-width: 1; fill: #0F2D25; }
     }
 
-    /* Core Border Breathing Effect */
-    .core-border {
-      animation: coreGlow 4s ease-in-out infinite alternate;
+    /* Radar Ping for Live Gateway */
+    .radar-pulse {
+      animation: radarRings 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
     }
-    @keyframes coreGlow {
-      0% { stroke: #1D6D56; filter: drop-shadow(0 0 2px rgba(16, 185, 129, 0.2)); }
-      100% { stroke: #10B981; filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.5)); }
+    @keyframes radarRings {
+      0% { r: 3.5px; opacity: 1; stroke-width: 1.5px; }
+      75% { r: 12px; opacity: 0; stroke-width: 0.5px; }
+      100% { r: 3.5px; opacity: 0; }
     }
 
-    /* Reduced Motion */
+    /* Acoustic RTP Equalizer Bars for Exotel Voice */
+    .eq-bar-1 { animation: eqJump 1.1s ease-in-out infinite alternate; }
+    .eq-bar-2 { animation: eqJump 0.8s ease-in-out infinite alternate 0.2s; }
+    .eq-bar-3 { animation: eqJump 1.4s ease-in-out infinite alternate 0.4s; }
+    .eq-bar-4 { animation: eqJump 0.9s ease-in-out infinite alternate 0.1s; }
+    @keyframes eqJump {
+      0% { height: 3px; transform: translateY(0); }
+      100% { height: 11px; transform: translateY(-4px); }
+    }
+
+    /* Accessibility: Reduced Motion */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0ms !important;
+        animation: none !important;
+        transform: none !important;
+        opacity: 1 !important;
       }
-      .signal-orb-1, .signal-orb-2, .signal-db-down, .signal-llm-down, .pulse-ring {
+      .laser-border-tracer, .signal-packet-1, .signal-packet-2, .radar-pulse, .sheen-card {
         display: none !important;
       }
-      .packet-path, .packet-fast {
-        stroke-dasharray: none !important;
-      }
+      .conduit-flow { stroke-dasharray: none !important; }
     }
     ]]>
   </style>
 
-  <!-- Canvas Background -->
-  <rect width="900" height="440" rx="14" fill="url(#bgGrad)" stroke="#1D6D56" stroke-width="1.5" />
-  <rect width="900" height="440" rx="14" fill="url(#archGrid)" />
-
-  <!-- ==================== HEADER ==================== -->
-  <g id="header-bar">
-    <!-- Title Pill -->
-    <rect x="24" y="16" width="372" height="30" rx="15" fill="#143A30" stroke="#1D6D56" stroke-width="1" />
-    <circle cx="40" cy="31" r="7" fill="none" stroke="#10B981" class="pulse-ring" />
-    <circle cx="40" cy="31" r="4" fill="#10B981" class="pulse-live" />
-    <text x="56" y="35" class="font-sans" font-size="11" font-weight="700" fill="#FFFFFF" letter-spacing="0.8">VAANI EVENT-DRIVEN PIPELINE ARCHITECTURE</text>
-
-    <!-- Metrics Badges (Right Aligned) -->
-    <rect x="418" y="18" width="132" height="26" rx="6" fill="#102E26" stroke="#1D6D56" stroke-width="0.8" />
-    <circle cx="429" cy="31" r="3" fill="#10B981" />
-    <text x="438" y="34" class="font-mono" font-size="10" font-weight="600" fill="#A0C9B9">p50 &lt; 3.0s Latency</text>
-
-    <rect x="560" y="18" width="170" height="26" rx="6" fill="#102E26" stroke="#D97736" stroke-width="0.8" stroke-opacity="0.8" />
-    <circle cx="571" cy="31" r="3" fill="#D97736" />
-    <text x="580" y="34" class="font-mono" font-size="10" font-weight="600" fill="#EFECE6">Atomic Dedup (Lease 120s)</text>
-
-    <rect x="740" y="18" width="136" height="26" rx="6" fill="#102E26" stroke="#10B981" stroke-width="0.8" />
-    <circle cx="751" cy="31" r="3" fill="#10B981" />
-    <text x="760" y="34" class="font-mono" font-size="10" font-weight="600" fill="#10B981">DPDP 2025 Audit Log</text>
+  <!-- ==================== LIVING AURORA BACKDROP ==================== -->
+  <rect width="900" height="440" rx="16" fill="url(#deepCanvas)" stroke="#1D6D56" stroke-width="1.5" />
+  
+  <!-- Aurora Ambient Orbs -->
+  <g filter="url(#auroraBlur)">
+    <circle cx="150" cy="120" r="110" fill="#10B981" class="aurora-orb-1" />
+    <circle cx="720" cy="280" r="130" fill="#D97736" class="aurora-orb-2" />
+    <circle cx="480" cy="160" r="120" fill="#1D6D56" opacity="0.45" />
   </g>
 
-  <!-- ==================== MAIN CONNECTIONS & PIPES ==================== -->
-  <g id="pipeline-connectors">
-    <!-- Main horizontal backbone line -->
-    <line x1="146" y1="172" x2="758" y2="172" stroke="#144337" stroke-width="6" stroke-linecap="round" />
-    <line x1="146" y1="172" x2="758" y2="172" stroke="#10B981" stroke-width="1.8" class="packet-fast" opacity="0.85" />
+  <!-- High-Precision Tech Matrix Grid -->
+  <rect width="900" height="440" rx="16" fill="url(#matrixGrid)" />
 
-    <!-- Branch to MongoDB Atlas from Redis & Agent Core -->
-    <path d="M 400 258 L 400 286 Q 400 300 380 300 L 320 300" fill="none" stroke="#1D6D56" stroke-width="1.5" class="packet-path" />
-    <path d="M 565 272 L 565 292 Q 565 304 530 304 L 460 304" fill="none" stroke="#F59E0B" stroke-width="1.5" class="packet-path" opacity="0.8" />
-
-    <!-- Branch to OpenRouter LLM Failover from Agent Core -->
-    <path d="M 640 272 L 640 292 Q 640 304 670 304 L 710 304" fill="none" stroke="#D97736" stroke-width="1.5" class="packet-path" opacity="0.8" />
-
-    <!-- Glowing Signal Packets Travelling Along Main Spine -->
-    <circle cx="0" cy="0" r="4.5" fill="#10B981" filter="url(#glowGreen)" class="signal-orb-1" />
-    <circle cx="0" cy="0" r="4.5" fill="#D97736" filter="url(#glowAmber)" class="signal-orb-2" />
-  </g>
-
-  <!-- ==================== COLUMN 1: INBOUND WEBHOOK ==================== -->
-  <g id="node-inbound" transform="translate(24, 62)">
-    <rect width="122" height="210" rx="9" fill="#112F27" stroke="#1D6D56" stroke-width="1.2" filter="url(#boxShadow)" />
+  <!-- ==================== TOP GLASS HEADER BAR ==================== -->
+  <g id="header-bar" transform="translate(24, 16)">
+    <!-- Liquid Glass Title Capsule -->
+    <rect width="388" height="32" rx="16" fill="url(#glassCardGrad)" stroke="url(#specularRim)" stroke-width="1.2" filter="url(#glassShadow)" />
     
+    <!-- Pulsing Telemetry Dot -->
+    <circle cx="18" cy="16" r="3.5" fill="#10B981" />
+    <circle cx="18" cy="16" r="3.5" fill="none" stroke="#10B981" class="radar-pulse" />
+    
+    <text x="32" y="20.5" class="font-sans" font-size="11" font-weight="800" fill="#FFFFFF" letter-spacing="0.8">
+      VAANI EVENT-DRIVEN PIPELINE ARCHITECTURE
+    </text>
+
+    <!-- Telemetry Capsule Badges (Right) -->
+    <g transform="translate(416, 0)">
+      <rect width="138" height="32" rx="8" fill="url(#glassCardGrad)" stroke="url(#specularRim)" stroke-width="0.9" />
+      <circle cx="14" cy="16" r="3" fill="#10B981" />
+      <text x="24" y="20" class="font-mono" font-size="9.5" font-weight="700" fill="#A0C9B9">p50 &lt; 3.0s Latency</text>
+    </g>
+
+    <g transform="translate(566, 0)">
+      <rect width="168" height="32" rx="8" fill="url(#glassCardGrad)" stroke="url(#specularGold)" stroke-width="0.9" />
+      <circle cx="14" cy="16" r="3" fill="#F59E0B" />
+      <text x="24" y="20" class="font-mono" font-size="9.5" font-weight="700" fill="#FDE68A">Atomic Lease TTL: 120s</text>
+    </g>
+
+    <g transform="translate(746, 0)">
+      <rect width="106" height="32" rx="8" fill="url(#glassCardGrad)" stroke="url(#specularRim)" stroke-width="0.9" />
+      <circle cx="14" cy="16" r="3" fill="#10B981" />
+      <text x="24" y="20" class="font-mono" font-size="9.5" font-weight="700" fill="#10B981">DPDP 2025</text>
+    </g>
+  </g>
+
+  <!-- ==================== LASER PIPELINE CONDUITS & PACKETS ==================== -->
+  <g id="pipeline-conduits">
+    <!-- Main Horizontal Pipeline Channel -->
+    <line x1="146" y1="172" x2="758" y2="172" stroke="#0E332A" stroke-width="8" stroke-linecap="round" />
+    <line x1="146" y1="172" x2="758" y2="172" stroke="url(#pipeGlow)" stroke-width="2.2" class="conduit-flow" opacity="0.9" />
+
+    <!-- Branch Conduit: Redis & LangGraph to MongoDB Atlas -->
+    <path d="M 400 258 L 400 286 Q 400 300 380 300 L 320 300" fill="none" stroke="#1D6D56" stroke-width="2" class="conduit-flow" />
+    <path d="M 565 272 L 565 292 Q 565 304 530 304 L 460 304" fill="none" stroke="#F59E0B" stroke-width="1.8" class="conduit-flow" opacity="0.8" />
+
+    <!-- Branch Conduit: LangGraph to OpenRouter LLM Failover -->
+    <path d="M 640 272 L 640 292 Q 640 304 670 304 L 710 304" fill="none" stroke="#D97736" stroke-width="1.8" class="conduit-flow" opacity="0.8" />
+
+    <!-- High-Speed Glowing Neon Signal Packets -->
+    <g class="signal-packet-1">
+      <circle cx="0" cy="0" r="5" fill="#FFFFFF" filter="url(#neonLaser)" />
+      <circle cx="-4" cy="0" r="3.5" fill="#10B981" opacity="0.8" />
+      <circle cx="-8" cy="0" r="2" fill="#10B981" opacity="0.4" />
+    </g>
+    <g class="signal-packet-2">
+      <circle cx="0" cy="0" r="5" fill="#FFFFFF" filter="url(#neonLaser)" />
+      <circle cx="-4" cy="0" r="3.5" fill="#F59E0B" opacity="0.8" />
+      <circle cx="-8" cy="0" r="2" fill="#F59E0B" opacity="0.4" />
+    </g>
+
+    <!-- Branching Packets Downward -->
+    <circle cx="0" cy="0" r="3.5" fill="#F59E0B" class="packet-down-db" filter="url(#neonLaser)" />
+    <circle cx="0" cy="0" r="3.5" fill="#D97736" class="packet-down-llm" filter="url(#neonLaser)" />
+  </g>
+
+  <!-- ==================== COLUMN 1: INBOUND INGESTION ==================== -->
+  <g id="col-inbound" transform="translate(24, 62)">
+    <!-- Liquid Glass Container -->
+    <rect width="122" height="210" rx="10" fill="url(#glassCardGrad)" stroke="url(#specularRim)" stroke-width="1.2" filter="url(#glassShadow)" />
+
     <!-- Title Bar -->
-    <rect width="122" height="28" rx="9" fill="#153D32" />
-    <rect y="18" width="122" height="10" fill="#153D32" />
-    <text x="61" y="18" text-anchor="middle" class="font-sans" font-size="10" font-weight="700" fill="#A0C9B9" letter-spacing="0.5">INBOUND INGESTION</text>
+    <rect width="122" height="28" rx="10" fill="#164338" />
+    <rect y="18" width="122" height="10" fill="#164338" />
+    <text x="61" y="18.5" text-anchor="middle" class="font-sans" font-size="10" font-weight="800" fill="#A0C9B9" letter-spacing="0.5">INBOUND INGEST</text>
 
     <!-- Sub-block 1: Meta Cloud API -->
     <g transform="translate(8, 36)">
-      <rect width="106" height="74" rx="6" fill="#0E2822" stroke="#1D6D56" stroke-width="0.8" />
+      <rect width="106" height="74" rx="6" fill="#0D2620" stroke="#1D6D56" stroke-width="0.8" />
       <circle cx="16" cy="16" r="3.5" fill="#25D366" />
-      <text x="25" y="19" class="font-sans" font-size="9.5" font-weight="700" fill="#FFFFFF">Meta Cloud API</text>
-      <text x="10" y="35" class="font-sans" font-size="8.5" fill="#A0C9B9">WhatsApp Webhook</text>
-      <text x="10" y="49" class="font-mono" font-size="8" fill="#EFECE6">v21.0 JSON payloads</text>
-      <rect x="10" y="56" width="60" height="13" rx="3" fill="#183F35" />
-      <text x="40" y="65" text-anchor="middle" class="font-mono" font-size="7.5" fill="#10B981">POST /webhook</text>
+      <text x="25" y="19" class="font-sans" font-size="9" font-weight="700" fill="#FFFFFF">Meta Cloud API</text>
+      <text x="10" y="34" class="font-sans" font-size="8" fill="#A0C9B9">WhatsApp Webhook</text>
+      <text x="10" y="47" class="font-mono" font-size="7.5" fill="#EFECE6">v21.0 JSON payloads</text>
+      <rect x="10" y="55" width="68" height="13" rx="3" fill="#184337" />
+      <text x="44" y="64" text-anchor="middle" class="font-mono" font-size="7" fill="#10B981">POST /webhook</text>
     </g>
 
-    <!-- Sub-block 2: Exotel SIP Voice -->
+    <!-- Sub-block 2: Exotel SIP Voice (with Audio Equalizer Waves) -->
     <g transform="translate(8, 118)">
-      <rect width="106" height="78" rx="6" fill="#0E2822" stroke="#1D6D56" stroke-width="0.8" />
+      <rect width="106" height="78" rx="6" fill="#0D2620" stroke="#1D6D56" stroke-width="0.8" />
       <circle cx="16" cy="16" r="3.5" fill="#D97736" />
-      <text x="25" y="19" class="font-sans" font-size="9.5" font-weight="700" fill="#FFFFFF">Exotel SIP Voice</text>
-      <text x="10" y="35" class="font-sans" font-size="8.5" fill="#A0C9B9">Live Audio RTP In</text>
-      <text x="10" y="49" class="font-mono" font-size="8" fill="#EFECE6">8kHz / 16kHz PCM</text>
-      <rect x="10" y="57" width="86" height="14" rx="3" fill="#183F35" />
-      <text x="53" y="67" text-anchor="middle" class="font-mono" font-size="7.5" fill="#D97736">wss://audio/stream</text>
+      <text x="25" y="19" class="font-sans" font-size="9" font-weight="700" fill="#FFFFFF">Exotel SIP Voice</text>
+      <text x="10" y="34" class="font-sans" font-size="8" fill="#A0C9B9">Live Audio RTP In</text>
+      
+      <!-- Real-Time Equalizer Waveform -->
+      <g transform="translate(10, 48)">
+        <rect x="0" y="0" width="2.5" height="6" rx="1" fill="#D97736" class="eq-bar-1" />
+        <rect x="5" y="0" width="2.5" height="10" rx="1" fill="#F59E0B" class="eq-bar-2" />
+        <rect x="10" y="0" width="2.5" height="4" rx="1" fill="#10B981" class="eq-bar-3" />
+        <rect x="15" y="0" width="2.5" height="8" rx="1" fill="#D97736" class="eq-bar-4" />
+        <text x="24" y="5" class="font-mono" font-size="7" fill="#EFECE6">8/16kHz μ-law</text>
+      </g>
+      
+      <rect x="10" y="58" width="86" height="13" rx="3" fill="#184337" />
+      <text x="53" y="67" text-anchor="middle" class="font-mono" font-size="7" fill="#D97736">wss://audio/stream</text>
     </g>
 
-    <!-- Port Marker Right -->
-    <circle cx="122" cy="110" r="4" fill="#10B981" stroke="#0E2822" stroke-width="1.5" />
+    <!-- Outport -->
+    <circle cx="122" cy="110" r="4.5" fill="#10B981" stroke="#0E2822" stroke-width="1.5" />
   </g>
 
   <!-- ==================== COLUMN 2: FASTAPI GATEWAY ==================== -->
-  <g id="node-gateway" transform="translate(176, 62)">
-    <rect width="128" height="210" rx="9" fill="#112F27" stroke="#1D6D56" stroke-width="1.2" filter="url(#boxShadow)" />
-    
+  <g id="col-gateway" transform="translate(176, 62)">
+    <rect width="128" height="210" rx="10" fill="url(#glassCardGrad)" stroke="url(#specularRim)" stroke-width="1.2" filter="url(#glassShadow)" />
+
     <!-- Title Bar -->
-    <rect width="128" height="28" rx="9" fill="#153D32" />
-    <rect y="18" width="128" height="10" fill="#153D32" />
-    <text x="64" y="18" text-anchor="middle" class="font-sans" font-size="10" font-weight="700" fill="#A0C9B9" letter-spacing="0.5">FASTAPI GATEWAY</text>
+    <rect width="128" height="28" rx="10" fill="#164338" />
+    <rect y="18" width="128" height="10" fill="#164338" />
+    <text x="64" y="18.5" text-anchor="middle" class="font-sans" font-size="10" font-weight="800" fill="#A0C9B9" letter-spacing="0.5">FASTAPI GATEWAY</text>
 
-    <!-- Sub-block 1: HMAC Verification -->
+    <!-- Sub-blocks -->
     <g transform="translate(8, 36)">
-      <rect width="112" height="46" rx="5" fill="#0E2822" stroke="#1D6D56" stroke-width="0.8" />
-      <text x="10" y="16" class="font-sans" font-size="9" font-weight="700" fill="#FFFFFF">HMAC Signature</text>
-      <text x="10" y="28" class="font-mono" font-size="7.5" fill="#10B981">sha256(secret, body)</text>
-      <text x="10" y="39" class="font-mono" font-size="7.5" fill="#A0C9B9">X-Hub-Sig verify: OK</text>
+      <rect width="112" height="46" rx="5" fill="#0D2620" stroke="#1D6D56" stroke-width="0.8" />
+      <text x="10" y="15" class="font-sans" font-size="8.5" font-weight="700" fill="#FFFFFF">HMAC Signature</text>
+      <text x="10" y="27" class="font-mono" font-size="7.5" fill="#10B981">sha256(secret, body)</text>
+      <text x="10" y="38" class="font-mono" font-size="7.5" fill="#A0C9B9">X-Hub-Sig: VERIFIED</text>
     </g>
 
-    <!-- Sub-block 2: Rate Limiter & Token Bucket -->
     <g transform="translate(8, 88)">
-      <rect width="112" height="48" rx="5" fill="#0E2822" stroke="#1D6D56" stroke-width="0.8" />
-      <text x="10" y="15" class="font-sans" font-size="9" font-weight="700" fill="#FFFFFF">Rate &amp; Quota Guard</text>
-      <text x="10" y="28" class="font-mono" font-size="7.5" fill="#EFECE6">Token Bucket (Tenant)</text>
-      <text x="10" y="40" class="font-mono" font-size="7.5" fill="#D97736">Max: 120 req/min/IP</text>
+      <rect width="112" height="48" rx="5" fill="#0D2620" stroke="#1D6D56" stroke-width="0.8" />
+      <text x="10" y="15" class="font-sans" font-size="8.5" font-weight="700" fill="#FFFFFF">Rate &amp; Quota Guard</text>
+      <text x="10" y="27" class="font-mono" font-size="7.5" fill="#EFECE6">Token Bucket (Tenant)</text>
+      <text x="10" y="39" class="font-mono" font-size="7.5" fill="#D97736">Max: 120 req/min/IP</text>
     </g>
 
-    <!-- Sub-block 3: Raw Event Ingestion -->
     <g transform="translate(8, 142)">
-      <rect width="112" height="54" rx="5" fill="#0E2822" stroke="#1D6D56" stroke-width="0.8" />
-      <text x="10" y="15" class="font-sans" font-size="9" font-weight="700" fill="#FFFFFF">Event Normalizer</text>
-      <text x="10" y="28" class="font-mono" font-size="7.5" fill="#A0C9B9">InboundEvent Schema</text>
-      <rect x="10" y="34" width="92" height="14" rx="3" fill="#183F35" />
-      <text x="56" y="44" text-anchor="middle" class="font-mono" font-size="7.5" fill="#10B981">Sync Latency &lt; 12ms</text>
+      <rect width="112" height="54" rx="5" fill="#0D2620" stroke="#1D6D56" stroke-width="0.8" />
+      <text x="10" y="15" class="font-sans" font-size="8.5" font-weight="700" fill="#FFFFFF">Event Normalizer</text>
+      <text x="10" y="27" class="font-mono" font-size="7.5" fill="#A0C9B9">InboundEvent Schema</text>
+      <rect x="10" y="33" width="92" height="14" rx="3" fill="#184337" />
+      <text x="56" y="43" text-anchor="middle" class="font-mono" font-size="7.5" fill="#10B981">Latency &lt; 12ms</text>
     </g>
 
-    <!-- Port Markers -->
-    <circle cx="0" cy="110" r="4" fill="#10B981" stroke="#0E2822" stroke-width="1.5" />
-    <circle cx="128" cy="110" r="4" fill="#10B981" stroke="#0E2822" stroke-width="1.5" />
+    <!-- Ports -->
+    <circle cx="0" cy="110" r="4.5" fill="#10B981" stroke="#0E2822" stroke-width="1.5" />
+    <circle cx="128" cy="110" r="4.5" fill="#10B981" stroke="#0E2822" stroke-width="1.5" />
   </g>
 
   <!-- ==================== COLUMN 3: REDIS STREAMS ==================== -->
-  <g id="node-redis" transform="translate(334, 62)">
-    <rect width="130" height="210" rx="9" fill="#112F27" stroke="#1D6D56" stroke-width="1.2" filter="url(#boxShadow)" />
-    
-    <!-- Title Bar -->
-    <rect width="130" height="28" rx="9" fill="#153D32" />
-    <rect y="18" width="130" height="10" fill="#153D32" />
-    <text x="65" y="18" text-anchor="middle" class="font-sans" font-size="10" font-weight="700" fill="#A0C9B9" letter-spacing="0.5">REDIS STREAMS ENGINE</text>
+  <g id="col-redis" transform="translate(334, 62)">
+    <rect width="130" height="210" rx="10" fill="url(#glassCardGrad)" stroke="url(#specularRim)" stroke-width="1.2" filter="url(#glassShadow)" />
 
-    <!-- Sub-block 1: XADD Queue -->
+    <!-- Title Bar -->
+    <rect width="130" height="28" rx="10" fill="#164338" />
+    <rect y="18" width="130" height="10" fill="#164338" />
+    <text x="65" y="18.5" text-anchor="middle" class="font-sans" font-size="10" font-weight="800" fill="#A0C9B9" letter-spacing="0.5">REDIS STREAMS</text>
+
+    <!-- Sub-blocks -->
     <g transform="translate(8, 36)">
-      <rect width="114" height="46" rx="5" fill="#0E2822" stroke="#1D6D56" stroke-width="0.8" />
-      <text x="10" y="15" class="font-sans" font-size="9" font-weight="700" fill="#FFFFFF">XADD Queue Sharding</text>
+      <rect width="114" height="46" rx="5" fill="#0D2620" stroke="#1D6D56" stroke-width="0.8" />
+      <text x="10" y="15" class="font-sans" font-size="8.5" font-weight="700" fill="#FFFFFF">XADD Queue Shard</text>
       <text x="10" y="27" class="font-mono" font-size="7.5" fill="#A0C9B9">stream:events:{tenant}</text>
       <text x="10" y="39" class="font-mono" font-size="7.5" fill="#10B981">Partitioned Workers</text>
     </g>
 
-    <!-- Sub-block 2: Message Leases & Atomic Dedup -->
     <g transform="translate(8, 88)">
-      <rect width="114" height="48" rx="5" fill="#0E2822" stroke="#1D6D56" stroke-width="0.8" />
-      <text x="10" y="15" class="font-sans" font-size="9" font-weight="700" fill="#FFFFFF">Message Leases &amp; Lock</text>
+      <rect width="114" height="48" rx="5" fill="#0D2620" stroke="#1D6D56" stroke-width="0.8" />
+      <text x="10" y="15" class="font-sans" font-size="8.5" font-weight="700" fill="#FFFFFF">Message Leases &amp; Lock</text>
       <text x="10" y="27" class="font-mono" font-size="7.5" fill="#F59E0B">Lease TTL: 120s Auto</text>
       <text x="10" y="39" class="font-mono" font-size="7.5" fill="#EFECE6">Crash-Safe Recovery</text>
     </g>
 
-    <!-- Sub-block 3: Idempotency Ledger -->
     <g transform="translate(8, 142)">
-      <rect width="114" height="54" rx="5" fill="#0E2822" stroke="#1D6D56" stroke-width="0.8" />
-      <text x="10" y="15" class="font-sans" font-size="9" font-weight="700" fill="#FFFFFF">Atomic Dedup Ledger</text>
+      <rect width="114" height="54" rx="5" fill="#0D2620" stroke="#1D6D56" stroke-width="0.8" />
+      <text x="10" y="15" class="font-sans" font-size="8.5" font-weight="700" fill="#FFFFFF">Atomic Dedup Ledger</text>
       <text x="10" y="27" class="font-mono" font-size="7.5" fill="#D97736">Key: event_id:hash</text>
-      <rect x="10" y="33" width="94" height="15" rx="3" fill="#183F35" />
-      <text x="57" y="44" text-anchor="middle" class="font-mono" font-size="7.5" fill="#10B981">0 Duplicate Executes</text>
+      <rect x="10" y="33" width="94" height="15" rx="3" fill="#184337" />
+      <text x="57" y="44" text-anchor="middle" class="font-mono" font-size="7.5" fill="#10B981">0 Duplicate Exec</text>
     </g>
 
-    <!-- Port Markers -->
-    <circle cx="0" cy="110" r="4" fill="#10B981" stroke="#0E2822" stroke-width="1.5" />
-    <circle cx="130" cy="110" r="4" fill="#10B981" stroke="#0E2822" stroke-width="1.5" />
-    <circle cx="65" cy="210" r="3.5" fill="#F59E0B" />
+    <!-- Ports -->
+    <circle cx="0" cy="110" r="4.5" fill="#10B981" stroke="#0E2822" stroke-width="1.5" />
+    <circle cx="130" cy="110" r="4.5" fill="#10B981" stroke="#0E2822" stroke-width="1.5" />
+    <circle cx="65" cy="210" r="4" fill="#F59E0B" />
   </g>
 
   <!-- ==================== COLUMN 4: LANGGRAPH AGENT CORE ==================== -->
-  <g id="node-langgraph" transform="translate(492, 54)">
-    <!-- Glowing Outer Frame -->
-    <rect width="242" height="224" rx="10" fill="url(#coreCardGrad)" class="core-border" stroke-width="1.8" filter="url(#boxShadow)" />
+  <g id="col-langgraph" transform="translate(492, 54)">
+    <!-- Liquid Glass Master Frame with Laser Perimeter Tracer -->
+    <rect width="242" height="224" rx="12" fill="url(#glassCardGrad)" stroke="url(#specularRim)" stroke-width="1.6" filter="url(#glassShadow)" />
     
-    <!-- Title Bar -->
-    <rect width="242" height="30" rx="10" fill="#18493C" />
-    <rect y="20" width="242" height="10" fill="#18493C" />
-    <circle cx="18" cy="15" r="4" fill="#10B981" />
-    <text x="28" y="19" class="font-sans" font-size="10.5" font-weight="800" fill="#FFFFFF" letter-spacing="0.6">LANGGRAPH AGENT CORE</text>
-    <rect x="182" y="7" width="50" height="16" rx="4" fill="#102E26" stroke="#10B981" stroke-width="0.7" />
-    <text x="207" y="18" text-anchor="middle" class="font-mono" font-size="8" font-weight="700" fill="#10B981">7 NODES</text>
+    <!-- React-Bits Laser Beam Tracer running along the perimeter -->
+    <rect width="242" height="224" rx="12" fill="none" stroke="url(#laserBeamGrad)" stroke-width="2.2" class="laser-border-tracer" filter="url(#neonLaser)" />
 
-    <!-- 7 Sequential Micro-Nodes -->
+    <!-- Glass Sheen Sweep Overlay -->
+    <g clip-path="url(#langClip)">
+      <clipPath id="langClip">
+        <rect width="242" height="224" rx="12" />
+      </clipPath>
+      <rect x="-100" y="-50" width="160" height="320" fill="url(#sheenLinear)" class="sheen-card" />
+    </g>
+
+    <!-- Title Bar -->
+    <rect width="242" height="32" rx="12" fill="#184C3F" />
+    <rect y="20" width="242" height="12" fill="#184C3F" />
+    <circle cx="18" cy="16" r="4.5" fill="#10B981" />
+    <text x="30" y="20" class="font-sans" font-size="10.5" font-weight="800" fill="#FFFFFF" letter-spacing="0.6">LANGGRAPH AGENT CORE</text>
+    
+    <!-- Micro-Badge: 7 Nodes -->
+    <rect x="180" y="8" width="52" height="16" rx="4" fill="#0C201B" stroke="#10B981" stroke-width="0.7" />
+    <text x="206" y="19" text-anchor="middle" class="font-mono" font-size="8" font-weight="700" fill="#10B981">7 NODES</text>
+
+    <!-- 7 Sequential Micro-Nodes with GSAP Micro-Glow Waves -->
     <!-- Node 1: lang_detect -->
-    <g transform="translate(10, 36)" class="node-seq-1">
-      <rect width="106" height="38" rx="5" fill="#0F2B23" stroke="#1D6D56" stroke-width="1" />
+    <g transform="translate(10, 38)" class="node-1">
+      <rect width="106" height="38" rx="5" stroke="#1D6D56" stroke-width="1" />
       <text x="8" y="14" class="font-mono" font-size="8.5" font-weight="700" fill="#10B981">1. lang_detect</text>
-      <text x="8" y="27" class="font-sans" font-size="7.5" fill="#EFECE6">Devanagari / Odia / Eng</text>
-      <!-- Small arrow pointing down -->
-      <path d="M 53 38 L 53 43" stroke="#10B981" stroke-width="1" marker-end="url(#arrow)" />
+      <text x="8" y="27" class="font-sans" font-size="7.5" fill="#EFECE6">Hindi / Odia / Eng</text>
+      <path d="M 53 38 L 53 43" stroke="#10B981" stroke-width="1.2" />
     </g>
 
     <!-- Node 2: intent_classifier -->
-    <g transform="translate(10, 80)" class="node-seq-2">
-      <rect width="106" height="38" rx="5" fill="#0F2B23" stroke="#1D6D56" stroke-width="1" />
-      <text x="8" y="14" class="font-mono" font-size="8.5" font-weight="700" fill="#10B981">2. intent_classifier</text>
-      <text x="8" y="27" class="font-sans" font-size="7.5" fill="#EFECE6">Slot / Inquiry / Handoff</text>
-      <path d="M 53 38 L 53 43" stroke="#10B981" stroke-width="1" marker-end="url(#arrow)" />
+    <g transform="translate(10, 82)" class="node-2">
+      <rect width="106" height="38" rx="5" stroke="#1D6D56" stroke-width="1" />
+      <text x="8" y="14" class="font-mono" font-size="8.5" font-weight="700" fill="#10B981">2. intent_classify</text>
+      <text x="8" y="27" class="font-sans" font-size="7.5" fill="#EFECE6">Slot / Inquiry / Take</text>
+      <path d="M 53 38 L 53 43" stroke="#10B981" stroke-width="1.2" />
     </g>
 
     <!-- Node 3: scope_gate -->
-    <g transform="translate(10, 124)" class="node-seq-3">
-      <rect width="106" height="38" rx="5" fill="#0F2B23" stroke="#1D6D56" stroke-width="1" />
+    <g transform="translate(10, 126)" class="node-3">
+      <rect width="106" height="38" rx="5" stroke="#1D6D56" stroke-width="1" />
       <text x="8" y="14" class="font-mono" font-size="8.5" font-weight="700" fill="#D97736">3. scope_gate</text>
       <text x="8" y="27" class="font-sans" font-size="7.5" fill="#A0C9B9">Strict In-Domain Gate</text>
-      <path d="M 53 38 L 53 43" stroke="#10B981" stroke-width="1" marker-end="url(#arrow)" />
+      <path d="M 53 38 L 53 43" stroke="#10B981" stroke-width="1.2" />
     </g>
 
     <!-- Node 4: tool_router -->
-    <g transform="translate(10, 168)" class="node-seq-4">
-      <rect width="106" height="42" rx="5" fill="#0F2B23" stroke="#1D6D56" stroke-width="1" />
+    <g transform="translate(10, 170)" class="node-4">
+      <rect width="106" height="42" rx="5" stroke="#1D6D56" stroke-width="1" />
       <text x="8" y="14" class="font-mono" font-size="8.5" font-weight="700" fill="#10B981">4. tool_router</text>
       <text x="8" y="27" class="font-sans" font-size="7.5" fill="#EFECE6">Calendar / Catalog / Hold</text>
-      <!-- Cross bridge to Column B -->
-      <path d="M 106 21 L 124 21" stroke="#10B981" stroke-width="1.2" stroke-dasharray="2 2" />
+      <!-- Link to Column B -->
+      <path d="M 106 21 L 126 21" stroke="#10B981" stroke-width="1.5" stroke-dasharray="2 2" />
     </g>
 
     <!-- Column B (Nodes 5, 6, 7) -->
     <!-- Node 5: responder -->
-    <g transform="translate(126, 56)" class="node-seq-5">
-      <rect width="106" height="42" rx="5" fill="#0F2B23" stroke="#1D6D56" stroke-width="1" />
+    <g transform="translate(126, 56)" class="node-5">
+      <rect width="106" height="42" rx="5" stroke="#1D6D56" stroke-width="1" />
       <text x="8" y="14" class="font-mono" font-size="8.5" font-weight="700" fill="#10B981">5. responder</text>
-      <text x="8" y="27" class="font-sans" font-size="7.5" fill="#EFECE6">Synthesis &amp; Tone Filter</text>
+      <text x="8" y="27" class="font-sans" font-size="7.5" fill="#EFECE6">Synthesis &amp; Tone</text>
       <text x="8" y="37" class="font-mono" font-size="7" fill="#A0C9B9">Dialect Adaptation</text>
-      <path d="M 53 42 L 53 48" stroke="#10B981" stroke-width="1" marker-end="url(#arrow)" />
+      <path d="M 53 42 L 53 48" stroke="#10B981" stroke-width="1.2" />
     </g>
 
     <!-- Node 6: output_grounding_gate -->
-    <g transform="translate(126, 110)" class="node-seq-6">
-      <rect width="106" height="44" rx="5" fill="#0F2B23" stroke="#1D6D56" stroke-width="1" />
-      <text x="8" y="13" class="font-mono" font-size="8" font-weight="700" fill="#F59E0B">6. output_ground</text>
+    <g transform="translate(126, 110)" class="node-6">
+      <rect width="106" height="44" rx="5" stroke="#1D6D56" stroke-width="1" />
+      <text x="8" y="13" class="font-mono" font-size="8.5" font-weight="700" fill="#F59E0B">6. output_ground</text>
       <text x="8" y="25" class="font-sans" font-size="7.5" fill="#EFECE6">Hallucination Guard</text>
-      <text x="8" y="37" class="font-mono" font-size="7" fill="#10B981">✓ In-Domain Token Verify</text>
-      <path d="M 53 44 L 53 50" stroke="#10B981" stroke-width="1" marker-end="url(#arrow)" />
+      <text x="8" y="37" class="font-mono" font-size="7" fill="#10B981">✓ In-Domain Verification</text>
+      <path d="M 53 44 L 53 50" stroke="#10B981" stroke-width="1.2" />
     </g>
 
     <!-- Node 7: handoff_manager -->
-    <g transform="translate(126, 166)" class="node-seq-7">
-      <rect width="106" height="44" rx="5" fill="#0F2B23" stroke="#1D6D56" stroke-width="1" />
+    <g transform="translate(126, 166)" class="node-7">
+      <rect width="106" height="44" rx="5" stroke="#1D6D56" stroke-width="1" />
       <text x="8" y="14" class="font-mono" font-size="8.5" font-weight="700" fill="#10B981">7. handoff_mgr</text>
       <text x="8" y="26" class="font-sans" font-size="7.5" fill="#EFECE6">1-Tap Owner Escalation</text>
       <text x="8" y="38" class="font-mono" font-size="7" fill="#D97736">State Sync / Human Take</text>
     </g>
 
-    <!-- Port Markers -->
-    <circle cx="0" cy="118" r="4.5" fill="#10B981" stroke="#0E2822" stroke-width="1.5" />
-    <circle cx="242" cy="118" r="4.5" fill="#10B981" stroke="#0E2822" stroke-width="1.5" />
-    <circle cx="73" cy="224" r="3.5" fill="#F59E0B" />
-    <circle cx="160" cy="224" r="3.5" fill="#D97736" />
+    <!-- Ports -->
+    <circle cx="0" cy="118" r="5" fill="#10B981" stroke="#0E2822" stroke-width="1.5" />
+    <circle cx="242" cy="118" r="5" fill="#10B981" stroke="#0E2822" stroke-width="1.5" />
+    <circle cx="73" cy="224" r="4" fill="#F59E0B" />
+    <circle cx="160" cy="224" r="4" fill="#D97736" />
   </g>
 
   <!-- ==================== COLUMN 5: OUTBOUND DISPATCH ==================== -->
-  <g id="node-outbound" transform="translate(760, 62)">
-    <rect width="116" height="210" rx="9" fill="#112F27" stroke="#1D6D56" stroke-width="1.2" filter="url(#boxShadow)" />
-    
-    <!-- Title Bar -->
-    <rect width="116" height="28" rx="9" fill="#153D32" />
-    <rect y="18" width="116" height="10" fill="#153D32" />
-    <text x="58" y="18" text-anchor="middle" class="font-sans" font-size="10" font-weight="700" fill="#A0C9B9" letter-spacing="0.5">OUTBOUND</text>
+  <g id="col-outbound" transform="translate(760, 62)">
+    <rect width="116" height="210" rx="10" fill="url(#glassCardGrad)" stroke="url(#specularRim)" stroke-width="1.2" filter="url(#glassShadow)" />
 
-    <!-- Sub-block 1: WhatsApp Dispatch -->
+    <!-- Title Bar -->
+    <rect width="116" height="28" rx="10" fill="#164338" />
+    <rect y="18" width="116" height="10" fill="#164338" />
+    <text x="58" y="18.5" text-anchor="middle" class="font-sans" font-size="10" font-weight="800" fill="#A0C9B9" letter-spacing="0.5">OUTBOUND</text>
+
+    <!-- Sub-blocks -->
     <g transform="translate(8, 36)">
-      <rect width="100" height="74" rx="6" fill="#0E2822" stroke="#1D6D56" stroke-width="0.8" />
+      <rect width="100" height="74" rx="6" fill="#0D2620" stroke="#1D6D56" stroke-width="0.8" />
       <circle cx="14" cy="15" r="3.5" fill="#25D366" />
-      <text x="23" y="18" class="font-sans" font-size="9" font-weight="700" fill="#FFFFFF">WhatsApp Delivery</text>
+      <text x="23" y="18" class="font-sans" font-size="9" font-weight="700" fill="#FFFFFF">WhatsApp Out</text>
       <text x="10" y="34" class="font-sans" font-size="8" fill="#A0C9B9">Quick-Reply &amp; CTAs</text>
       <text x="10" y="47" class="font-mono" font-size="7.5" fill="#EFECE6">Atomic Slots / Maps</text>
-      <rect x="10" y="55" width="80" height="13" rx="3" fill="#183F35" />
+      <rect x="10" y="55" width="80" height="13" rx="3" fill="#184337" />
       <text x="50" y="64" text-anchor="middle" class="font-mono" font-size="7" fill="#10B981">Idempotent Send</text>
     </g>
 
-    <!-- Sub-block 2: Voice SIP Stream -->
     <g transform="translate(8, 118)">
-      <rect width="100" height="78" rx="6" fill="#0E2822" stroke="#1D6D56" stroke-width="0.8" />
+      <rect width="100" height="78" rx="6" fill="#0D2620" stroke="#1D6D56" stroke-width="0.8" />
       <circle cx="14" cy="15" r="3.5" fill="#D97736" />
       <text x="23" y="18" class="font-sans" font-size="9" font-weight="700" fill="#FFFFFF">Voice SIP Out</text>
       <text x="10" y="34" class="font-sans" font-size="8" fill="#A0C9B9">TTS Stream Buffer</text>
       <text x="10" y="47" class="font-mono" font-size="7.5" fill="#EFECE6">Exotel Telephony SIP</text>
-      <rect x="10" y="56" width="80" height="14" rx="3" fill="#183F35" />
+      <rect x="10" y="56" width="80" height="14" rx="3" fill="#184337" />
       <text x="50" y="66" text-anchor="middle" class="font-mono" font-size="7" fill="#D97736">RTP Ultra-low Jitter</text>
     </g>
 
-    <!-- Port Marker Left -->
-    <circle cx="0" cy="110" r="4" fill="#10B981" stroke="#0E2822" stroke-width="1.5" />
+    <circle cx="0" cy="110" r="4.5" fill="#10B981" stroke="#0E2822" stroke-width="1.5" />
   </g>
 
   <!-- ==================== BOTTOM AUXILIARY: MONGODB & OPENROUTER ==================== -->
   <!-- Box 1: MongoDB Atlas Replica Set -->
   <g id="node-mongodb" transform="translate(176, 298)">
-    <rect width="320" height="122" rx="8" fill="url(#dbGrad)" stroke="#1D6D56" stroke-width="1.2" filter="url(#boxShadow)" />
-    
-    <!-- Header -->
-    <rect width="320" height="26" rx="8" fill="#153A2F" />
-    <rect y="16" width="320" height="10" fill="#153A2F" />
-    <circle cx="18" cy="13" r="3.5" fill="#F59E0B" />
-    <text x="28" y="17" class="font-sans" font-size="9.5" font-weight="700" fill="#FFFFFF">MONGODB ATLAS REPLICA SET (DISTRIBUTED STORAGE)</text>
-    <rect x="250" y="5" width="60" height="16" rx="3" fill="#0E2822" stroke="#F59E0B" stroke-width="0.6" />
-    <text x="280" y="16" text-anchor="middle" class="font-mono" font-size="7.5" fill="#F59E0B">HIGH-AVAIL</text>
+    <rect width="320" height="122" rx="10" fill="url(#glassCardGrad)" stroke="url(#specularGold)" stroke-width="1.2" filter="url(#glassShadow)" />
 
-    <!-- Content 2-Column Grid -->
-    <g transform="translate(12, 34)">
-      <!-- Item A: 500-claim atomic slot holds -->
-      <rect width="142" height="42" rx="4" fill="#0C201B" stroke="#1D6D56" stroke-width="0.6" />
+    <rect width="320" height="28" rx="10" fill="#1B4234" />
+    <rect y="18" width="320" height="10" fill="#1B4234" />
+    <circle cx="18" cy="14" r="3.5" fill="#F59E0B" />
+    <text x="28" y="18" class="font-sans" font-size="9.5" font-weight="800" fill="#FFFFFF">MONGODB ATLAS REPLICA SET (DISTRIBUTED STORAGE)</text>
+    <rect x="250" y="6" width="60" height="16" rx="3" fill="#0C201B" stroke="#F59E0B" stroke-width="0.6" />
+    <text x="280" y="17" text-anchor="middle" class="font-mono" font-size="7.5" font-weight="700" fill="#F59E0B">HIGH-AVAIL</text>
+
+    <!-- Sub-Items -->
+    <g transform="translate(12, 36)">
+      <rect width="142" height="42" rx="5" fill="#0A201A" stroke="#1D6D56" stroke-width="0.7" />
       <text x="8" y="14" class="font-sans" font-size="8.5" font-weight="700" fill="#10B981">500-Claim Atomic Hold</text>
-      <text x="8" y="26" class="font-mono" font-size="7.5" fill="#EFECE6">db.slots.findOneAndUpdate()</text>
+      <text x="8" y="26" class="font-mono" font-size="7.5" fill="#EFECE6">findOneAndUpdate({status: 0})</text>
       <text x="8" y="36" class="font-sans" font-size="7" fill="#A0C9B9">0 Double-Booking Guarantee</text>
 
-      <!-- Item B: Audit & DPDP -->
       <g transform="translate(152, 0)">
-        <rect width="144" height="42" rx="4" fill="#0C201B" stroke="#1D6D56" stroke-width="0.6" />
+        <rect width="144" height="42" rx="5" fill="#0A201A" stroke="#1D6D56" stroke-width="0.7" />
         <text x="8" y="14" class="font-sans" font-size="8.5" font-weight="700" fill="#F59E0B">DPDP 2025 Audit Logs</text>
         <text x="8" y="26" class="font-mono" font-size="7.5" fill="#EFECE6">30-Day Auto-Purge TTL</text>
-        <text x="8" y="36" class="font-sans" font-size="7" fill="#A0C9B9">Zero Patient PII in Plaintext</text>
+        <text x="8" y="36" class="font-sans" font-size="7" fill="#A0C9B9">Zero Plaintext Patient PII</text>
       </g>
     </g>
 
-    <!-- Footer Stats Strip -->
-    <g transform="translate(12, 86)">
-      <rect width="296" height="24" rx="4" fill="#0E241E" />
+    <g transform="translate(12, 88)">
+      <rect width="296" height="24" rx="4" fill="#0B1E19" />
       <text x="10" y="16" class="font-mono" font-size="8" fill="#10B981">Replica: 3-Node Primary/Secondary</text>
       <text x="180" y="16" class="font-mono" font-size="8" fill="#A0C9B9">Heartbeat: 2000ms | Failover &lt; 3s</text>
     </g>
   </g>
 
-  <!-- Box 2: OpenRouter LLM Failover & Fallback -->
+  <!-- Box 2: OpenRouter Multi-Model Failover -->
   <g id="node-openrouter" transform="translate(520, 298)">
-    <rect width="356" height="122" rx="8" fill="url(#dbGrad)" stroke="#1D6D56" stroke-width="1.2" filter="url(#boxShadow)" />
-    
-    <!-- Header -->
-    <rect width="356" height="26" rx="8" fill="#153A2F" />
-    <rect y="16" width="356" height="10" fill="#153A2F" />
-    <circle cx="18" cy="13" r="3.5" fill="#D97736" />
-    <text x="28" y="17" class="font-sans" font-size="9.5" font-weight="700" fill="#FFFFFF">OPENROUTER MULTI-MODEL ORCHESTRATION &amp; FAILOVER</text>
-    <rect x="290" y="5" width="56" height="16" rx="3" fill="#0E2822" stroke="#D97736" stroke-width="0.6" />
-    <text x="318" y="16" text-anchor="middle" class="font-mono" font-size="7.5" fill="#D97736">CIRCUIT 2.5s</text>
+    <rect width="356" height="122" rx="10" fill="url(#glassCardGrad)" stroke="url(#specularRim)" stroke-width="1.2" filter="url(#glassShadow)" />
 
-    <!-- Content 2-Column Grid -->
-    <g transform="translate(12, 34)">
-      <!-- Primary Engine -->
-      <rect width="160" height="42" rx="4" fill="#0C201B" stroke="#10B981" stroke-width="0.7" />
+    <rect width="356" height="28" rx="10" fill="#1B4234" />
+    <rect y="18" width="356" height="10" fill="#1B4234" />
+    <circle cx="18" cy="14" r="3.5" fill="#D97736" />
+    <text x="28" y="18" class="font-sans" font-size="9.5" font-weight="800" fill="#FFFFFF">OPENROUTER MULTI-MODEL ORCHESTRATION &amp; FAILOVER</text>
+    <rect x="290" y="6" width="56" height="16" rx="3" fill="#0C201B" stroke="#D97736" stroke-width="0.6" />
+    <text x="318" y="17" text-anchor="middle" class="font-mono" font-size="7.5" font-weight="700" fill="#D97736">CIRCUIT 2.5s</text>
+
+    <!-- Sub-Items -->
+    <g transform="translate(12, 36)">
+      <rect width="160" height="42" rx="5" fill="#0A201A" stroke="#10B981" stroke-width="0.8" />
       <text x="8" y="14" class="font-sans" font-size="8.5" font-weight="700" fill="#10B981">Primary: DeepSeek V3</text>
       <text x="8" y="26" class="font-mono" font-size="7.5" fill="#EFECE6">Fast Vernacular Hindi/Odia</text>
       <text x="8" y="36" class="font-sans" font-size="7" fill="#A0C9B9">TTFT &lt; 450ms • High Efficiency</text>
 
-      <!-- Hot Standby Failover -->
       <g transform="translate(170, 0)">
-        <rect width="162" height="42" rx="4" fill="#0C201B" stroke="#D97736" stroke-width="0.7" />
+        <rect width="162" height="42" rx="5" fill="#0A201A" stroke="#D97736" stroke-width="0.8" />
         <text x="8" y="14" class="font-sans" font-size="8.5" font-weight="700" fill="#D97736">Fallback: Claude / Llama 3.3</text>
         <text x="8" y="26" class="font-mono" font-size="7.5" fill="#EFECE6">Zero-Downtime Hot Standby</text>
         <text x="8" y="36" class="font-sans" font-size="7" fill="#A0C9B9">Auto-Failover on HTTP 429/5xx</text>
       </g>
     </g>
 
-    <!-- Footer Stats Strip -->
-    <g transform="translate(12, 86)">
-      <rect width="332" height="24" rx="4" fill="#0E241E" />
+    <g transform="translate(12, 88)">
+      <rect width="332" height="24" rx="4" fill="#0B1E19" />
       <text x="10" y="16" class="font-mono" font-size="8" fill="#EFECE6">Fallback Trigger: Timeout &gt; 2.5s</text>
       <text x="190" y="16" class="font-mono" font-size="8" fill="#10B981">Structured Output Mode (Tool-Use)</text>
     </g>

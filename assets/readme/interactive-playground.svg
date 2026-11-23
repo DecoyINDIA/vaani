@@ -1,47 +1,83 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 380" width="100%" height="auto" role="img" aria-label="Vaani Vernacular Sandbox Simulator">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 380" width="100%" height="auto" role="img" aria-label="Vaani Liquid Glass Vernacular Sandbox Simulator">
   <defs>
-    <!-- Background Gradient -->
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0E2822" />
-      <stop offset="50%" stop-color="#12352C" />
-      <stop offset="100%" stop-color="#081814" />
+    <!-- Background Canvas & Living Aurora Gradients -->
+    <linearGradient id="sandCanvas" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#081A15" />
+      <stop offset="50%" stop-color="#0C251F" />
+      <stop offset="100%" stop-color="#05120E" />
     </linearGradient>
 
-    <!-- Card Background Gradient -->
-    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#153C32" />
-      <stop offset="100%" stop-color="#0E2822" />
+    <!-- Liquid Glass Surface Gradient -->
+    <linearGradient id="sandGlassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#164337" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#0F2E26" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#081E18" stop-opacity="0.96" />
     </linearGradient>
 
-    <!-- User Bubble Gradient -->
-    <linearGradient id="userBubbleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1A473B" />
-      <stop offset="100%" stop-color="#14392F" />
+    <!-- Specular Rim Gradient for Refractive Glass Edges -->
+    <linearGradient id="sandSpecularRim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.7" />
+      <stop offset="25%" stop-color="#10B981" stop-opacity="0.85" />
+      <stop offset="70%" stop-color="#1D6D56" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.15" />
     </linearGradient>
 
-    <!-- Bot Bubble Gradient -->
-    <linearGradient id="botBubbleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#184A3D" />
-      <stop offset="100%" stop-color="#10332A" />
-    </linearGradient>
-
-    <!-- Tab Active Glow -->
-    <linearGradient id="tabActiveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+    <!-- Tab Active Glow Gradient -->
+    <linearGradient id="sandTabActive" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#1D6D56" />
-      <stop offset="100%" stop-color="#248267" />
+      <stop offset="50%" stop-color="#248267" />
+      <stop offset="100%" stop-color="#10B981" />
     </linearGradient>
 
-    <filter id="shadowFilter" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000000" flood-opacity="0.5" />
+    <!-- User Chat Bubble Glass Gradient -->
+    <linearGradient id="sandUserBubble" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1B493C" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#12372D" stop-opacity="0.95" />
+    </linearGradient>
+
+    <!-- Bot Chat Bubble Glass Gradient -->
+    <linearGradient id="sandBotBubble" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E5244" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#11362D" stop-opacity="0.98" />
+    </linearGradient>
+
+    <!-- 45-degree Sheen Gradient -->
+    <linearGradient id="sandSheen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0" />
+      <stop offset="44%" stop-color="#FFFFFF" stop-opacity="0" />
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.2" />
+      <stop offset="56%" stop-color="#FFFFFF" stop-opacity="0" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Laser Beam Clip Gradient -->
+    <linearGradient id="laserBeamClipSand" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10B981" stop-opacity="0" />
+      <stop offset="60%" stop-color="#10B981" stop-opacity="0.9" />
+      <stop offset="90%" stop-color="#34D399" stop-opacity="1" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="1" />
+    </linearGradient>
+
+    <!-- Filters: Neon Glow, Aurora Blur & Glass Shadow -->
+    <filter id="neonSand" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
     </filter>
 
-    <filter id="activeGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#10B981" flood-opacity="0.6" />
+    <filter id="auroraBlurSand" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="38" />
     </filter>
 
-    <!-- Dot Pattern -->
-    <pattern id="sandboxDots" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#1D6D56" fill-opacity="0.25" />
+    <filter id="sandShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000000" flood-opacity="0.65" />
+    </filter>
+
+    <!-- Background Tech Grid Pattern -->
+    <pattern id="sandMatrix" width="22" height="22" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#1D6D56" fill-opacity="0.28" />
     </pattern>
   </defs>
 
@@ -50,11 +86,48 @@
     .font-sans { font-family: "Noto Sans Odia", "Noto Sans Devanagari", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
     .font-mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; }
 
-    /* Tab Indicator Sliding Animation (16s cycle) */
-    .tab-slider {
-      animation: slideTabs 16s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    /* Living Aurora Ambient Glows */
+    .aurora-sand-1 {
+      animation: auroraSand1 11s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
     }
-    @keyframes slideTabs {
+    @keyframes auroraSand1 {
+      0% { transform: translate(130px, 80px) scale(1); opacity: 0.35; }
+      100% { transform: translate(300px, 150px) scale(1.3); opacity: 0.6; }
+    }
+
+    .aurora-sand-2 {
+      animation: auroraSand2 13s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
+    }
+    @keyframes auroraSand2 {
+      0% { transform: translate(700px, 260px) scale(1.1); opacity: 0.3; }
+      100% { transform: translate(540px, 180px) scale(1.35); opacity: 0.55; }
+    }
+
+    /* Perimeter Border Laser Beam Tracer (React-Bits) */
+    .sand-laser-tracer {
+      stroke-dasharray: 130 750;
+      animation: traceSandBox 9s linear infinite;
+    }
+    @keyframes traceSandBox {
+      0% { stroke-dashoffset: 880; }
+      100% { stroke-dashoffset: 0; }
+    }
+
+    /* 45-degree Glass Sheen Sweep */
+    .sheen-sand-sweep {
+      animation: sweepSandSheen 6.5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+    @keyframes sweepSandSheen {
+      0%, 15% { transform: translateX(-350px) rotate(25deg); opacity: 0; }
+      35% { opacity: 0.75; }
+      55%, 100% { transform: translateX(650px) rotate(25deg); opacity: 0; }
+    }
+
+    /* Liquid Glass Tab Indicator Sliding (16s cycle, GSAP Power4.out) */
+    .tab-slider-gsap {
+      animation: slideTabsGsap 16s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+    @keyframes slideTabsGsap {
       0%, 22% { transform: translateX(0px); }
       25%, 47% { transform: translateX(202px); }
       50%, 72% { transform: translateX(404px); }
@@ -62,51 +135,61 @@
       100% { transform: translateX(0px); }
     }
 
-    /* Tab Label Color Transitions */
-    .tab-lbl-1 { animation: tabText1 16s ease-in-out infinite; }
-    .tab-lbl-2 { animation: tabText2 16s ease-in-out infinite; }
-    .tab-lbl-3 { animation: tabText3 16s ease-in-out infinite; }
-    .tab-lbl-4 { animation: tabText4 16s ease-in-out infinite; }
+    /* Tab Text Color Highlight Synchronized with Tabs */
+    .tab-t-1 { animation: tabColor1 16s ease-in-out infinite; }
+    .tab-t-2 { animation: tabColor2 16s ease-in-out infinite; }
+    .tab-t-3 { animation: tabColor3 16s ease-in-out infinite; }
+    .tab-t-4 { animation: tabColor4 16s ease-in-out infinite; }
 
-    @keyframes tabText1 { 0%, 22% { fill: #FFFFFF; font-weight: 700; } 25%, 100% { fill: #A0C9B9; font-weight: 500; } }
-    @keyframes tabText2 { 0%, 22% { fill: #A0C9B9; font-weight: 500; } 25%, 47% { fill: #FFFFFF; font-weight: 700; } 50%, 100% { fill: #A0C9B9; font-weight: 500; } }
-    @keyframes tabText3 { 0%, 47% { fill: #A0C9B9; font-weight: 500; } 50%, 72% { fill: #FFFFFF; font-weight: 700; } 75%, 100% { fill: #A0C9B9; font-weight: 500; } }
-    @keyframes tabText4 { 0%, 72% { fill: #A0C9B9; font-weight: 500; } 75%, 97% { fill: #FFFFFF; font-weight: 700; } 100% { fill: #A0C9B9; font-weight: 500; } }
+    @keyframes tabColor1 { 0%, 22% { fill: #FFFFFF; font-weight: 800; } 25%, 100% { fill: #A0C9B9; font-weight: 500; } }
+    @keyframes tabColor2 { 0%, 22% { fill: #A0C9B9; font-weight: 500; } 25%, 47% { fill: #FFFFFF; font-weight: 800; } 50%, 100% { fill: #A0C9B9; font-weight: 500; } }
+    @keyframes tabColor3 { 0%, 47% { fill: #A0C9B9; font-weight: 500; } 50%, 72% { fill: #FFFFFF; font-weight: 800; } 75%, 100% { fill: #A0C9B9; font-weight: 500; } }
+    @keyframes tabColor4 { 0%, 72% { fill: #A0C9B9; font-weight: 500; } 75%, 97% { fill: #FFFFFF; font-weight: 800; } 100% { fill: #A0C9B9; font-weight: 500; } }
 
-    /* Conversation Frames Switching */
-    .frame-hindi    { animation: showFrame1 16s ease-in-out infinite; }
-    .frame-odia     { animation: showFrame2 16s ease-in-out infinite; }
-    .frame-hinglish { animation: showFrame3 16s ease-in-out infinite; }
-    .frame-english  { animation: showFrame4 16s ease-in-out infinite; }
+    /* Conversation Frames Transitions with GSAP Spring Overshoot */
+    .frame-hindi    { animation: animFrame1 16s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
+    .frame-odia     { animation: animFrame2 16s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
+    .frame-hinglish { animation: animFrame3 16s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
+    .frame-english  { animation: animFrame4 16s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
 
-    @keyframes showFrame1 {
+    @keyframes animFrame1 {
       0%, 22% { opacity: 1; transform: translateY(0); pointer-events: auto; }
-      24%, 100% { opacity: 0; transform: translateY(4px); pointer-events: none; }
+      24%, 100% { opacity: 0; transform: translateY(6px); pointer-events: none; }
     }
-    @keyframes showFrame2 {
-      0%, 23% { opacity: 0; transform: translateY(4px); pointer-events: none; }
+    @keyframes animFrame2 {
+      0%, 23% { opacity: 0; transform: translateY(6px); pointer-events: none; }
       25%, 47% { opacity: 1; transform: translateY(0); pointer-events: auto; }
-      49%, 100% { opacity: 0; transform: translateY(4px); pointer-events: none; }
+      49%, 100% { opacity: 0; transform: translateY(6px); pointer-events: none; }
     }
-    @keyframes showFrame3 {
-      0%, 48% { opacity: 0; transform: translateY(4px); pointer-events: none; }
+    @keyframes animFrame3 {
+      0%, 48% { opacity: 0; transform: translateY(6px); pointer-events: none; }
       50%, 72% { opacity: 1; transform: translateY(0); pointer-events: auto; }
-      74%, 100% { opacity: 0; transform: translateY(4px); pointer-events: none; }
+      74%, 100% { opacity: 0; transform: translateY(6px); pointer-events: none; }
     }
-    @keyframes showFrame4 {
-      0%, 73% { opacity: 0; transform: translateY(4px); pointer-events: none; }
+    @keyframes animFrame4 {
+      0%, 73% { opacity: 0; transform: translateY(6px); pointer-events: none; }
       75%, 97% { opacity: 1; transform: translateY(0); pointer-events: auto; }
-      99%, 100% { opacity: 0; transform: translateY(4px); pointer-events: none; }
+      99%, 100% { opacity: 0; transform: translateY(6px); pointer-events: none; }
     }
 
-    /* Live Indicator Pulse */
-    .radar-pulse {
-      animation: radarPing 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+    /* Radar Ping for Live Telemetry */
+    .radar-sand {
+      animation: radarSandPing 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
     }
-    @keyframes radarPing {
-      0% { r: 3.5px; opacity: 1; }
-      70% { r: 9px; opacity: 0; }
+    @keyframes radarSandPing {
+      0% { r: 3.5px; opacity: 1; stroke-width: 1.5px; }
+      75% { r: 12px; opacity: 0; stroke-width: 0.5px; }
       100% { r: 3.5px; opacity: 0; }
+    }
+
+    /* 120s Atomic Countdown Timer Ring */
+    .timer-ring {
+      stroke-dasharray: 44;
+      animation: countdownArc 4s linear infinite;
+    }
+    @keyframes countdownArc {
+      0% { stroke-dashoffset: 0; }
+      100% { stroke-dashoffset: 44; }
     }
 
     /* Reduced Motion */
@@ -116,130 +199,150 @@
         transform: none !important;
       }
       .frame-hindi { opacity: 1 !important; pointer-events: auto !important; }
-      .frame-odia, .frame-hinglish, .frame-english { display: none !important; }
-      .tab-slider { transform: translateX(0px) !important; }
+      .frame-odia, .frame-hinglish, .frame-english, .radar-sand, .sand-laser-tracer, .sheen-sand-sweep {
+        display: none !important;
+      }
+      .tab-slider-gsap { transform: translateX(0px) !important; }
     }
     ]]>
   </style>
 
-  <!-- Canvas Outer Rect -->
-  <rect width="860" height="380" rx="14" fill="url(#bgGrad)" stroke="#1D6D56" stroke-width="1.5" filter="url(#shadowFilter)" />
-  <rect width="860" height="380" rx="14" fill="url(#sandboxDots)" />
+  <!-- ==================== LIVING AURORA BACKDROP ==================== -->
+  <rect width="860" height="380" rx="16" fill="url(#sandCanvas)" stroke="#1D6D56" stroke-width="1.5" />
+  
+  <g filter="url(#auroraBlurSand)">
+    <circle cx="160" cy="110" r="110" fill="#10B981" class="aurora-sand-1" />
+    <circle cx="710" cy="260" r="120" fill="#D97736" class="aurora-sand-2" />
+  </g>
+
+  <rect width="860" height="380" rx="16" fill="url(#sandMatrix)" />
 
   <!-- ==================== HEADER BAR ==================== -->
   <g id="sandbox-header" transform="translate(24, 16)">
-    <!-- Title Pill -->
-    <rect width="254" height="28" rx="14" fill="#143A30" stroke="#1D6D56" stroke-width="1" />
-    <circle cx="16" cy="14" r="3.5" fill="#10B981" />
-    <circle cx="16" cy="14" r="3.5" fill="none" stroke="#10B981" stroke-width="1" class="radar-pulse" />
-    <text x="28" y="18" class="font-sans" font-size="10" font-weight="800" fill="#FFFFFF" letter-spacing="0.6">VERNACULAR SANDBOX</text>
-    <rect x="180" y="5" width="66" height="18" rx="4" fill="#0C201B" />
-    <text x="213" y="17" text-anchor="middle" class="font-mono" font-size="8" font-weight="700" fill="#10B981">LIVE REEL</text>
+    <!-- Title Capsule -->
+    <rect width="258" height="30" rx="15" fill="url(#sandGlassGrad)" stroke="url(#sandSpecularRim)" stroke-width="1.2" filter="url(#sandShadow)" />
+    <circle cx="16" cy="15" r="3.5" fill="#10B981" />
+    <circle cx="16" cy="15" r="3.5" fill="none" stroke="#10B981" class="radar-sand" />
+    <text x="28" y="19.5" class="font-sans" font-size="10.5" font-weight="800" fill="#FFFFFF" letter-spacing="0.6">VERNACULAR SANDBOX</text>
+    <rect x="184" y="6" width="64" height="18" rx="4" fill="#0C201B" />
+    <text x="216" y="18" text-anchor="middle" class="font-mono" font-size="8" font-weight="700" fill="#10B981">LIVE REEL</text>
 
     <!-- Floating Badge 1: Zero Hallucination Gate -->
-    <g transform="translate(266, 0)">
-      <rect width="270" height="28" rx="6" fill="#102E26" stroke="#10B981" stroke-width="0.9" />
+    <g transform="translate(270, 0)">
+      <rect width="270" height="30" rx="8" fill="url(#sandGlassGrad)" stroke="#10B981" stroke-width="1" />
       <!-- Shield Icon -->
-      <path d="M 14 8 L 22 8 Q 22 18 14 22 Q 6 18 6 8 Z" fill="#10B981" fill-opacity="0.2" stroke="#10B981" stroke-width="1.2" />
-      <path d="M 11 15 L 13 17 L 18 12" fill="none" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round" />
-      <text x="28" y="18" class="font-sans" font-size="9.5" font-weight="700" fill="#EFECE6">Zero Hallucination Discrete Token Gate</text>
+      <path d="M 14 9 L 22 9 Q 22 19 14 23 Q 6 19 6 9 Z" fill="#10B981" fill-opacity="0.25" stroke="#10B981" stroke-width="1.2" />
+      <path d="M 11 16 L 13 18 L 18 13" fill="none" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round" />
+      <text x="28" y="19" class="font-sans" font-size="9.5" font-weight="700" fill="#EFECE6">Zero Hallucination Discrete Token Gate</text>
     </g>
 
     <!-- Badge 2: Latency -->
-    <g transform="translate(546, 0)">
-      <rect width="128" height="28" rx="6" fill="#102E26" stroke="#1D6D56" stroke-width="0.8" />
-      <circle cx="12" cy="14" r="3" fill="#10B981" />
-      <text x="20" y="18" class="font-mono" font-size="9.5" font-weight="600" fill="#A0C9B9">p50: 1.8s</text>
-      <text x="76" y="18" class="font-mono" font-size="8.5" fill="#64748B">p95 &lt; 3.0s</text>
+    <g transform="translate(552, 0)">
+      <rect width="130" height="30" rx="8" fill="url(#sandGlassGrad)" stroke="url(#sandSpecularRim)" stroke-width="0.8" />
+      <circle cx="14" cy="15" r="3" fill="#10B981" />
+      <text x="22" y="19" class="font-mono" font-size="9.5" font-weight="700" fill="#A0C9B9">p50: 1.8s</text>
+      <text x="78" y="19" class="font-mono" font-size="8.5" fill="#64748B">p95 &lt; 3.0s</text>
     </g>
 
     <!-- Badge 3: CSAT -->
-    <g transform="translate(684, 0)">
-      <rect width="128" height="28" rx="6" fill="#102E26" stroke="#F59E0B" stroke-width="0.8" />
-      <text x="10" y="18" class="font-sans" font-size="9.5" font-weight="700" fill="#F59E0B">⭐ 4.9/5 CSAT</text>
-      <text x="82" y="18" class="font-mono" font-size="8" fill="#EFECE6">(Pan-India)</text>
+    <g transform="translate(694, 0)">
+      <rect width="118" height="30" rx="8" fill="url(#sandGlassGrad)" stroke="#F59E0B" stroke-width="0.9" />
+      <text x="10" y="19.5" class="font-sans" font-size="9.5" font-weight="800" fill="#F59E0B">⭐ 4.9/5 CSAT</text>
     </g>
   </g>
 
   <!-- ==================== LANGUAGE SELECTOR TABS ==================== -->
   <g id="language-tabs" transform="translate(24, 56)">
-    <!-- Container pill -->
-    <rect width="812" height="36" rx="8" fill="#0E2822" stroke="#1D6D56" stroke-width="1" />
+    <!-- Container Pill -->
+    <rect width="812" height="36" rx="10" fill="url(#sandGlassGrad)" stroke="url(#sandSpecularRim)" stroke-width="1.2" />
 
-    <!-- Animated Active Pill Slider -->
-    <g class="tab-slider">
-      <rect x="4" y="4" width="196" height="28" rx="6" fill="url(#tabActiveGrad)" stroke="#10B981" stroke-width="1.2" filter="url(#activeGlow)" />
+    <!-- GSAP Power4.out Animated Tab Highlight Capsule -->
+    <g class="tab-slider-gsap">
+      <rect x="4" y="4" width="196" height="28" rx="7" fill="url(#sandTabActive)" stroke="#FFFFFF" stroke-width="0.8" filter="url(#neonSand)" />
     </g>
 
     <!-- Tab 1: Hindi -->
     <g transform="translate(4, 4)">
-      <text x="98" y="18" text-anchor="middle" class="font-sans tab-lbl-1" font-size="11">हिन्दी (Hindi)</text>
+      <text x="98" y="18.5" text-anchor="middle" class="font-sans tab-t-1" font-size="11">हिन्दी (Hindi)</text>
     </g>
 
     <!-- Tab 2: Odia -->
     <g transform="translate(206, 4)">
-      <text x="98" y="18" text-anchor="middle" class="font-sans tab-lbl-2" font-size="11">ଓଡ଼ିଆ (Odia)</text>
+      <text x="98" y="18.5" text-anchor="middle" class="font-sans tab-t-2" font-size="11">ଓଡ଼ିଆ (Odia)</text>
     </g>
 
     <!-- Tab 3: Hinglish -->
     <g transform="translate(408, 4)">
-      <text x="98" y="18" text-anchor="middle" class="font-sans tab-lbl-3" font-size="11">Hinglish (Colloquial)</text>
+      <text x="98" y="18.5" text-anchor="middle" class="font-sans tab-t-3" font-size="11">Hinglish (Colloquial)</text>
     </g>
 
     <!-- Tab 4: English -->
     <g transform="translate(610, 4)">
-      <text x="98" y="18" text-anchor="middle" class="font-sans tab-lbl-4" font-size="11">English (Direct)</text>
+      <text x="98" y="18.5" text-anchor="middle" class="font-sans tab-t-4" font-size="11">English (Direct)</text>
     </g>
   </g>
 
   <!-- ==================== SANDBOX WORKSPACE ==================== -->
   <g id="sandbox-viewport" transform="translate(24, 102)">
-    <!-- Inner Background Box -->
-    <rect width="812" height="226" rx="8" fill="url(#cardGrad)" stroke="#1D6D56" stroke-width="1" />
+    <!-- Liquid Glass Frame with Specular Rim -->
+    <rect width="812" height="226" rx="10" fill="url(#sandGlassGrad)" stroke="url(#sandSpecularRim)" stroke-width="1.4" filter="url(#sandShadow)" />
+    
+    <!-- React-Bits Laser Beam Tracer running around workspace perimeter -->
+    <rect width="812" height="226" rx="10" fill="none" stroke="url(#laserBeamClipSand)" stroke-width="2" class="sand-laser-tracer" filter="url(#neonSand)" />
 
-    <!-- Sub-header: Clinic Identity Bar -->
+    <!-- 45-degree Glass Sheen Sweep -->
+    <g clip-path="url(#sandClip)">
+      <clipPath id="sandClip">
+        <rect width="812" height="226" rx="10" />
+      </clipPath>
+      <rect x="-100" y="-50" width="180" height="340" fill="url(#sandSheen)" class="sheen-sand-sweep" />
+    </g>
+
+    <!-- Sub-header: Clinic Identity Bar (Bhubaneswar Landmark) -->
     <g transform="translate(16, 12)">
-      <!-- Avatar Circle -->
-      <circle cx="16" cy="16" r="16" fill="#18493C" stroke="#10B981" stroke-width="1" />
+      <circle cx="16" cy="16" r="16" fill="#18493C" stroke="#10B981" stroke-width="1.2" />
       <text x="16" y="21" text-anchor="middle" class="font-sans" font-size="13" font-weight="700" fill="#FFFFFF">🩺</text>
       
-      <!-- Doctor / Clinic Name -->
-      <text x="40" y="15" class="font-sans" font-size="11" font-weight="700" fill="#FFFFFF">Dr. Priya Sharma • Apex Health Clinic</text>
+      <text x="40" y="15" class="font-sans" font-size="11" font-weight="800" fill="#FFFFFF">Dr. Priya Sharma • Apex Health Clinic</text>
       <circle cx="270" cy="11" r="3" fill="#10B981" />
-      <text x="278" y="15" class="font-sans" font-size="9" fill="#10B981" font-weight="600">WhatsApp Verified Assistant</text>
-      <text x="40" y="27" class="font-sans" font-size="8.5" fill="#A0C9B9">Bapuji Nagar, Bhubaneswar • Timings: 10:00 AM - 08:00 PM</text>
+      <text x="278" y="15" class="font-sans" font-size="9" fill="#10B981" font-weight="700">WhatsApp Verified Assistant</text>
+      <text x="40" y="27" class="font-sans" font-size="8.5" fill="#A0C9B9">Bapuji Nagar (Opp. SBI Main Branch), Bhubaneswar • Timings: 10:00 AM - 08:00 PM</text>
       
-      <!-- Tenant ID Pill -->
-      <rect x="660" y="4" width="120" height="20" rx="4" fill="#0C201B" stroke="#1D6D56" stroke-width="0.7" />
-      <text x="720" y="17" text-anchor="middle" class="font-mono" font-size="8" fill="#A0C9B9">tenant_or_402 • LIVE</text>
+      <!-- 120s Atomic Countdown Timer Badge -->
+      <g transform="translate(630, 4)">
+        <rect width="150" height="22" rx="11" fill="#0C201B" stroke="#D97736" stroke-width="0.8" />
+        <!-- Circular Arc Timer -->
+        <circle cx="12" cy="11" r="7" fill="none" stroke="#D97736" stroke-width="1.5" stroke-opacity="0.3" />
+        <circle cx="12" cy="11" r="7" fill="none" stroke="#F59E0B" stroke-width="1.5" class="timer-ring" />
+        <text x="24" y="14.5" class="font-mono" font-size="8.5" font-weight="700" fill="#FDE68A">120s ATOMIC HOLD</text>
+      </g>
     </g>
 
     <line x1="16" y1="46" x2="796" y2="46" stroke="#1D6D56" stroke-width="0.8" stroke-opacity="0.6" />
 
     <!-- ==================== FRAME 1: HINDI ==================== -->
     <g class="frame-hindi" transform="translate(16, 54)">
-      <!-- Customer User Bubble (Right) -->
+      <!-- Customer User Bubble -->
       <g transform="translate(420, 4)">
-        <rect width="360" height="42" rx="8" fill="url(#userBubbleGrad)" stroke="#1D6D56" stroke-width="0.8" />
-        <text x="14" y="18" class="font-sans" font-size="10.5" font-weight="600" fill="#FFFFFF">कल शाम 5 बजे डॉक्टर प्रिया से अपॉइंटमेंट मिलेगा?</text>
+        <rect width="360" height="42" rx="8" fill="url(#sandUserBubble)" stroke="url(#sandSpecularRim)" stroke-width="0.8" />
+        <text x="14" y="18" class="font-sans" font-size="10.5" font-weight="700" fill="#FFFFFF">कल शाम 5 बजे डॉक्टर प्रिया से अपॉइंटमेंट मिलेगा?</text>
         <text x="312" y="34" class="font-mono" font-size="8" fill="#A0C9B9">16:42 ✓✓</text>
       </g>
 
-      <!-- Vaani Bot Response Bubble (Left) -->
+      <!-- Vaani Bot Response Bubble -->
       <g transform="translate(0, 52)">
-        <rect width="660" height="66" rx="8" fill="url(#botBubbleGrad)" stroke="#10B981" stroke-width="1" />
-        <!-- Bot Icon badge -->
-        <circle cx="18" cy="18" r="8" fill="#183F35" stroke="#10B981" stroke-width="0.8" />
-        <text x="18" y="21" text-anchor="middle" class="font-sans" font-size="9" font-weight="700" fill="#10B981">वा</text>
+        <rect width="660" height="66" rx="8" fill="url(#sandBotBubble)" stroke="url(#sandSpecularRim)" stroke-width="1" />
+        <circle cx="18" cy="18" r="8" fill="#183F35" stroke="#10B981" stroke-width="1" />
+        <text x="18" y="21" text-anchor="middle" class="font-sans" font-size="9" font-weight="800" fill="#10B981">वा</text>
 
-        <text x="34" y="20" class="font-sans" font-size="10.5" font-weight="600" fill="#FFFFFF">
+        <text x="34" y="20" class="font-sans" font-size="10.5" font-weight="700" fill="#FFFFFF">
           जी बिल्कुल! कल (मंगलवार) शाम 5:00 बजे डॉ. प्रिया का स्लॉट खाली है।
         </text>
         <text x="34" y="36" class="font-sans" font-size="10" fill="#EFECE6">
-          क्या मैं आपके नाम 'सुमित कुमार' के लिए यह समय निश्चित (Book) कर दूँ?
+          बापूजी नगर क्लिनिक के लिए क्या मैं आपका नाम 'सुमित कुमार' निश्चित (Book) कर दूँ?
         </text>
 
-        <!-- Interactive Quick-Reply Buttons -->
+        <!-- Quick-Reply Action Buttons -->
         <g transform="translate(34, 44)">
           <rect width="144" height="18" rx="4" fill="#1D6D56" stroke="#10B981" stroke-width="0.8" />
           <text x="72" y="12.5" text-anchor="middle" class="font-sans" font-size="9" font-weight="700" fill="#FFFFFF">✓ 5:00 PM बुक करें</text>
@@ -250,37 +353,36 @@
         <text x="618" y="58" class="font-mono" font-size="8" fill="#10B981">16:42 • 1.8s</text>
       </g>
 
-      <!-- State Pill -->
       <g transform="translate(0, 130)">
         <text class="font-mono" font-size="8.5" fill="#A0C9B9">
-          <tspan fill="#10B981">INTENT: </tspan>book_slot | <tspan fill="#10B981">LANG: </tspan>hi_IN (Devanagari) | <tspan fill="#F59E0B">GROUNDING: </tspan>100% In-Domain | <tspan fill="#D97736">SLOT HOLD: </tspan>120s
+          <tspan fill="#10B981" font-weight="700">INTENT: </tspan>book_slot | <tspan fill="#10B981" font-weight="700">LANG: </tspan>hi_IN (Devanagari) | <tspan fill="#F59E0B" font-weight="700">GROUNDING: </tspan>100% In-Domain | <tspan fill="#D97736" font-weight="700">SLOT HOLD: </tspan>120s
         </text>
       </g>
     </g>
 
     <!-- ==================== FRAME 2: ODIA ==================== -->
     <g class="frame-odia" transform="translate(16, 54)">
-      <!-- Customer User Bubble (Right) -->
+      <!-- Customer User Bubble -->
       <g transform="translate(390, 4)">
-        <rect width="390" height="42" rx="8" fill="url(#userBubbleGrad)" stroke="#1D6D56" stroke-width="0.8" />
-        <text x="14" y="18" class="font-sans" font-size="10" font-weight="600" fill="#FFFFFF">କାଲି ସନ୍ଧ୍ୟା ୫ଟାରେ ଡାକ୍ତର ପ୍ରିୟାଙ୍କ ସହ ଆପଏଣ୍ଟମେଣ୍ଟ ମିଳିବ କି?</text>
+        <rect width="390" height="42" rx="8" fill="url(#sandUserBubble)" stroke="url(#sandSpecularRim)" stroke-width="0.8" />
+        <text x="14" y="18" class="font-sans" font-size="10" font-weight="700" fill="#FFFFFF">କାଲି ସନ୍ଧ୍ୟା ୫ଟାରେ ଡାକ୍ତର ପ୍ରିୟାଙ୍କ ସହ ଆପଏଣ୍ଟମେଣ୍ଟ ମିଳିବ କି?</text>
         <text x="342" y="34" class="font-mono" font-size="8" fill="#A0C9B9">16:42 ✓✓</text>
       </g>
 
-      <!-- Vaani Bot Response Bubble (Left) -->
+      <!-- Vaani Bot Response Bubble -->
       <g transform="translate(0, 52)">
-        <rect width="660" height="66" rx="8" fill="url(#botBubbleGrad)" stroke="#10B981" stroke-width="1" />
-        <circle cx="18" cy="18" r="8" fill="#183F35" stroke="#10B981" stroke-width="0.8" />
-        <text x="18" y="21" text-anchor="middle" class="font-sans" font-size="9" font-weight="700" fill="#10B981">ବା</text>
+        <rect width="660" height="66" rx="8" fill="url(#sandBotBubble)" stroke="url(#sandSpecularRim)" stroke-width="1" />
+        <circle cx="18" cy="18" r="8" fill="#183F35" stroke="#10B981" stroke-width="1" />
+        <text x="18" y="21" text-anchor="middle" class="font-sans" font-size="9" font-weight="800" fill="#10B981">ବା</text>
 
-        <text x="34" y="20" class="font-sans" font-size="10" font-weight="600" fill="#FFFFFF">
+        <text x="34" y="20" class="font-sans" font-size="10" font-weight="700" fill="#FFFFFF">
           ହଁ ନିଶ୍ଚୟ! କାଲି ସନ୍ଧ୍ୟା ୫:୦୦ ଟାରେ ଡାକ୍ତର ପ୍ରିୟାଙ୍କ ସ୍ଲଟ୍ ଖାଲି ଅଛି।
         </text>
         <text x="34" y="36" class="font-sans" font-size="9.5" fill="#EFECE6">
-          ଆପଣଙ୍କ ପାଇଁ ଏହି ସମୟଟି ବୁକ୍ କରିଦେବି କି? (୧୨୦ ସେକେଣ୍ଡ ହୋଲ୍ଡ)
+          ବାପୁଜୀ ନଗର କ୍ଲିନିକ୍ ପାଇଁ ଆପଣଙ୍କ ନାମରେ ଏହି ସମୟଟି ବୁକ୍ କରିଦେବି କି? (୧୨୦ ସେକେଣ୍ଡ ହୋଲ୍ଡ)
         </text>
 
-        <!-- Interactive Quick-Reply Buttons -->
+        <!-- Quick-Reply Action Buttons -->
         <g transform="translate(34, 44)">
           <rect width="144" height="18" rx="4" fill="#1D6D56" stroke="#10B981" stroke-width="0.8" />
           <text x="72" y="12.5" text-anchor="middle" class="font-sans" font-size="9" font-weight="700" fill="#FFFFFF">✓ ୫:୦୦ PM ବୁକ୍ କରନ୍ତୁ</text>
@@ -291,37 +393,36 @@
         <text x="618" y="58" class="font-mono" font-size="8" fill="#10B981">16:42 • 1.7s</text>
       </g>
 
-      <!-- State Pill -->
       <g transform="translate(0, 130)">
         <text class="font-mono" font-size="8.5" fill="#A0C9B9">
-          <tspan fill="#10B981">INTENT: </tspan>book_slot | <tspan fill="#10B981">LANG: </tspan>or_IN (Odia Script) | <tspan fill="#F59E0B">GROUNDING: </tspan>100% In-Domain | <tspan fill="#D97736">SLOT HOLD: </tspan>120s
+          <tspan fill="#10B981" font-weight="700">INTENT: </tspan>book_slot | <tspan fill="#10B981" font-weight="700">LANG: </tspan>or_IN (Odia Script) | <tspan fill="#F59E0B" font-weight="700">GROUNDING: </tspan>100% In-Domain | <tspan fill="#D97736" font-weight="700">SLOT HOLD: </tspan>120s
         </text>
       </g>
     </g>
 
     <!-- ==================== FRAME 3: HINGLISH ==================== -->
     <g class="frame-hinglish" transform="translate(16, 54)">
-      <!-- Customer User Bubble (Right) -->
+      <!-- Customer User Bubble -->
       <g transform="translate(410, 4)">
-        <rect width="370" height="42" rx="8" fill="url(#userBubbleGrad)" stroke="#1D6D56" stroke-width="0.8" />
-        <text x="14" y="18" class="font-sans" font-size="10.5" font-weight="600" fill="#FFFFFF">Kal 5pm Dr. Priya ka appointment available hai kya?</text>
+        <rect width="370" height="42" rx="8" fill="url(#sandUserBubble)" stroke="url(#sandSpecularRim)" stroke-width="0.8" />
+        <text x="14" y="18" class="font-sans" font-size="10.5" font-weight="700" fill="#FFFFFF">Kal 5pm Dr. Priya ka appointment available hai kya?</text>
         <text x="322" y="34" class="font-mono" font-size="8" fill="#A0C9B9">16:42 ✓✓</text>
       </g>
 
-      <!-- Vaani Bot Response Bubble (Left) -->
+      <!-- Vaani Bot Response Bubble -->
       <g transform="translate(0, 52)">
-        <rect width="660" height="66" rx="8" fill="url(#botBubbleGrad)" stroke="#10B981" stroke-width="1" />
-        <circle cx="18" cy="18" r="8" fill="#183F35" stroke="#10B981" stroke-width="0.8" />
-        <text x="18" y="21" text-anchor="middle" class="font-sans" font-size="9" font-weight="700" fill="#10B981">V</text>
+        <rect width="660" height="66" rx="8" fill="url(#sandBotBubble)" stroke="url(#sandSpecularRim)" stroke-width="1" />
+        <circle cx="18" cy="18" r="8" fill="#183F35" stroke="#10B981" stroke-width="1" />
+        <text x="18" y="21" text-anchor="middle" class="font-sans" font-size="9" font-weight="800" fill="#10B981">V</text>
 
-        <text x="34" y="20" class="font-sans" font-size="10.5" font-weight="600" fill="#FFFFFF">
+        <text x="34" y="20" class="font-sans" font-size="10.5" font-weight="700" fill="#FFFFFF">
           Haanji! Kal (Tuesday) 5:00 PM pe Dr. Priya ka slot available hai.
         </text>
         <text x="34" y="36" class="font-sans" font-size="10" fill="#EFECE6">
-          Should I confirm this 5:00 PM booking under your name 'Sumit'?
+          Bapuji Nagar Clinic ke liye should I confirm this 5:00 PM slot under your name 'Sumit'?
         </text>
 
-        <!-- Interactive Quick-Reply Buttons -->
+        <!-- Quick-Reply Action Buttons -->
         <g transform="translate(34, 44)">
           <rect width="144" height="18" rx="4" fill="#1D6D56" stroke="#10B981" stroke-width="0.8" />
           <text x="72" y="12.5" text-anchor="middle" class="font-sans" font-size="9" font-weight="700" fill="#FFFFFF">✓ Confirm 5:00 PM</text>
@@ -332,37 +433,36 @@
         <text x="618" y="58" class="font-mono" font-size="8" fill="#10B981">16:42 • 1.9s</text>
       </g>
 
-      <!-- State Pill -->
       <g transform="translate(0, 130)">
         <text class="font-mono" font-size="8.5" fill="#A0C9B9">
-          <tspan fill="#10B981">INTENT: </tspan>book_slot | <tspan fill="#10B981">LANG: </tspan>hi_Latn (Hinglish) | <tspan fill="#F59E0B">GROUNDING: </tspan>100% In-Domain | <tspan fill="#D97736">SLOT HOLD: </tspan>120s
+          <tspan fill="#10B981" font-weight="700">INTENT: </tspan>book_slot | <tspan fill="#10B981" font-weight="700">LANG: </tspan>hi_Latn (Hinglish) | <tspan fill="#F59E0B" font-weight="700">GROUNDING: </tspan>100% In-Domain | <tspan fill="#D97736" font-weight="700">SLOT HOLD: </tspan>120s
         </text>
       </g>
     </g>
 
     <!-- ==================== FRAME 4: ENGLISH ==================== -->
     <g class="frame-english" transform="translate(16, 54)">
-      <!-- Customer User Bubble (Right) -->
+      <!-- Customer User Bubble -->
       <g transform="translate(420, 4)">
-        <rect width="360" height="42" rx="8" fill="url(#userBubbleGrad)" stroke="#1D6D56" stroke-width="0.8" />
-        <text x="14" y="18" class="font-sans" font-size="10.5" font-weight="600" fill="#FFFFFF">Can I book Dr. Priya for tomorrow 5:00 PM?</text>
+        <rect width="360" height="42" rx="8" fill="url(#sandUserBubble)" stroke="url(#sandSpecularRim)" stroke-width="0.8" />
+        <text x="14" y="18" class="font-sans" font-size="10.5" font-weight="700" fill="#FFFFFF">Can I book Dr. Priya for tomorrow 5:00 PM?</text>
         <text x="312" y="34" class="font-mono" font-size="8" fill="#A0C9B9">16:42 ✓✓</text>
       </g>
 
-      <!-- Vaani Bot Response Bubble (Left) -->
+      <!-- Vaani Bot Response Bubble -->
       <g transform="translate(0, 52)">
-        <rect width="660" height="66" rx="8" fill="url(#botBubbleGrad)" stroke="#10B981" stroke-width="1" />
-        <circle cx="18" cy="18" r="8" fill="#183F35" stroke="#10B981" stroke-width="0.8" />
-        <text x="18" y="21" text-anchor="middle" class="font-sans" font-size="9" font-weight="700" fill="#10B981">V</text>
+        <rect width="660" height="66" rx="8" fill="url(#sandBotBubble)" stroke="url(#sandSpecularRim)" stroke-width="1" />
+        <circle cx="18" cy="18" r="8" fill="#183F35" stroke="#10B981" stroke-width="1" />
+        <text x="18" y="21" text-anchor="middle" class="font-sans" font-size="9" font-weight="800" fill="#10B981">V</text>
 
-        <text x="34" y="20" class="font-sans" font-size="10.5" font-weight="600" fill="#FFFFFF">
-          Yes! Dr. Priya has an opening tomorrow at 5:00 PM at Apex Clinic.
+        <text x="34" y="20" class="font-sans" font-size="10.5" font-weight="700" fill="#FFFFFF">
+          Yes! Dr. Priya has an opening tomorrow at 5:00 PM at Apex Clinic (Bapuji Nagar).
         </text>
         <text x="34" y="36" class="font-sans" font-size="10" fill="#EFECE6">
-          I have placed a 120-second atomic hold. Would you like to confirm?
+          I have placed a 120-second atomic hold. Would you like to confirm this reservation?
         </text>
 
-        <!-- Interactive Quick-Reply Buttons -->
+        <!-- Quick-Reply Action Buttons -->
         <g transform="translate(34, 44)">
           <rect width="144" height="18" rx="4" fill="#1D6D56" stroke="#10B981" stroke-width="0.8" />
           <text x="72" y="12.5" text-anchor="middle" class="font-sans" font-size="9" font-weight="700" fill="#FFFFFF">✓ Confirm 5:00 PM</text>
@@ -373,10 +473,9 @@
         <text x="618" y="58" class="font-mono" font-size="8" fill="#10B981">16:42 • 1.6s</text>
       </g>
 
-      <!-- State Pill -->
       <g transform="translate(0, 130)">
         <text class="font-mono" font-size="8.5" fill="#A0C9B9">
-          <tspan fill="#10B981">INTENT: </tspan>book_slot | <tspan fill="#10B981">LANG: </tspan>en_IN (English) | <tspan fill="#F59E0B">GROUNDING: </tspan>100% In-Domain | <tspan fill="#D97736">SLOT HOLD: </tspan>120s
+          <tspan fill="#10B981" font-weight="700">INTENT: </tspan>book_slot | <tspan fill="#10B981" font-weight="700">LANG: </tspan>en_IN (English) | <tspan fill="#F59E0B" font-weight="700">GROUNDING: </tspan>100% In-Domain | <tspan fill="#D97736" font-weight="700">SLOT HOLD: </tspan>120s
         </text>
       </g>
     </g>
@@ -384,20 +483,20 @@
 
   <!-- ==================== BOTTOM AUDIT TICKER ==================== -->
   <g id="sandbox-footer" transform="translate(24, 338)">
-    <rect width="812" height="28" rx="6" fill="#0C201B" stroke="#1D6D56" stroke-width="0.8" />
+    <rect width="812" height="30" rx="8" fill="url(#sandGlassGrad)" stroke="url(#sandSpecularRim)" stroke-width="0.9" />
     
-    <!-- Pulse checkmark -->
-    <circle cx="16" cy="14" r="4" fill="#10B981" />
-    <path d="M 13 14 L 15 16 L 19 12" fill="none" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round" />
-    <text x="28" y="17.5" class="font-mono" font-size="9" font-weight="600" fill="#10B981">FACT GROUNDING: PASS</text>
+    <!-- Pulse Checkmark -->
+    <circle cx="16" cy="15" r="4" fill="#10B981" />
+    <path d="M 13 15 L 15 17 L 19 13" fill="none" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round" />
+    <text x="28" y="18.5" class="font-mono" font-size="9" font-weight="700" fill="#10B981">FACT GROUNDING: PASS</text>
 
-    <!-- Middle Specs -->
-    <text x="180" y="17.5" class="font-mono" font-size="8.5" fill="#EFECE6">
+    <!-- Middle Pipeline Nodes -->
+    <text x="180" y="18.5" class="font-mono" font-size="8.5" fill="#EFECE6">
       <tspan fill="#64748B">Pipeline: </tspan>lang_detect ➔ intent ➔ scope_gate ➔ tool_router ➔ responder ➔ output_grounding
     </text>
 
     <!-- Right Audit Label -->
-    <rect x="714" y="5" width="88" height="18" rx="3" fill="#183F35" stroke="#1D6D56" stroke-width="0.6" />
-    <text x="758" y="17" text-anchor="middle" class="font-mono" font-size="8" font-weight="700" fill="#10B981">DPDP AUDIT ✓</text>
+    <rect x="712" y="6" width="90" height="18" rx="4" fill="#184337" stroke="#1D6D56" stroke-width="0.7" />
+    <text x="757" y="18" text-anchor="middle" class="font-mono" font-size="8" font-weight="800" fill="#10B981">DPDP AUDIT ✓</text>
   </g>
 </svg>

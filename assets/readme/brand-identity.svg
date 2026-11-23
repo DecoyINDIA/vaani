@@ -1,50 +1,86 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 240" width="100%" height="100%" role="img" aria-label="Vaani Brand Identity: Warm Intelligence - The AI Front Desk for Indian SMBs">
   <defs>
-    <!-- Background Gradients -->
-    <linearGradient id="brand-bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#183F35" />
-      <stop offset="50%" stop-color="#12352D" />
-      <stop offset="100%" stop-color="#0E2822" />
+    <!-- Background Gradient -->
+    <linearGradient id="brand-bg-ultra" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14362E" />
+      <stop offset="50%" stop-color="#0E2822" />
+      <stop offset="100%" stop-color="#081814" />
     </linearGradient>
 
-    <radialGradient id="emblem-core-glow" cx="130" cy="120" r="140" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#1D6D56" stop-opacity="0.6" />
-      <stop offset="50%" stop-color="#183F35" stop-opacity="0.2" />
+    <!-- Liquid Glass Specular Rim -->
+    <linearGradient id="brand-glass-rim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.6" />
+      <stop offset="25%" stop-color="#A0C9B9" stop-opacity="0.25" />
+      <stop offset="50%" stop-color="#1D6D56" stop-opacity="0.1" />
+      <stop offset="75%" stop-color="#F59E0B" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.2" />
+    </linearGradient>
+
+    <!-- Refractive Glass Surface Fill -->
+    <linearGradient id="brand-glass-fill" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A4739" stop-opacity="0.45" />
+      <stop offset="100%" stop-color="#0D2721" stop-opacity="0.75" />
+    </linearGradient>
+
+    <!-- Laser Border Beam Gradient -->
+    <linearGradient id="brand-laser-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="50%" stop-color="#22C55E" />
+      <stop offset="100%" stop-color="#A0C9B9" />
+    </linearGradient>
+
+    <!-- Liquid Sheen Gradient -->
+    <linearGradient id="brand-sheen" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0" />
+      <stop offset="45%" stop-color="#FFFFFF" stop-opacity="0" />
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.3" />
+      <stop offset="55%" stop-color="#FFFFFF" stop-opacity="0.45" />
+      <stop offset="60%" stop-color="#FFFFFF" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Core Radial Glow -->
+    <radialGradient id="emblem-aurora" cx="130" cy="120" r="130" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1D6D56" stop-opacity="0.65" />
+      <stop offset="50%" stop-color="#14362E" stop-opacity="0.25" />
       <stop offset="100%" stop-color="#0E2822" stop-opacity="0" />
     </radialGradient>
 
-    <linearGradient id="gold-amber" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#F59E0B" />
-      <stop offset="100%" stop-color="#D97736" />
-    </linearGradient>
-
-    <linearGradient id="synapse-line" x1="0%" y1="0%" x2="100%" y2="0%">
+    <!-- Synaptic Path Gradient -->
+    <linearGradient id="synapse-beam" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#1D6D56" stop-opacity="0.8" />
       <stop offset="50%" stop-color="#A0C9B9" stop-opacity="0.6" />
       <stop offset="100%" stop-color="#F59E0B" stop-opacity="0.8" />
     </linearGradient>
 
-    <linearGradient id="badge-pill" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1A473C" />
-      <stop offset="100%" stop-color="#11332B" />
-    </linearGradient>
-
     <!-- Glow & Shadow Filters -->
-    <filter id="soft-glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="6" result="blur" />
+    <filter id="emblem-halo" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
       <feMerge>
         <feMergeNode in="blur" />
         <feMergeNode in="SourceGraphic" />
       </feMerge>
     </filter>
 
-    <filter id="stroke-glow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="3.5" result="glow" />
+    <filter id="laser-beam-blur" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
       <feMerge>
-        <feMergeNode in="glow" />
+        <feMergeNode in="blur" />
         <feMergeNode in="SourceGraphic" />
       </feMerge>
     </filter>
+
+    <filter id="text-glow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.3" />
+    </filter>
+
+    <!-- Clip Path for Banner Sheen Sweep -->
+    <clipPath id="banner-sheen-clip">
+      <rect width="800" height="240" rx="20" />
+    </clipPath>
+    <clipPath id="emblem-squircle-clip">
+      <rect x="85" y="75" width="90" height="90" rx="26" />
+    </clipPath>
   </defs>
 
   <style>
@@ -53,93 +89,89 @@
       font-family: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
-    /* Stroke-dasharray animation drawing the Devanagari 'वा' glyph */
-    .glyph-stroke {
-      stroke-dasharray: 220;
-      stroke-dashoffset: 0;
-      animation: drawDevanagari 4.5s ease-in-out infinite alternate;
+    /* Living Plasma Aurora Core */
+    .brand-plasma {
+      animation: plasmaGlow 6s ease-in-out infinite alternate;
+    }
+    @keyframes plasmaGlow {
+      0% { opacity: 0.5; transform: scale(0.95); }
+      100% { opacity: 0.85; transform: scale(1.1); }
     }
 
-    @keyframes drawDevanagari {
-      0% {
-        stroke-dashoffset: 220;
-        opacity: 0.3;
-      }
-      30% {
-        stroke-dashoffset: 0;
-        opacity: 1;
-      }
-      80% {
-        stroke-dashoffset: 0;
-        opacity: 1;
-      }
-      100% {
-        stroke-dashoffset: 0;
-        opacity: 1;
-      }
+    /* Perimeter Laser Tracer on Emblem (React-bits Border Beam) */
+    .emblem-laser-beam {
+      stroke-dasharray: 60 300;
+      animation: laserTravelEmblem 6s linear infinite;
+    }
+    @keyframes laserTravelEmblem {
+      0% { stroke-dashoffset: 0; }
+      100% { stroke-dashoffset: -360; }
+    }
+
+    /* Banner Sheen Sweep */
+    .banner-sheen-sweep {
+      animation: bannerSheenMotion 8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+    @keyframes bannerSheenMotion {
+      0%, 20% { transform: translateX(-600px) rotate(25deg); opacity: 0; }
+      30% { opacity: 0.8; }
+      50%, 100% { transform: translateX(900px) rotate(25deg); opacity: 0; }
+    }
+
+    /* GSAP Style Drawing of Devanagari 'वा' Glyph */
+    .glyph-draw {
+      stroke-dasharray: 230;
+      stroke-dashoffset: 0;
+      animation: drawGlyphTimeline 5s cubic-bezier(0.34, 1.56, 0.64, 1) infinite alternate;
+    }
+    @keyframes drawGlyphTimeline {
+      0% { stroke-dashoffset: 230; opacity: 0.2; }
+      35% { stroke-dashoffset: 0; opacity: 1; }
+      85% { stroke-dashoffset: 0; opacity: 1; }
+      100% { stroke-dashoffset: 0; opacity: 1; }
     }
 
     /* Concentric Acoustic Waves */
-    .acoustic-ring {
+    .acoustic-wave {
       transform-origin: 130px 120px;
-      animation: ringExpand 4s cubic-bezier(0.2, 0.7, 0.4, 1) infinite;
+      animation: waveRadiate 4.5s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
     }
-    .ring-2 { animation-delay: 1.3s; }
-    .ring-3 { animation-delay: 2.6s; }
-
-    @keyframes ringExpand {
-      0% {
-        r: 45;
-        opacity: 0.7;
-        stroke-width: 2;
-      }
-      60% {
-        opacity: 0.25;
-        stroke-width: 1.2;
-      }
-      100% {
-        r: 105;
-        opacity: 0;
-        stroke-width: 0.5;
-      }
-    }
-
-    /* Neural Synaptic Nodes Pulsing */
-    .neural-node {
-      animation: nodePulse 2.5s ease-in-out infinite alternate;
-    }
-    .node-delay-1 { animation-delay: 0.4s; }
-    .node-delay-2 { animation-delay: 0.8s; }
-    .node-delay-3 { animation-delay: 1.2s; }
-    .node-delay-4 { animation-delay: 1.6s; }
-
-    @keyframes nodePulse {
-      0% { transform: scale(0.9); opacity: 0.4; }
-      100% { transform: scale(1.25); opacity: 1; }
+    .wave-delay-2 { animation-delay: 1.5s; }
+    .wave-delay-3 { animation-delay: 3s; }
+    @keyframes waveRadiate {
+      0% { r: 45; opacity: 0.75; stroke-width: 2.2; }
+      55% { opacity: 0.3; stroke-width: 1.2; }
+      100% { r: 110; opacity: 0; stroke-width: 0.4; }
     }
 
     /* Synaptic Pulse Travelling Along Network Lines */
-    .synapse-pulse {
-      animation: linePulse 3s linear infinite;
-      stroke-dasharray: 8 20;
+    .synaptic-laser {
+      stroke-dasharray: 10 24;
+      animation: synTravel 2.8s linear infinite;
     }
-    @keyframes linePulse {
-      0% { stroke-dashoffset: 56; }
+    @keyframes synTravel {
+      0% { stroke-dashoffset: 68; }
       100% { stroke-dashoffset: 0; }
     }
 
-    /* Ambient Warm Glow Breathe */
-    .ambient-breathe {
-      animation: ambientGlow 5s ease-in-out infinite alternate;
+    /* Neural Nodes Spring Snapping */
+    .node-sparkle {
+      animation: nodeSparkleAnim 2.2s ease-in-out infinite alternate;
     }
-    @keyframes ambientGlow {
-      0% { opacity: 0.5; }
-      100% { opacity: 0.9; }
+    .ns-2 { animation-delay: 0.4s; }
+    .ns-3 { animation-delay: 0.8s; }
+    .ns-4 { animation-delay: 1.2s; }
+    .ns-5 { animation-delay: 1.6s; }
+
+    @keyframes nodeSparkleAnim {
+      0% { transform: scale(0.85); opacity: 0.4; }
+      100% { transform: scale(1.3); opacity: 1; }
     }
 
-    /* Reduced Motion Preference */
+    /* Reduced Motion */
     @media (prefers-reduced-motion: reduce) {
-      .glyph-stroke, .acoustic-ring, .neural-node, .synapse-pulse, .ambient-breathe {
+      .brand-plasma, .emblem-laser-beam, .banner-sheen-sweep,
+      .glyph-draw, .acoustic-wave, .synaptic-laser, .node-sparkle {
         animation: none !important;
         stroke-dashoffset: 0 !important;
         opacity: 1 !important;
@@ -149,8 +181,11 @@
   </style>
 
   <!-- Deep Canvas Frame -->
-  <rect width="800" height="240" rx="20" fill="url(#brand-bg)" />
-  <circle class="ambient-breathe" cx="130" cy="120" r="130" fill="url(#emblem-core-glow)" />
+  <rect width="800" height="240" rx="20" fill="url(#brand-bg-ultra)" />
+  <rect width="800" height="240" rx="20" fill="none" stroke="url(#brand-glass-rim)" stroke-width="1.2" />
+
+  <!-- Living Plasma Glow Behind Emblem -->
+  <circle class="brand-plasma" cx="130" cy="120" r="120" fill="url(#emblem-aurora)" />
 
   <!-- Background Technical Grid Lines -->
   <g opacity="0.08" stroke="#FFFFFF" stroke-width="1">
@@ -158,96 +193,92 @@
     <line x1="0" y1="180" x2="800" y2="180" stroke-dasharray="3 6" />
   </g>
 
+  <!-- Sheen Sweep Across Banner -->
+  <g clip-path="url(#banner-sheen-clip)">
+    <rect class="banner-sheen-sweep" x="-200" y="-40" width="120" height="320" fill="url(#brand-sheen)" />
+  </g>
+
   <!-- ==================================================== -->
-  <!-- LEFT: Devanagari 'वा' + Acoustic & Neural Morphing -->
+  <!-- LEFT: Emblem, Concentric Waves, Neural Network        -->
   <!-- ==================================================== -->
-  <g id="brand-emblem-group">
+  <g id="brand-emblem-cluster">
     <!-- Concentric Acoustic Waves -->
-    <circle class="acoustic-ring" cx="130" cy="120" r="48" fill="none" stroke="#A0C9B9" />
-    <circle class="acoustic-ring ring-2" cx="130" cy="120" r="48" fill="none" stroke="#1D6D56" />
-    <circle class="acoustic-ring ring-3" cx="130" cy="120" r="48" fill="none" stroke="#D97736" />
+    <circle class="acoustic-wave" cx="130" cy="120" r="48" fill="none" stroke="#A0C9B9" />
+    <circle class="acoustic-wave wave-delay-2" cx="130" cy="120" r="48" fill="none" stroke="#22C55E" />
+    <circle class="acoustic-wave wave-delay-3" cx="130" cy="120" r="48" fill="none" stroke="#F59E0B" />
 
-    <!-- Outer Neural Constellation Ring (r = 85) -->
-    <circle cx="130" cy="120" r="85" fill="none" stroke="rgba(160,201,185,0.18)" stroke-dasharray="4 6" />
+    <!-- Outer Neural Ring -->
+    <circle cx="130" cy="120" r="86" fill="none" stroke="rgba(160,201,185,0.2)" stroke-dasharray="4 6" />
 
-    <!-- Synaptic Network Lines Radiating to Neural Nodes -->
-    <g class="synapse-pulse" stroke="url(#synapse-line)" stroke-width="1.4">
-      <!-- Node 1: Top-Right (approx 45 deg) -->
+    <!-- Synaptic Network Lines -->
+    <g class="synaptic-laser" stroke="url(#synapse-beam)" stroke-width="1.6">
       <line x1="165" y1="85" x2="190" y2="60" />
-      <!-- Node 2: Right (approx 10 deg) -->
       <line x1="175" y1="120" x2="215" y2="120" />
-      <!-- Node 3: Bottom-Right (approx -45 deg) -->
       <line x1="165" y1="155" x2="190" y2="180" />
-      <!-- Node 4: Bottom-Left (approx -135 deg) -->
       <line x1="95" y1="155" x2="70" y2="180" />
-      <!-- Node 5: Top-Left (approx 135 deg) -->
       <line x1="95" y1="85" x2="70" y2="60" />
-      <!-- Node 6: Top (90 deg) -->
       <line x1="130" y1="75" x2="130" y2="35" />
     </g>
 
     <!-- Neural Network Nodes (Glowing Intersections) -->
-    <!-- Node 1 -->
     <g transform="translate(190, 60)">
-      <circle class="neural-node" cx="0" cy="0" r="4.5" fill="#F59E0B" filter="url(#soft-glow)" />
+      <circle class="node-sparkle" cx="0" cy="0" r="4.5" fill="#F59E0B" filter="url(#laser-beam-blur)" />
       <circle cx="0" cy="0" r="2" fill="#FFFFFF" />
     </g>
-    <!-- Node 2 -->
     <g transform="translate(215, 120)">
-      <circle class="neural-node node-delay-1" cx="0" cy="0" r="5" fill="#22C55E" filter="url(#soft-glow)" />
+      <circle class="node-sparkle ns-2" cx="0" cy="0" r="5" fill="#22C55E" filter="url(#laser-beam-blur)" />
       <circle cx="0" cy="0" r="2" fill="#FFFFFF" />
     </g>
-    <!-- Node 3 -->
     <g transform="translate(190, 180)">
-      <circle class="neural-node node-delay-2" cx="0" cy="0" r="4.5" fill="#D97736" filter="url(#soft-glow)" />
+      <circle class="node-sparkle ns-3" cx="0" cy="0" r="4.5" fill="#D97736" filter="url(#laser-beam-blur)" />
       <circle cx="0" cy="0" r="2" fill="#FFFFFF" />
     </g>
-    <!-- Node 4 -->
     <g transform="translate(70, 180)">
-      <circle class="neural-node node-delay-3" cx="0" cy="0" r="4" fill="#A0C9B9" filter="url(#soft-glow)" />
+      <circle class="node-sparkle ns-4" cx="0" cy="0" r="4" fill="#A0C9B9" filter="url(#laser-beam-blur)" />
       <circle cx="0" cy="0" r="1.5" fill="#FFFFFF" />
     </g>
-    <!-- Node 5 -->
     <g transform="translate(70, 60)">
-      <circle class="neural-node node-delay-4" cx="0" cy="0" r="4" fill="#1D6D56" filter="url(#soft-glow)" />
+      <circle class="node-sparkle ns-5" cx="0" cy="0" r="4" fill="#1D6D56" filter="url(#laser-beam-blur)" />
       <circle cx="0" cy="0" r="1.5" fill="#FFFFFF" />
     </g>
-    <!-- Node 6 -->
     <g transform="translate(130, 35)">
-      <circle class="neural-node node-delay-1" cx="0" cy="0" r="3.5" fill="#F59E0B" filter="url(#soft-glow)" />
+      <circle class="node-sparkle ns-2" cx="0" cy="0" r="3.5" fill="#F59E0B" filter="url(#laser-beam-blur)" />
     </g>
 
-    <!-- Core Brand Emblem Squircle Container -->
-    <g filter="url(#soft-glow)">
-      <rect x="85" y="75" width="90" height="90" rx="26" fill="#1D6D56" stroke="rgba(245,158,11,0.5)" stroke-width="2" />
+    <!-- Core Brand Emblem Glass Squircle (Liquid Glassmorphism) -->
+    <g filter="url(#emblem-halo)">
+      <rect x="85" y="75" width="90" height="90" rx="26" fill="url(#brand-glass-fill)" stroke="url(#brand-glass-rim)" stroke-width="2" />
       <circle cx="130" cy="120" r="38" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.2" />
     </g>
 
-    <!-- Animated Devanagari 'वा' Glyph -->
-    <g filter="url(#stroke-glow)">
+    <!-- React-bits Perimeter Laser Tracer around Emblem -->
+    <rect class="emblem-laser-beam" x="85" y="75" width="90" height="90" rx="26" fill="none" stroke="url(#brand-laser-grad)" stroke-width="2.5" filter="url(#laser-beam-blur)" />
+
+    <!-- Animated Devanagari 'वा' Glyph with GSAP Drawing Curve -->
+    <g filter="url(#laser-beam-blur)">
       <!-- Shirorekha (Top Hanging Bar) -->
-      <path class="glyph-stroke" d="M 98 94 L 162 94" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" />
+      <path class="glyph-draw" d="M 98 94 L 162 94" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" />
 
       <!-- 'व' Belly Loop -->
-      <path class="glyph-stroke" d="M 126 106 C 106 104 98 114 98 126 C 98 138 106 148 126 146" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+      <path class="glyph-draw" d="M 126 106 C 106 104 98 114 98 126 C 98 138 106 148 126 146" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
 
       <!-- First Vertical Stem -->
-      <path class="glyph-stroke" d="M 126 94 L 126 150" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" />
+      <path class="glyph-draw" d="M 126 94 L 126 150" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" />
 
       <!-- 'ा' Aa-Ki-Matra (Vowel Stem) in Warm Gold Glow -->
-      <path class="glyph-stroke" d="M 148 94 L 148 150" stroke="#F59E0B" stroke-width="7" stroke-linecap="round" />
+      <path class="glyph-draw" d="M 148 94 L 148 150" stroke="#F59E0B" stroke-width="7" stroke-linecap="round" />
     </g>
   </g>
 
   <!-- ==================================================== -->
-  <!-- RIGHT: Typography & Positioning System -->
+  <!-- RIGHT: Typography & Deep Personalization System      -->
   <!-- ==================================================== -->
-  <g transform="translate(265, 36)">
+  <g transform="translate(265, 34)" filter="url(#text-glow)">
     <!-- Top Micro-Badge -->
     <g>
-      <rect x="0" y="0" width="220" height="24" rx="12" fill="rgba(217,119,54,0.15)" stroke="#D97736" stroke-width="1" />
+      <rect x="0" y="0" width="235" height="24" rx="12" fill="rgba(217,119,54,0.18)" stroke="#D97736" stroke-width="1" />
       <circle cx="12" cy="12" r="3.5" fill="#F59E0B" />
-      <text x="24" y="16" font-size="10.5" font-weight="700" fill="#F59E0B" letter-spacing="0.6">
+      <text x="24" y="16" font-size="10" font-weight="800" fill="#F59E0B" letter-spacing="0.6">
         AI FRONT DESK ARCHITECTURE
       </text>
     </g>
@@ -262,35 +293,35 @@
       <text x="0" y="30" font-size="17" font-weight="600" fill="#EFECE6" letter-spacing="-0.2">
         The AI Front Desk for Indian SMBs
       </text>
-      <text x="0" y="52" font-size="13" font-weight="500" fill="#CBD5E1">
-        Never miss a customer call or WhatsApp booking. In Hindi, Odia, Hinglish &amp; English.
+      <text x="0" y="52" font-size="12.5" font-weight="500" fill="#CBD5E1">
+        Built by Subham Jena (Xolver, Bhubaneswar) · Odia, Hindi, Hinglish &amp; English.
       </text>
     </g>
 
-    <!-- Trust Badges & Feature Pills Row -->
+    <!-- Liquid Glass Feature Chips Row -->
     <g transform="translate(0, 138)">
-      <!-- Pill 1: Atomic Lock -->
+      <!-- Pill 1: 0 Double Book -->
       <g transform="translate(0, 0)">
-        <rect width="116" height="28" rx="14" fill="url(#badge-pill)" stroke="rgba(160,201,185,0.25)" stroke-width="1" />
+        <rect width="116" height="28" rx="14" fill="url(#brand-glass-fill)" stroke="url(#brand-glass-rim)" stroke-width="1" />
         <circle cx="12" cy="14" r="3" fill="#22C55E" />
         <text x="22" y="18" font-size="10.5" font-weight="700" fill="#FFFFFF">0 Double Book</text>
       </g>
 
       <!-- Pill 2: Voice Latency -->
       <g transform="translate(124, 0)">
-        <rect width="98" height="28" rx="14" fill="url(#badge-pill)" stroke="rgba(160,201,185,0.25)" stroke-width="1" />
+        <rect width="98" height="28" rx="14" fill="url(#brand-glass-fill)" stroke="url(#brand-glass-rim)" stroke-width="1" />
         <text x="12" y="18" font-size="10.5" font-weight="700" fill="#F59E0B">⚡ p50 ≤ 3s</text>
       </g>
 
       <!-- Pill 3: DPDP 2025 -->
       <g transform="translate(230, 0)">
-        <rect width="112" height="28" rx="14" fill="url(#badge-pill)" stroke="rgba(160,201,185,0.25)" stroke-width="1" />
+        <rect width="112" height="28" rx="14" fill="url(#brand-glass-fill)" stroke="url(#brand-glass-rim)" stroke-width="1" />
         <text x="12" y="18" font-size="10.5" font-weight="700" fill="#A0C9B9">🛡️ DPDP 2025</text>
       </g>
 
-      <!-- Pill 4: WhatsApp + Voice -->
+      <!-- Pill 4: WhatsApp + SIP Voice -->
       <g transform="translate(350, 0)">
-        <rect width="138" height="28" rx="14" fill="url(#badge-pill)" stroke="rgba(160,201,185,0.25)" stroke-width="1" />
+        <rect width="144" height="28" rx="14" fill="url(#brand-glass-fill)" stroke="url(#brand-glass-rim)" stroke-width="1" />
         <text x="14" y="18" font-size="10.5" font-weight="700" fill="#FFFFFF">WhatsApp + SIP Voice</text>
       </g>
     </g>

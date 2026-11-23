@@ -1,40 +1,60 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" width="100%" height="100%" role="img" aria-label="Vaani Standout Capabilities: 4-Card Architecture Showcase">
   <defs>
-    <!-- Background Gradient -->
-    <linearGradient id="grid-bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#183F35" />
-      <stop offset="60%" stop-color="#11332A" />
-      <stop offset="100%" stop-color="#0E2822" />
+    <!-- Background Canvas -->
+    <linearGradient id="feat-bg-ultra" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14362E" />
+      <stop offset="50%" stop-color="#0E2822" />
+      <stop offset="100%" stop-color="#081814" />
     </linearGradient>
 
-    <!-- Card Background Gradient -->
-    <linearGradient id="card-surface" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#163C31" />
-      <stop offset="100%" stop-color="#0E2721" />
+    <!-- Liquid Glass Specular Rim -->
+    <linearGradient id="feat-glass-rim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.65" />
+      <stop offset="25%" stop-color="#A0C9B9" stop-opacity="0.3" />
+      <stop offset="50%" stop-color="#1D6D56" stop-opacity="0.1" />
+      <stop offset="75%" stop-color="#F59E0B" stop-opacity="0.45" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.2" />
     </linearGradient>
 
-    <linearGradient id="amber-accent" x1="0%" y1="0%" x2="100%" y2="0%">
+    <!-- Liquid Glass Card Fill -->
+    <linearGradient id="feat-glass-fill" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A493B" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#0D2721" stop-opacity="0.8" />
+    </linearGradient>
+
+    <!-- Border Laser Beam Gradient -->
+    <linearGradient id="feat-laser-grad" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#F59E0B" />
-      <stop offset="100%" stop-color="#D97736" />
+      <stop offset="50%" stop-color="#22C55E" />
+      <stop offset="100%" stop-color="#A0C9B9" />
     </linearGradient>
 
-    <linearGradient id="pill-badge-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1D6D56" />
-      <stop offset="100%" stop-color="#14493A" />
+    <!-- Sheen Gradient -->
+    <linearGradient id="feat-sheen" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0" />
+      <stop offset="45%" stop-color="#FFFFFF" stop-opacity="0" />
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.3" />
+      <stop offset="55%" stop-color="#FFFFFF" stop-opacity="0.5" />
+      <stop offset="60%" stop-color="#FFFFFF" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
     </linearGradient>
 
-    <!-- Drop Shadows & Glow Filters -->
-    <filter id="card-drop" x="-10%" y="-10%" width="120%" height="125%">
-      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000000" flood-opacity="0.35" />
+    <!-- Filters -->
+    <filter id="feat-card-shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.45" />
     </filter>
 
-    <filter id="subtle-glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="3" result="blur" />
+    <filter id="feat-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
       <feMerge>
         <feMergeNode in="blur" />
         <feMergeNode in="SourceGraphic" />
       </feMerge>
     </filter>
+
+    <clipPath id="card-clip-1">
+      <rect width="410" height="165" rx="16" />
+    </clipPath>
   </defs>
 
   <style>
@@ -43,122 +63,144 @@
       font-family: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
-    /* CARD 1: Phone Vibrate & Webhook Packet Flow */
-    .phone-ring {
-      animation: phoneVibe 2s ease-in-out infinite;
-      transform-origin: 52px 148px;
+    /* React-bits Border Beam around Cards (Perimeter ~ 1150) */
+    .card-laser-beam {
+      stroke-dasharray: 80 1070;
+      animation: laserTravelCard 7s linear infinite;
     }
-    @keyframes phoneVibe {
+    .clb-delay-2 { animation-delay: 1.75s; }
+    .clb-delay-3 { animation-delay: 3.5s; }
+    .clb-delay-4 { animation-delay: 5.25s; }
+
+    @keyframes laserTravelCard {
+      0% { stroke-dashoffset: 0; }
+      100% { stroke-dashoffset: -1150; }
+    }
+
+    /* Liquid Glass Sheen Sweeps */
+    .card-sheen-sweep {
+      animation: cSheenMotion 7s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+    @keyframes cSheenMotion {
+      0%, 20% { transform: translateX(-400px) rotate(25deg); opacity: 0; }
+      30% { opacity: 0.75; }
+      50%, 100% { transform: translateX(600px) rotate(25deg); opacity: 0; }
+    }
+
+    /* CARD 1: Phone Vibrate & Webhook Laser Particle */
+    .phone-ring-anim {
+      animation: phoneVibeAnim 2s ease-in-out infinite;
+      transform-origin: 30px 40px;
+    }
+    @keyframes phoneVibeAnim {
       0%, 100% { transform: rotate(0deg); }
-      10%, 30% { transform: rotate(-8deg); }
-      20%, 40% { transform: rotate(8deg); }
+      10%, 30% { transform: rotate(-9deg); }
+      20%, 40% { transform: rotate(9deg); }
       50% { transform: rotate(0deg); }
     }
 
-    .webhook-packet {
-      animation: packetFly 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    .webhook-laser-packet {
+      animation: packetFlyLaser 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
     }
-    @keyframes packetFly {
+    @keyframes packetFlyLaser {
       0% { cx: 88; opacity: 0; }
       20% { opacity: 1; }
       80% { opacity: 1; }
-      100% { cx: 168; opacity: 0; }
+      100% { cx: 172; opacity: 0; }
     }
 
-    .wa-bubble-pop {
-      animation: waBubble 2.2s ease-out infinite;
+    .wa-bubble-pop-spring {
+      animation: waBubbleSpring 2.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
     }
-    @keyframes waBubble {
-      0%, 45% { opacity: 0.3; transform: scale(0.96); }
+    @keyframes waBubbleSpring {
+      0%, 45% { opacity: 0.3; transform: scale(0.95); }
       55%, 90% { opacity: 1; transform: scale(1); }
-      100% { opacity: 0.3; transform: scale(0.96); }
+      100% { opacity: 0.3; transform: scale(0.95); }
     }
 
-    /* CARD 2: Clock Hand Rotation & Revenue Ticker */
-    .clock-hand-hour {
-      transform-origin: 64px 148px;
-      animation: rotateHour 6s linear infinite;
+    /* CARD 2: Clock Hands & Revenue Pulse */
+    .clock-hour-spring {
+      transform-origin: 28px 28px;
+      animation: rHour 6s linear infinite;
     }
-    .clock-hand-min {
-      transform-origin: 64px 148px;
-      animation: rotateMin 2s linear infinite;
+    .clock-min-spring {
+      transform-origin: 28px 28px;
+      animation: rMin 2s linear infinite;
     }
-    @keyframes rotateHour {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    @keyframes rotateMin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
+    @keyframes rHour { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes rMin  { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    .revenue-ticker {
-      animation: revenuePulse 3s ease-in-out infinite alternate;
+    .revenue-ticker-laser {
+      animation: revTickerPulse 3s ease-in-out infinite alternate;
     }
-    @keyframes revenuePulse {
+    @keyframes revTickerPulse {
       0% { fill: #22C55E; transform: scale(1); }
-      100% { fill: #F59E0B; transform: scale(1.05); }
+      100% { fill: #F59E0B; transform: scale(1.04); }
     }
 
-    /* CARD 3: Scope Gate Scanner Beam & Shield Glow */
-    .scan-beam {
-      animation: beamSweep 3s ease-in-out infinite alternate;
+    /* CARD 3: Scope Gate Laser Scanning Beam */
+    .gate-scanner-beam {
+      animation: gateSweep 3s ease-in-out infinite alternate;
     }
-    @keyframes beamSweep {
+    @keyframes gateSweep {
       0% { y: 118; opacity: 0.3; }
       50% { y: 154; opacity: 1; }
       100% { y: 182; opacity: 0.3; }
     }
 
-    .shield-pulse {
-      animation: shieldGlowAnim 2.5s ease-in-out infinite alternate;
+    .shield-pulse-laser {
+      animation: shieldGlowLaser 2.5s ease-in-out infinite alternate;
     }
-    @keyframes shieldGlowAnim {
+    @keyframes shieldGlowLaser {
       0% { stroke: #22C55E; stroke-width: 1.5; }
       100% { stroke: #A0C9B9; stroke-width: 2.8; }
     }
 
-    /* CARD 4: Staff Handoff Toggle Switch Slide */
-    .toggle-knob {
-      animation: toggleSlide 4s ease-in-out infinite alternate;
+    /* CARD 4: Staff Handoff GSAP Spring Toggle */
+    .toggle-knob-spring {
+      animation: toggleSlideSpring 4s cubic-bezier(0.34, 1.56, 0.64, 1) infinite alternate;
     }
-    @keyframes toggleSlide {
-      0%, 30% { transform: translateX(0px); fill: #A0C9B9; }
-      70%, 100% { transform: translateX(24px); fill: #F59E0B; }
-    }
-
-    .toggle-state-ai {
-      animation: stateAi 4s ease-in-out infinite alternate;
-    }
-    @keyframes stateAi {
-      0%, 30% { opacity: 1; }
-      70%, 100% { opacity: 0.3; }
+    @keyframes toggleSlideSpring {
+      0%, 25% { transform: translateX(0px); fill: #A0C9B9; }
+      75%, 100% { transform: translateX(24px); fill: #F59E0B; }
     }
 
-    .toggle-state-human {
-      animation: stateHuman 4s ease-in-out infinite alternate;
+    .state-ai-text {
+      animation: aiTextFade 4s ease-in-out infinite alternate;
     }
-    @keyframes stateHuman {
-      0%, 30% { opacity: 0.3; }
-      70%, 100% { opacity: 1; }
+    @keyframes aiTextFade {
+      0%, 25% { opacity: 1; }
+      75%, 100% { opacity: 0.35; }
     }
 
-    /* Reduced Motion Preference */
+    .state-human-text {
+      animation: humanTextFade 4s ease-in-out infinite alternate;
+    }
+    @keyframes humanTextFade {
+      0%, 25% { opacity: 0.35; }
+      75%, 100% { opacity: 1; }
+    }
+
+    /* Reduced Motion */
     @media (prefers-reduced-motion: reduce) {
-      .phone-ring, .webhook-packet, .wa-bubble-pop,
-      .clock-hand-hour, .clock-hand-min, .revenue-ticker,
-      .scan-beam, .shield-pulse, .toggle-knob, .toggle-state-ai, .toggle-state-human {
+      .card-laser-beam, .card-sheen-sweep,
+      .phone-ring-anim, .webhook-laser-packet, .wa-bubble-pop-spring,
+      .clock-hour-spring, .clock-min-spring, .revenue-ticker-laser,
+      .gate-scanner-beam, .shield-pulse-laser, .toggle-knob-spring,
+      .state-ai-text, .state-human-text {
         animation: none !important;
       }
-      .toggle-knob { transform: translateX(24px) !important; fill: #F59E0B !important; }
-      .toggle-state-human { opacity: 1 !important; }
-      .toggle-state-ai { opacity: 0.6 !important; }
+      .card-laser-beam { stroke-dasharray: none !important; }
+      .toggle-knob-spring { transform: translateX(24px) !important; fill: #F59E0B !important; }
+      .state-human-text { opacity: 1 !important; }
+      .state-ai-text { opacity: 0.5 !important; }
     }
     ]]>
   </style>
 
   <!-- Canvas Frame -->
-  <rect width="900" height="420" rx="20" fill="url(#grid-bg)" />
+  <rect width="900" height="420" rx="20" fill="url(#feat-bg-ultra)" />
+  <rect width="900" height="420" rx="20" fill="none" stroke="url(#feat-glass-rim)" stroke-width="1.2" />
 
   <!-- Background Decorative Grid -->
   <g opacity="0.06" stroke="#FFFFFF" stroke-width="1">
@@ -170,12 +212,12 @@
   <!-- TOP HEADER / SECTION BANNER                          -->
   <!-- ==================================================== -->
   <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="230" height="20" rx="10" fill="rgba(217,119,54,0.18)" stroke="#D97736" stroke-width="1" />
-    <text x="115" y="14" font-size="10" font-weight="700" fill="#F59E0B" text-anchor="middle">
+    <rect x="0" y="0" width="235" height="20" rx="10" fill="rgba(217,119,54,0.18)" stroke="#D97736" stroke-width="1" />
+    <text x="117" y="14" font-size="10" font-weight="800" fill="#F59E0B" text-anchor="middle">
       PRODUCTION ARCHITECTURE MATRIX
     </text>
 
-    <text x="248" y="15" font-size="15" font-weight="800" fill="#FFFFFF" letter-spacing="-0.3">
+    <text x="252" y="15" font-size="15" font-weight="800" fill="#FFFFFF" letter-spacing="-0.3">
       Four Standout Capabilities That Put Indian SMBs in Full Control
     </text>
   </g>
@@ -183,46 +225,54 @@
   <!-- ==================================================== -->
   <!-- ROW 1, CARD 1: Missed-Call-to-WhatsApp Bridge        -->
   <!-- ==================================================== -->
-  <g transform="translate(30, 56)" filter="url(#card-drop)">
-    <rect width="410" height="165" rx="16" fill="url(#card-surface)" stroke="rgba(160,201,185,0.25)" stroke-width="1.2" />
+  <g transform="translate(30, 56)" filter="url(#feat-card-shadow)">
+    <!-- Liquid Glass Card Base -->
+    <rect width="410" height="165" rx="16" fill="url(#feat-glass-fill)" stroke="url(#feat-glass-rim)" stroke-width="1.4" />
+
+    <!-- React-bits Perimeter Laser Tracer -->
+    <rect class="card-laser-beam" x="1" y="1" width="408" height="163" rx="15" fill="none" stroke="url(#feat-laser-grad)" stroke-width="2" filter="url(#feat-glow)" />
+
+    <!-- Sheen Sweep -->
+    <g clip-path="url(#card-clip-1)">
+      <rect class="card-sheen-sweep" x="-200" y="-30" width="90" height="230" fill="url(#feat-sheen)" />
+    </g>
 
     <!-- Card Header -->
     <g transform="translate(18, 16)">
       <circle cx="12" cy="12" r="12" fill="#1D6D56" />
-      <!-- Small Phone Icon -->
       <path d="M8 8 C9 8 9.5 9 9.2 9.8 L8.6 10.8 C9.5 12 10.5 13 11.7 13.8 L12.7 13.3 C13.5 13 14.5 13.5 14.5 14.5 C14.5 15.5 13.5 16.5 12 16.5 C8 16.5 4.5 13 4.5 9 C4.5 7.5 5.5 6.5 6.5 6.5 C7 6.5 7.5 7.5 8 8 Z" fill="#22C55E" />
       
       <text x="32" y="11" font-size="13" font-weight="700" fill="#FFFFFF">Missed-Call-to-WhatsApp Bridge</text>
       <text x="32" y="24" font-size="10.5" font-weight="500" fill="#A0C9B9">Webhook latency &lt; 2s · 0 lost leads</text>
 
       <rect x="290" y="2" width="76" height="20" rx="10" fill="#144C3D" />
-      <text x="328" y="16" font-size="9" font-weight="700" fill="#22C55E" text-anchor="middle">&lt; 2s BRIDGE</text>
+      <text x="328" y="16" font-size="9" font-weight="800" fill="#22C55E" text-anchor="middle">&lt; 2s BRIDGE</text>
     </g>
 
     <!-- Interactive Graphic Area -->
     <g transform="translate(18, 54)">
       <!-- Ringing Phone Node -->
-      <g class="phone-ring" transform="translate(10, 10)">
-        <rect width="40" height="58" rx="8" fill="#14362E" stroke="#22C55E" stroke-width="1.5" />
+      <g class="phone-ring-anim" transform="translate(10, 8)">
+        <rect width="40" height="58" rx="8" fill="#14362E" stroke="#22C55E" stroke-width="1.6" />
         <circle cx="20" cy="50" r="3" fill="#A0C9B9" />
-        <!-- Missed Call Alert Badge -->
+        <!-- Alert Badge -->
         <circle cx="36" cy="4" r="7" fill="#EF4444" />
         <text x="36" y="7.5" font-size="8" font-weight="800" fill="#FFFFFF" text-anchor="middle">!</text>
         <path d="M12 24 C14 20 26 20 28 24" stroke="#22C55E" stroke-width="1.5" fill="none" />
       </g>
 
       <!-- Connecting Webhook Flow Track -->
-      <line x1="72" y1="40" x2="182" y2="40" stroke="rgba(160,201,185,0.3)" stroke-width="2" stroke-dasharray="3 4" />
-      <circle class="webhook-packet" cx="88" cy="40" r="4.5" fill="#F59E0B" filter="url(#subtle-glow)" />
+      <line x1="72" y1="38" x2="182" y2="38" stroke="rgba(160,201,185,0.3)" stroke-width="2" stroke-dasharray="3 4" />
+      <circle class="webhook-laser-packet" cx="88" cy="38" r="4.5" fill="#F59E0B" filter="url(#feat-glow)" />
 
       <!-- WhatsApp Utility Template Card -->
-      <g class="wa-bubble-pop" transform="translate(196, 4)">
+      <g class="wa-bubble-pop-spring" transform="translate(196, 4)">
         <rect width="170" height="70" rx="8" fill="#FFFFFF" stroke="#22C55E" stroke-width="1.2" />
         <path d="M0 8A8 8 0 0 1 8 0h154a8 8 0 0 1 8 8v16H0z" fill="#183F35" />
         <text x="10" y="16" font-size="9.5" font-weight="700" fill="#FFFFFF">WhatsApp Utility Template</text>
         
         <text x="10" y="36" font-size="8.5" font-weight="600" fill="#1E293B">Namaste! Missed your call.</text>
-        <text x="10" y="48" font-size="8" fill="#64748B">Dr. Sharma Clinic assistant here.</text>
+        <text x="10" y="48" font-size="8" fill="#64748B">Dr. Tripathy Clinic (Bhubaneswar).</text>
         
         <rect x="10" y="54" width="70" height="12" rx="6" fill="#F0FDF4" stroke="#1D6D56" stroke-width="0.8" />
         <text x="45" y="63" font-size="7.5" font-weight="700" fill="#166534" text-anchor="middle">Book Slot Tap</text>
@@ -238,13 +288,21 @@
   <!-- ==================================================== -->
   <!-- ROW 1, CARD 2: 08:00 AM Owner Morning Brief          -->
   <!-- ==================================================== -->
-  <g transform="translate(460, 56)" filter="url(#card-drop)">
-    <rect width="410" height="165" rx="16" fill="url(#card-surface)" stroke="rgba(160,201,185,0.25)" stroke-width="1.2" />
+  <g transform="translate(460, 56)" filter="url(#feat-card-shadow)">
+    <!-- Liquid Glass Card Base -->
+    <rect width="410" height="165" rx="16" fill="url(#feat-glass-fill)" stroke="url(#feat-glass-rim)" stroke-width="1.4" />
+
+    <!-- React-bits Perimeter Laser Tracer -->
+    <rect class="card-laser-beam clb-delay-2" x="1" y="1" width="408" height="163" rx="15" fill="none" stroke="url(#feat-laser-grad)" stroke-width="2" filter="url(#feat-glow)" />
+
+    <!-- Sheen Sweep -->
+    <g clip-path="url(#card-clip-1)">
+      <rect class="card-sheen-sweep" x="-200" y="-30" width="90" height="230" fill="url(#feat-sheen)" />
+    </g>
 
     <!-- Card Header -->
     <g transform="translate(18, 16)">
       <circle cx="12" cy="12" r="12" fill="#D97736" />
-      <!-- Sun / Clock Glyph -->
       <circle cx="12" cy="12" r="6" fill="none" stroke="#FFFFFF" stroke-width="1.5" />
       <line x1="12" y1="8" x2="12" y2="12" stroke="#FFFFFF" stroke-width="1.5" />
       <line x1="12" y1="12" x2="15" y2="12" stroke="#FFFFFF" stroke-width="1.5" />
@@ -253,44 +311,39 @@
       <text x="32" y="24" font-size="10.5" font-weight="500" fill="#A0C9B9">Daily digest on WhatsApp · 0 app logins needed</text>
 
       <rect x="290" y="2" width="76" height="20" rx="10" fill="rgba(217,119,54,0.2)" stroke="#D97736" stroke-width="0.8" />
-      <text x="328" y="16" font-size="9" font-weight="700" fill="#F59E0B" text-anchor="middle">08:00 AM SHARP</text>
+      <text x="328" y="16" font-size="9" font-weight="800" fill="#F59E0B" text-anchor="middle">08:00 AM SHARP</text>
     </g>
 
     <!-- Interactive Graphic Area -->
     <g transform="translate(18, 54)">
       <!-- Analog Clock Graphic -->
-      <g transform="translate(14, 8)">
+      <g transform="translate(14, 6)">
         <circle cx="28" cy="28" r="28" fill="#14362E" stroke="#D97736" stroke-width="2" />
-        <!-- Hour Markers -->
         <circle cx="28" cy="6" r="1.5" fill="#A0C9B9" />
         <circle cx="50" cy="28" r="1.5" fill="#A0C9B9" />
         <circle cx="28" cy="50" r="1.5" fill="#A0C9B9" />
         <circle cx="6" cy="28" r="1.5" fill="#A0C9B9" />
         
-        <!-- Center Pivot -->
         <circle cx="28" cy="28" r="2.5" fill="#F59E0B" />
-        <!-- Hour Hand pointing to 8 -->
-        <line class="clock-hand-hour" x1="28" y1="28" x2="16" y2="35" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" />
-        <!-- Minute Hand pointing to 12 -->
-        <line class="clock-hand-min" x1="28" y1="28" x2="28" y2="10" stroke="#F59E0B" stroke-width="1.8" stroke-linecap="round" />
+        <line class="clock-hour-spring" x1="28" y1="28" x2="16" y2="35" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" />
+        <line class="clock-min-spring" x1="28" y1="28" x2="28" y2="10" stroke="#F59E0B" stroke-width="1.8" stroke-linecap="round" />
       </g>
 
       <!-- Connecting Delivery Beam -->
-      <line x1="84" y1="36" x2="174" y2="36" stroke="rgba(245,158,11,0.4)" stroke-width="2" stroke-dasharray="3 4" />
-      <path d="M174 36 L168 32 M174 36 L168 40" stroke="#F59E0B" stroke-width="1.8" />
+      <line x1="84" y1="34" x2="174" y2="34" stroke="rgba(245,158,11,0.4)" stroke-width="2" stroke-dasharray="3 4" />
+      <path d="M174 34 L168 30 M174 34 L168 38" stroke="#F59E0B" stroke-width="1.8" />
 
       <!-- Morning Brief WhatsApp Message Card -->
       <g transform="translate(186, 2)">
         <rect width="180" height="74" rx="8" fill="#FFFFFF" stroke="#D97736" stroke-width="1.2" />
         <rect width="180" height="18" rx="8" fill="#183F35" />
-        <text x="8" y="13" font-size="9" font-weight="700" fill="#FFFFFF">🌅 Suprabhat Dr. Sharma!</text>
+        <text x="8" y="13" font-size="9" font-weight="700" fill="#FFFFFF">🌅 Suprabhat Dr. Tripathy!</text>
         
         <text x="8" y="32" font-size="8.5" font-weight="600" fill="#1E293B">Today's Schedule: 8 Confirmed</text>
         <text x="8" y="46" font-size="8" fill="#475569">First Patient: 10:30 AM (Sunita R.)</text>
         
-        <!-- Recovered Revenue Ticker -->
         <rect x="8" y="52" width="164" height="16" rx="4" fill="#FEF3C7" />
-        <text class="revenue-ticker" x="14" y="64" font-size="8.5" font-weight="800" fill="#92400E">
+        <text class="revenue-ticker-laser" x="14" y="64" font-size="8.5" font-weight="800" fill="#92400E">
           ✨ Overnight Recovered: ₹2,000
         </text>
       </g>
@@ -305,51 +358,58 @@
   <!-- ==================================================== -->
   <!-- ROW 2, CARD 3: 0-Hallucination Scope Gate            -->
   <!-- ==================================================== -->
-  <g transform="translate(30, 235)" filter="url(#card-drop)">
-    <rect width="410" height="165" rx="16" fill="url(#card-surface)" stroke="rgba(160,201,185,0.25)" stroke-width="1.2" />
+  <g transform="translate(30, 235)" filter="url(#feat-card-shadow)">
+    <!-- Liquid Glass Card Base -->
+    <rect width="410" height="165" rx="16" fill="url(#feat-glass-fill)" stroke="url(#feat-glass-rim)" stroke-width="1.4" />
+
+    <!-- React-bits Perimeter Laser Tracer -->
+    <rect class="card-laser-beam clb-delay-3" x="1" y="1" width="408" height="163" rx="15" fill="none" stroke="url(#feat-laser-grad)" stroke-width="2" filter="url(#feat-glow)" />
+
+    <!-- Sheen Sweep -->
+    <g clip-path="url(#card-clip-1)">
+      <rect class="card-sheen-sweep" x="-200" y="-30" width="90" height="230" fill="url(#feat-sheen)" />
+    </g>
 
     <!-- Card Header -->
     <g transform="translate(18, 16)">
       <circle cx="12" cy="12" r="12" fill="#1D6D56" />
-      <!-- Shield Icon -->
       <path d="M8 8 L12 6 L16 8 C16 13 12 16 12 16 C12 16 8 13 8 8 Z" fill="none" stroke="#22C55E" stroke-width="1.5" />
 
       <text x="32" y="11" font-size="13" font-weight="700" fill="#FFFFFF">0-Hallucination Scope Gate</text>
       <text x="32" y="24" font-size="10.5" font-weight="500" fill="#A0C9B9">Dual token filtering · Answers strictly from clinic truth</text>
 
       <rect x="290" y="2" width="76" height="20" rx="10" fill="#144C3D" />
-      <text x="328" y="16" font-size="9" font-weight="700" fill="#22C55E" text-anchor="middle">FACT SHIELD</text>
+      <text x="328" y="16" font-size="9" font-weight="800" fill="#22C55E" text-anchor="middle">FACT SHIELD</text>
     </g>
 
     <!-- Interactive Graphic Area -->
     <g transform="translate(18, 54)">
       <!-- Inbound Query Box -->
-      <g transform="translate(4, 8)">
+      <g transform="translate(4, 6)">
         <rect width="105" height="58" rx="8" fill="#14362E" stroke="rgba(160,201,185,0.3)" stroke-width="1" />
         <text x="8" y="18" font-size="8" font-weight="700" fill="#A0C9B9">INBOUND QUERY</text>
-        <text x="8" y="32" font-size="8.5" fill="#EFECE6">"Can you give me</text>
-        <text x="8" y="44" font-size="8.5" fill="#EFECE6">antibiotic prescription?"</text>
+        <text x="8" y="32" font-size="8.5" fill="#EFECE6">"Can you prescribe</text>
+        <text x="8" y="44" font-size="8.5" fill="#EFECE6">antibiotics directly?"</text>
       </g>
 
-      <!-- Dual Scope Gate Filter / Scanning Wall -->
-      <g transform="translate(120, 4)">
-        <rect width="36" height="66" rx="6" fill="#0F2B23" stroke="#22C55E" stroke-width="1.5" />
+      <!-- Scope Gate Wall -->
+      <g transform="translate(120, 2)">
+        <rect width="36" height="66" rx="6" fill="#0F2B23" stroke="#22C55E" stroke-width="1.6" />
         <text x="18" y="16" font-size="7" font-weight="800" fill="#22C55E" text-anchor="middle">SCOPE</text>
         <text x="18" y="26" font-size="7" font-weight="800" fill="#22C55E" text-anchor="middle">GATE</text>
-        <line class="scan-beam" x1="4" y1="36" x2="32" y2="36" stroke="#F59E0B" stroke-width="2" />
+        <line class="gate-scanner-beam" x1="4" y1="36" x2="32" y2="36" stroke="#F59E0B" stroke-width="2" />
         <text x="18" y="56" font-size="8" font-weight="800" fill="#F59E0B" text-anchor="middle">SAFE</text>
       </g>
 
       <!-- Verified Action Shield Result -->
-      <g transform="translate(170, 8)">
+      <g transform="translate(170, 6)">
         <rect width="195" height="58" rx="8" fill="#FFFFFF" stroke="#22C55E" stroke-width="1.5" />
-        <!-- Shield badge -->
         <g transform="translate(12, 14)">
-          <path class="shield-pulse" d="M0 4 L10 0 L20 4 C20 12 10 18 10 18 C10 18 0 12 0 4 Z" fill="#F0FDF4" stroke="#22C55E" stroke-width="1.8" />
+          <path class="shield-pulse-laser" d="M0 4 L10 0 L20 4 C20 12 10 18 10 18 C10 18 0 12 0 4 Z" fill="#F0FDF4" stroke="#22C55E" stroke-width="1.8" />
           <path d="M6 9 L9 12 L14 6" stroke="#22C55E" stroke-width="1.5" fill="none" stroke-linecap="round" />
         </g>
         <text x="40" y="22" font-size="9" font-weight="800" fill="#183F35">Medical Advice Blocked</text>
-        <text x="40" y="36" font-size="8" fill="#475569">"Only Dr. Sharma can prescribe."</text>
+        <text x="40" y="36" font-size="8" fill="#475569">"Only Dr. Tripathy can prescribe."</text>
         <text x="40" y="48" font-size="8" font-weight="700" fill="#22C55E">Auto-routed to Doctor Consultation</text>
       </g>
     </g>
@@ -363,13 +423,21 @@
   <!-- ==================================================== -->
   <!-- ROW 2, CARD 4: 1-Tap Instant Staff Handoff           -->
   <!-- ==================================================== -->
-  <g transform="translate(460, 235)" filter="url(#card-drop)">
-    <rect width="410" height="165" rx="16" fill="url(#card-surface)" stroke="rgba(160,201,185,0.25)" stroke-width="1.2" />
+  <g transform="translate(460, 235)" filter="url(#feat-card-shadow)">
+    <!-- Liquid Glass Card Base -->
+    <rect width="410" height="165" rx="16" fill="url(#feat-glass-fill)" stroke="url(#feat-glass-rim)" stroke-width="1.4" />
+
+    <!-- React-bits Perimeter Laser Tracer -->
+    <rect class="card-laser-beam clb-delay-4" x="1" y="1" width="408" height="163" rx="15" fill="none" stroke="url(#feat-laser-grad)" stroke-width="2" filter="url(#feat-glow)" />
+
+    <!-- Sheen Sweep -->
+    <g clip-path="url(#card-clip-1)">
+      <rect class="card-sheen-sweep" x="-200" y="-30" width="90" height="230" fill="url(#feat-sheen)" />
+    </g>
 
     <!-- Card Header -->
     <g transform="translate(18, 16)">
       <circle cx="12" cy="12" r="12" fill="#1D6D56" />
-      <!-- Human User Glyph -->
       <circle cx="12" cy="9" r="3.5" fill="#FFFFFF" />
       <path d="M6 18 C6 15 9 14 12 14 C15 14 18 15 18 18" fill="#FFFFFF" />
 
@@ -377,7 +445,7 @@
       <text x="32" y="24" font-size="10.5" font-weight="500" fill="#A0C9B9">Takeover any chat anytime · 1-click return to bot</text>
 
       <rect x="290" y="2" width="76" height="20" rx="10" fill="rgba(217,119,54,0.2)" stroke="#D97736" stroke-width="0.8" />
-      <text x="328" y="16" font-size="9" font-weight="700" fill="#F59E0B" text-anchor="middle">1-TAP PAUSE</text>
+      <text x="328" y="16" font-size="9" font-weight="800" fill="#F59E0B" text-anchor="middle">1-TAP PAUSE</text>
     </g>
 
     <!-- Interactive Graphic Area -->
@@ -393,14 +461,12 @@
 
       <!-- Center: 1-Tap Takeover Switch -->
       <g transform="translate(132, 16)">
-        <text class="toggle-state-ai" x="12" y="8" font-size="8" font-weight="700" fill="#A0C9B9" text-anchor="middle">BOT</text>
+        <text class="state-ai-text" x="12" y="8" font-size="8" font-weight="700" fill="#A0C9B9" text-anchor="middle">BOT</text>
         
-        <!-- Toggle Pill Track -->
-        <rect x="0" y="14" width="48" height="24" rx="12" fill="#0C241D" stroke="#1D6D56" stroke-width="1.5" />
-        <!-- Sliding Knob -->
-        <circle class="toggle-knob" cx="12" cy="26" r="8" fill="#F59E0B" filter="url(#subtle-glow)" />
+        <rect x="0" y="14" width="48" height="24" rx="12" fill="#0C241D" stroke="#1D6D56" stroke-width="1.6" />
+        <circle class="toggle-knob-spring" cx="12" cy="26" r="8" fill="#F59E0B" filter="url(#feat-glow)" />
 
-        <text class="toggle-state-human" x="36" y="8" font-size="8" font-weight="800" fill="#F59E0B" text-anchor="middle">STAFF</text>
+        <text class="state-human-text" x="36" y="8" font-size="8" font-weight="800" fill="#F59E0B" text-anchor="middle">STAFF</text>
       </g>
 
       <!-- Right: Handoff Status Card -->

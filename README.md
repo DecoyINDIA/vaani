@@ -68,6 +68,9 @@ Hiring a human receptionist costs **₹12,000 – ₹18,000/month**, covers only
 ### 1. The 2-Tap Interactive Booking Experience (`F-18`)
 *Taps beat typing — especially for mobile-first, vernacular, and elderly customers.* Rather than forcing customers to type dates and times in freeform text, Vaani parses colloquial temporal cues and serves interactive WhatsApp list messages and reply buttons:
 
+<details open>
+<summary><b>Hindi / Hinglish Interaction (हिन्दी)</b></summary>
+
 ```
 Customer: "kal shaam ko doctor se milna hai"
 ────────────────────────────────────────────────────────────────────────────────
@@ -104,6 +107,48 @@ Vaani (Confirmed & Cal-synced):
 
 24 घंटे पहले reminder भेज दूँगी। कुछ पूछना हो तो यहीं message करें 🙏
 ```
+</details>
+
+<details>
+<summary><b>Odia Interaction (ଓଡ଼ିଆ) — Bhubaneswar Regional Pilot</b></summary>
+
+```
+Customer: "Daktara babu nka saha dekha karibaku thila, kali sandhya bele slot miliba ki?"
+────────────────────────────────────────────────────────────────────────────────
+Vaani:
+ନମସ୍କାର! 🙏 ମୁଁ ବାଣୀ — Dr. Sharma Clinic ର AI ସହାୟକ।
+(ଆପଣଙ୍କ ତଥ୍ୟ କେବଳ appointment ପାଇଁ ସୁରକ୍ଷିତ — vaani.ai/privacy)
+
+ଆଜ୍ଞା, କାଲି ଅର୍ଥାତ ଶନିବାର, ୧୯ ଜୁଲାଇ ପାଇଁ Dr. Priya ଙ୍କର ଏହି slots ଖାଲି ଅଛି: 👇
+
+┌────────────────────────────────────────────────────────┐
+│ 📅 ଉପଲବ୍ଧ ସମୟ ବାଛନ୍ତୁ (Available Slots)                  │
+├────────────────────────────────────────────────────────┤
+│ 1. 05:00 PM (ସନ୍ଧ୍ୟା ୫:୦୦)                               │
+│ 2. 05:30 PM (ସନ୍ଧ୍ୟା ୫:୩୦)                               │
+│ 3. 06:15 PM (ସନ୍ଧ୍ୟା ୬:୧୫)                               │
+│ [ ଅଧିକ slots ଦେଖନ୍ତୁ... ]                              │
+└────────────────────────────────────────────────────────┘
+────────────────────────────────────────────────────────────────────────────────
+Customer taps: [ 05:30 PM ]
+────────────────────────────────────────────────────────────────────────────────
+Vaani (Atomic 120s hold secured in MongoDB):
+ଶନିବାର, ୧୯ ଜୁଲାଇ · ସନ୍ଧ୍ୟା ୫:୩୦
+Dr. Priya Sharma · ପରାମର୍ଶ (₹500)
+
+[ ✅ ନିଶ୍ଚିତ କରନ୍ତୁ ]   [ 🔄 ସମୟ ବଦଳାନ୍ତୁ ]   [ ❌ ରଦ୍ଦ କରନ୍ତୁ ]
+────────────────────────────────────────────────────────────────────────────────
+Customer taps: [ ✅ ନିଶ୍ଚିତ କରନ୍ତୁ ]
+────────────────────────────────────────────────────────────────────────────────
+Vaani (Confirmed & Cal-synced):
+✓ ଆପଣଙ୍କ appointment ନିଶ୍ଚିତ ହୋଇଗଲା! 🎉
+• ତାରିଖ: ଶନିବାର, ୧୯ ଜୁଲାଇ · 5:30 PM
+• ଡାକ୍ତର: Dr. Priya Sharma
+• ଠିକଣା: Bapuji Nagar, SBI ବ୍ୟାଙ୍କ ଠିକ ସାମ୍ନାରେ (📍 https://maps.google.com/...)
+
+୨୪ ଘଣ୍ଟା ପୂର୍ବରୁ reminder ପଠାଇଦେବି। କିଛି ପଚାରିବାକୁ ଥିଲେ ଏଠାରେ message କରନ୍ତୁ 🙏
+```
+</details>
 
 ### 2. The Missed-Call-to-WhatsApp Bridge (`F-16`)
 India has a deeply ingrained missed-call habit. Customers often disconnect after 2–3 rings expecting a callback, or hang up when the line is engaged:
@@ -182,6 +227,9 @@ Provides business owners complete control. If a customer demands human assistanc
 
 ## Technical Architecture & Agent Pipeline
 
+> [!NOTE]
+> **Deterministic State Flow:** Every interaction is bounded by LangGraph checkpoints. Branching paths, scope filtering, and grounding checks are enforced strictly in code before and after LLM execution, satisfying Meta's Jan 2026 WhatsApp Platform policies and eliminating unconstrained generative output.
+
 Vaani's runtime architecture is built upon a deterministic **LangGraph 7-Node State Machine** operating in an asynchronous pipeline backed by **FastAPI**, **Redis Streams**, and **MongoDB Atlas**:
 
 ```
@@ -250,6 +298,10 @@ Vaani's runtime architecture is built upon a deterministic **LangGraph 7-Node St
 | **ADR-07** | **React 18 SPA Dashboard** | Eliminates app store review delays; owners live on desktop & mobile web | Optimized mobile web viewport with PWA caching capabilities |
 
 ### Resilience & Degradation Ladder (TRD §9)
+
+> [!TIP]
+> **Zero Silence Guarantee:** If both primary and secondary LLM gateways fail simultaneously, Vaani immediately drops into **Deterministic Menu Mode** (`F-18`). The interactive slot picker and booking engine continue confirming appointments without touching an LLM token.
+
 *In production, silence is a P0 bug. Every dependency has a deterministic fallback:*
 - **LLM Outage:** OpenRouter automatically fails over to secondary provider. If all LLM providers fail, the system enters **Deterministic Menu Mode**: slot pickers and booking tools run completely without an LLM.
 - **Classifier Failure:** Fast regex/keyword pre-router catches core booking/cancel/hours requests; remainder gracefully escalates.
@@ -294,9 +346,24 @@ Built in **React 18**, **TypeScript**, and **Tailwind CSS**, the Owner Dashboard
 * **"Test Vaani" Vernacular Sandbox:** Embedded simulation sandbox allowing owners and staff to test queries in Hindi, Odia, or English before going live to customers.
 * **Zero-PII System Health:** Dedicated privacy-compliant telemetry views (`deliveries`, `processing`) displaying webhook latency and error counts with zero customer PII leakage.
 
+### Design Engineering: Warm Intelligence & Liquid Glass
+
+The visual architecture of Vaani reflects the hospitality of a trusted local front desk paired with high-performance fintech precision:
+
+* **Refractive Liquid Glassmorphism:** Glass card surfaces utilizing multi-stop specular rim gradients (`rgba(255,255,255,0.12)` to `rgba(255,255,255,0.02)`), 45-degree linear backdrop sheen sweeps, and subtle chromatic aberration fringes.
+* **Animated Border Beams & Laser Tracers:** Dynamic perimeter highlights traversing active card borders via choreographed `stroke-dasharray` and `stroke-dashoffset` timing, signaling real-time system state without visual noise.
+* **GSAP-Class Timing Physics:** Micro-interactions mapped to calibrated cubic-bezier easing curves:
+  - *Natural Deceleration:* `cubic-bezier(0.16, 1, 0.3, 1)` (Power4 Out) for silky drawer transitions and modal entries.
+  - *Spring-Snap Micro-Overshoots:* `cubic-bezier(0.34, 1.56, 0.64, 1)` for button tap tactile feedback and slot selection locks.
+* **Living Acoustic Equalizers:** Real-time animated SVG waveforms visualizing Exotel SIP telephony audio activity and Sarvam voice stream packets.
+* **Accessibility First:** Contrast ratios verified against WCAG 2.1 AA standards; full reduced-motion graceful degradation via `@media (prefers-reduced-motion: reduce)` across all animated vector assets.
+
 ---
 
 ## India DPDP Act 2025 & Security Posture
+
+> [!IMPORTANT]
+> **Data Fiduciary & Processor Obligations:** Vaani operates strictly as a Data Processor under the India Digital Personal Data Protection (DPDP) Act 2025. All data residency is pinned to AWS Mumbai (`ap-south-1`). Customer data is never used for training foundation LLM models.
 
 Vaani is architected for strict compliance with the **Digital Personal Data Protection (DPDP) Act 2025** and Meta WhatsApp Business Platform policies:
 
