@@ -190,12 +190,6 @@ def parse_understanding(raw: str, *, today: date) -> dict[str, Any]:
     return result
 
 
-def parse_intent_response(raw: str) -> tuple[str, float]:
-    """Parse raw LLM response into (intent, confidence)."""
-    parsed = parse_understanding(raw, today=date.today())
-    return parsed["intent"], parsed["confidence"]
-
-
 async def intent(state: AgentState) -> dict[str, Any]:
     """Node 2 — intent classifier & structured understand (TRD §4.1/§4.2 input gate).
 

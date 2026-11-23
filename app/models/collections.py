@@ -75,11 +75,6 @@ class Messages(TenantScoped):
     collection = "messages"
 
     @classmethod
-    async def seen_unscoped(cls, message_id: str) -> bool:
-        """Idempotency check before tenant resolution — has this id been sighted?"""
-        return await get_db()[cls.collection].find_one({"_id": message_id}) is not None
-
-    @classmethod
     async def accept_inbound_unscoped(
         cls, message_id: str, tenant_id: str, payload: dict[str, Any]
     ) -> None:
@@ -95,18 +90,6 @@ class Messages(TenantScoped):
                 "attempts": 0,
                 "accepted_at": datetime.now(UTC).replace(tzinfo=None),
             }
-        )
-
-    @classmethod
-    async def upsert_fallback_message_unscoped(
-        cls, tenant_id: str, message_id: str, document: dict[str, Any]
-    ) -> None:
-        """Upsert a message when Redis is down and we are falling back to MongoDB."""
-        doc_with_tenant = {**document, "_id": message_id, "tenant_id": tenant_id}
-        await get_db()[cls.collection].replace_one(
-            {"_id": message_id},
-            doc_with_tenant,
-            upsert=True
         )
 
     @classmethod
@@ -197,14 +180,6 @@ class Messages(TenantScoped):
                 },
                 "$unset": {"lease_expires_at": ""},
             },
-        )
-
-    @classmethod
-    async def increment_retries_unscoped(cls, message_id: str) -> None:
-        """Increment retry count on a queued message."""
-        await get_db()[cls.collection].update_one(
-            {"_id": message_id},
-            {"$inc": {"retries": 1}}
         )
 
 

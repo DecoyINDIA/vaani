@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -172,7 +172,7 @@ async def test_tool_router_date_priority_and_disagreement_logging() -> None:
 
     # Case 1: parser explicit keyword ("parso") matches today + 2,
     # but model erroneously returned today + 1. Parser wins!
-    today = date(2026, 11, 12)
+    today = datetime.now(UTC).astimezone(ZoneInfo("Asia/Kolkata")).date()
     state: dict[str, Any] = {
         "tenant_id": tenant_id,
         "intent": "book",
@@ -217,12 +217,13 @@ async def test_tool_router_slots_ordered_by_req_time() -> None:
     })
     practitioner_id = str(prac_res.inserted_id)
 
-    # Seed 3 slots on 2026-11-13 at 09:00, 14:00, 18:00 IST
+    # Seed 3 slots on tomorrow/future day at 09:00, 14:00, 18:00 IST
     # Asia/Kolkata is UTC+5:30 -> 09:00 IST is 03:30 UTC, 14:00 IST is 08:30 UTC, 18:00 IST is 12:30 UTC
-    target_d = date(2026, 11, 13)
-    s1 = datetime(2026, 11, 13, 3, 30, tzinfo=UTC).replace(tzinfo=None)
-    s2 = datetime(2026, 11, 13, 8, 30, tzinfo=UTC).replace(tzinfo=None)
-    s3 = datetime(2026, 11, 13, 12, 30, tzinfo=UTC).replace(tzinfo=None)
+    today = datetime.now(UTC).astimezone(ZoneInfo("Asia/Kolkata")).date()
+    target_d = today + timedelta(days=2)
+    s1 = datetime.combine(target_d, time(3, 30))
+    s2 = datetime.combine(target_d, time(8, 30))
+    s3 = datetime.combine(target_d, time(12, 30))
 
     for st in [s1, s2, s3]:
         await Slots(tenant_id).insert_one({

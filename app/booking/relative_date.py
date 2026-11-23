@@ -263,38 +263,3 @@ def parse_colloquial_time(phrase: str) -> str | None:
         return f"{hour:02d}:{minute:02d}"
     return None
 
-
-def format_colloquial_time(time_str: str, lang: str) -> str:
-    """Format 24h 'HH:MM' time back into colloquial '4:00 PM (shaam)' form."""
-    try:
-        hour, minute = map(int, time_str.split(":"))
-    except ValueError:
-        return time_str
-
-    period = "AM"
-    colloquial = "subah"
-    
-    if hour >= 12:
-        period = "PM"
-        if 12 <= hour < 16:
-            colloquial = "dopahar"
-        else:
-            colloquial = "shaam"
-        if hour > 12:
-            hour -= 12
-    elif hour == 0:
-        hour = 12
-
-    # Language translations for colloquial label
-    translations = {
-        "hi": {"subah": "subah", "dopahar": "dopahar", "shaam": "shaam"},
-        "hi-Latn": {"subah": "subah", "dopahar": "dopahar", "shaam": "shaam"},
-        "or": {"subah": "sakala", "dopahar": "dwiprahara", "shaam": "sandhya"},
-        "en": {"subah": "morning", "dopahar": "afternoon", "shaam": "evening"}
-    }
-
-    lang_trans = translations.get(lang, translations["en"])
-    colloquial_label = lang_trans.get(colloquial, colloquial)
-
-    return f"{hour}:{minute:02d} {period} ({colloquial_label})"
-

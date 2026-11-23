@@ -188,8 +188,3 @@ async def transcribe_audio(
     else:
         # Google Speech-to-Text
         raise NotImplementedError("Google STT API connection failed: Credentials verified but endpoints unreachable offline.")
-
-
-async def transcribe_stream(audio: Any) -> None:
-    """Placeholder for websocket streaming transcription."""
-    raise NotImplementedError("Streaming STT — 06-engineering-plan Phase 2")

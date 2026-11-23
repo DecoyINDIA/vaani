@@ -18,10 +18,6 @@ def detect_voice_activity(audio_chunk: bytes, threshold: int = 500) -> bool:
     """
     if not audio_chunk:
         return False
-        
-    # Special test signal: chunk starting with b"TALK" simulates user speaking
-    if audio_chunk.startswith(b"TALK"):
-        return True
 
     # Standard RMS (Root Mean Square) energy calculation for 16-bit PCM (2 bytes per sample)
     if len(audio_chunk) >= 2:

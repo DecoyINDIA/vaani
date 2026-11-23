@@ -111,16 +111,6 @@ class VoiceSession:
         else:
             return f"Thank you for calling {clinic}. This call is answered by Vaani, our AI receptionist. To manage your booking, we process your phone number and conversation. For quality and security, this call may be recorded under the DPDP Act. To proceed, please stay on the line or press 1. If you do not consent, you may hang up and book via our WhatsApp assistant."
 
-    def get_filler_phrase(self, lang: str) -> str:
-        """Return the vernacular filler phrase for latency slips."""
-        if lang == "hi":
-            return "जी, एक सेकंड..."
-        elif lang == "hi-Latn":
-            return "Ji, ek second..."
-        elif lang == "or":
-            return "ଟିକେ ଅପେକ୍ଷା କରନ୍ତୁ..."
-        return "Just a moment..."
-
     async def save_consent(self) -> None:
         """Atomically set consent_accepted to True and save to contact database profile."""
         self.consent_accepted = True
