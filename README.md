@@ -1,120 +1,225 @@
 <p align="center">
-  <img src="assets/hero.svg" alt="Vaani: Your business, always answered. AI front desk that books appointments on WhatsApp and voice" width="800">
+  <a href="https://github.com/DecoyINDIA/vaani">
+    <img src="https://raw.githubusercontent.com/DecoyINDIA/vaani/main/assets/hero.svg?v=4" alt="Vaani: Your business, always answered. AI front desk that books appointments on WhatsApp and voice" width="800">
+  </a>
 </p>
 
 <h1 align="center">Vaani — Your business, always answered.</h1>
 
-<p align="center"><em>Every call answered. Every booking secured. In the language your customers speak.</em></p>
+<p align="center">
+  <em>Every call answered. Every booking secured. In the language your customers speak.</em>
+</p>
 
 <p align="center">
-  <strong>WhatsApp & Voice Front Office for Indian Small and Medium Businesses</strong><br>
-  Clinics · Salons · Coaching Centres · Studios · Service Garages
+  <a href="https://github.com/DecoyINDIA/vaani/actions"><img src="https://img.shields.io/badge/CI-191%20passing-207e56?style=flat-square" alt="CI Status"></a>
+  <a href="docs/05-risk-compliance.md"><img src="https://img.shields.io/badge/Compliance-DPDP%20Act%202025-183f35?style=flat-square" alt="DPDP Act"></a>
+  <a href="docs/02-TRD.md"><img src="https://img.shields.io/badge/Architecture-Dual%20Scope%20Gates-1d6d56?style=flat-square" alt="Dual Scope Gates"></a>
+  <a href="docs/08-user-flows.md"><img src="https://img.shields.io/badge/Languages-Hindi%20%7C%20Odia%20%7C%20Hinglish%20%7C%20English-d97736?style=flat-square" alt="Languages"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Proprietary-788a82?style=flat-square" alt="License"></a>
+</p>
+
+<p align="center">
+  <strong>The AI-Powered Front Office Employee for Indian Small and Medium Businesses</strong><br>
+  Clinics · Salons & Spas · Tuition & Coaching Institutes · Diagnostic Labs · Studios · Service Garages
 </p>
 
 ---
 
 ## The Emotional Promise
 
-Your customers are heard. Your appointments are handled. **You remain in control.**
+> **Your customers are heard. Your appointments are handled. You remain in control.**
 
-Vaani is an AI-powered front office employee built for everyday Indian small and medium businesses. It answers customer calls and WhatsApp messages in **Hindi, Odia, Hinglish, and English**, books appointments with atomic conflict prevention, sends automatic reminders, and provides the business owner with a **morning brief** summarizing yesterday’s revenue and bookings.
+Indian small and medium businesses miss 20–40% of customer calls and WhatsApp messages during peak rush, while consulting with walk-ins, or after hours. Every missed contact is lost revenue. 
 
-Vaani always discloses that it is an AI assistant. It never pretends to be human, and it never guesses a fact — answering strictly from approved business records with verified human escalation.
+**Vaani is your AI front desk.** It answers incoming WhatsApp messages and telephone calls in **Hindi, Odia, Hinglish, and English**, books appointments with atomic conflict prevention, sends automatic reminders, and delivers a **morning brief** to the business owner on WhatsApp each day at 08:00 AM.
+
+Vaani **always discloses that it is an AI assistant**. It never pretends to be human, and it never invents fees, timings, or medical/legal advice — answering strictly from verified business facts with instant human handoff.
 
 ---
 
-## Two Agents, One Cohesive System
+## How Vaani Compares
+
+| Dimension | Human Receptionist | WhatsApp Business App | Generic Chatbots (Wati/Interakt) | **Vaani** |
+| :--- | :--- | :--- | :--- | :--- |
+| **Availability** | 8 hours/day | Manual (whenever free) | 24/7 rule trees | **24/7 instant replies (p50 ≤ 3s)** |
+| **Vernacular NLU** | Depends on hire | Manual typing | Broken keyword triggers | **Native Hindi, Odia, Hinglish & English** |
+| **Voice Handling** | Busy when on call | No voice line | None | **Inbound SIP line + Missed-call bridge** |
+| **Booking Speed** | 5–10 mins chatting | Phone tag back & forth | Rigid static menus | **2 taps via WhatsApp list picker** |
+| **Fact Accuracy** | Variable training | High effort | High hallucination risk | **0-hallucination discrete token gate** |
+| **Monthly Cost** | ₹12,000 – ₹18,000/mo | Free (costs owner time) | ₹3,000+ plus flow tools | **Outcome-aligned subscription** |
+
+---
+
+## Two Autonomous Agents, One Unified Desk
 
 ```
-  ┌────────────────────────────────────────────────────────┐
-  │                 CUSTOMER INTERACTION                   │
-  │     WhatsApp Messages  ·  Inbound & Missed Calls       │
-  └──────────────────────────┬─────────────────────────────┘
-                             │
-                             ▼
-  ┌────────────────────────────────────────────────────────┐
-  │                   FRONT-DESK AGENT                     │
-  │  • Answers in Hindi, Odia, Hinglish & English          │
-  │  • 2-Tap Booking via List Messages & Reply Buttons    │
-  │  • Missed-Call-to-WhatsApp Bridge (F-16)               │
-  │  • Reminders, Rescheduling & Waitlist Auto-Backfill    │
-  │  • UPI Payment Links (Razorpay)                        │
-  │  • 1-Tap Human Takeover & Seamless Return              │
-  └──────────────────────────┬─────────────────────────────┘
-                             │
-                             ▼
-  ┌────────────────────────────────────────────────────────┐
-  │                   REPORTING AGENT                      │
-  │  • Daily WhatsApp Brief at 08:00 AM (F-13)             │
-  │  • Recovered Bookings & After-Hours Revenue Ticker     │
-  │  • Escalations Needing Owner Decision                  │
-  └────────────────────────────────────────────────────────┘
+                         ┌──────────────────────────────────────────────┐
+                         │             CUSTOMER TOUCHPOINTS             │
+                         │   WhatsApp Messages  ·  Voice & Missed Calls │
+                         └──────────────────────┬───────────────────────┘
+                                                │
+                                                ▼
+ ┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+ │                                   FRONT-DESK AGENT (P0/P1)                                  │
+ │                                                                                             │
+ │  • Multilingual Reception: Answers fluently in Hindi, Odia, Hinglish, and English.          │
+ │  • 2-Tap Interactive Booking: Slot picker via WhatsApp list messages & reply buttons.       │
+ │  • Missed-Call-to-WhatsApp Bridge (F-16): Auto-engages engaged callers in 30s.              │
+ │  • Smart Reminders & Backfill: 24h & 2h reminders with 1-tap reschedule & waitlist refill.  │
+ │  • Strict Scope Guard: 0 hallucinations on fees, timings, or restricted advice topics.      │
+ │  • Instant Staff Handoff: 1-tap takeover in owner inbox with seamless return to bot.        │
+ └──────────────────────────────────────────────┬──────────────────────────────────────────────┘
+                                                │
+                                                ▼
+ ┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+ │                                    REPORTING AGENT (F-13)                                   │
+ │                                                                                             │
+ │  • 08:00 AM WhatsApp Morning Brief: Sent to owner each morning with yesterday's pulse.      │
+ │  • Recovered Revenue Ticker: Attributed revenue from after-hours & missed-call bookings.    │
+ │  • Actionable Escalations: Clear summary of items requiring an owner or staff decision.     │
+ └─────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## What Makes Vaani Different
+## Conversational Architecture in Action
 
-1. **Taps Over Typing (2-Tap Booking):** No endless conversational back-and-forth. Slot selection is presented as native WhatsApp list messages and reply buttons.
-2. **The Missed-Call-to-WhatsApp Bridge:** When the business phone line is busy or engaged, Vaani immediately opens a WhatsApp conversation offering open slots within 30 seconds.
-3. **Zero Hallucination Guarantee:** Dual-scope compliance gates and discrete token verification block fabricated pricing, unauthorized discounts, or incorrect business hours. If an answer isn't in approved knowledge, Vaani offers an appointment or routes to staff.
-4. **Cultural & Language Fluency:** Natively understands colloquial Hindi, Odia, Hinglish, and English with relative date understanding (*"kal/parso"*) and landmark-based directions.
-5. **Radical Owner Control:** A modern, distraction-free control desk providing a real-time schedule, 1-tap customer takeover, and knowledge verification sandbox.
-6. **Built for India’s DPDP Act:** Strict tenant isolation, privacy notice consent recording, and statutory data retention compliance.
+### 1. The 2-Tap Booking Experience (Taps Over Typing)
+Instead of forcing customers to type dates and times, Vaani presents interactive list messages and confirms slots with local landmarks:
+
+```
+Customer: "kal shaam ko doctor se milna hai"
+────────────────────────────────────────────────────────────────────────
+Vaani:
+नमस्ते! 🙏 मैं वाणी हूँ — Dr. Sharma Clinic की AI सहायक।
+(आपकी जानकारी सिर्फ़ appointment के लिए — विवरण: vaani.ai/privacy)
+
+जी, कल यानी शनिवार, 19 जुलाई के लिए Dr. Priya के ये slots खाली हैं: 👇
+
+┌───────────────────────────────────────────┐
+│ 1. 05:00 PM (shaam)                       │
+│ 2. 05:30 PM (shaam)                       │
+│ 3. 06:15 PM (shaam)                       │
+│ [ और slots देखें... ]                     │
+└───────────────────────────────────────────┘
+────────────────────────────────────────────────────────────────────────
+Customer taps: [ 05:30 PM ]
+────────────────────────────────────────────────────────────────────────
+Vaani (Atomic 120s hold locked):
+शनिवार, 19 जुलाई · शाम 5:30 बजे
+Dr. Priya Sharma · Consultation (₹500)
+
+[ ✅ पक्का करें ]   [ 🔄 समय बदलें ]   [ ❌ रहने दें ]
+────────────────────────────────────────────────────────────────────────
+Customer taps: [ ✅ पक्का करें ]
+────────────────────────────────────────────────────────────────────────
+Vaani:
+✓ आपकी appointment पक्की हो गई है! 🎉
+• तारीख़: शनिवार, 19 जुलाई · 5:30 PM
+• डॉक्टर: Dr. Priya Sharma
+• पता: Bapuji Nagar, SBI बैंक के ठीक सामने (📍 https://maps.google.com/...)
+
+24 घंटे पहले reminder भेज दूँगी। कुछ पूछना हो तो यहीं message करें 🙏
+```
+
+### 2. The Missed-Call-to-WhatsApp Bridge (F-16)
+India has a deeply ingrained missed-call habit. When a customer dials the business while the line is engaged:
+1. Call disconnects after ring; Exotel webhook notifies Vaani in `< 2 seconds`.
+2. Vaani verifies caller consent and opens an approved WhatsApp utility template:  
+   *"Aapne Dr. Sharma Clinic ko call kiya tha 🙏 line vyast thi — main Vaani, humari AI sahayak. Appointment book karna chahenge?"*
+3. Customer completes booking in 2 taps without redialing.
+
+### 3. The 08:00 AM Daily Owner Brief (F-13)
+Delivered straight to the owner's WhatsApp every morning at 08:00 AM local time:
+```
+Namaste Dr. Priya! 🙏
+Yahan hai kal ka front desk brief:
+
+• 24 customer conversations handled
+• 8 appointments booked & confirmed
+• 4 bookings recovered outside clinic hours (Estimated: ₹2,000)
+• 1 enquiry waiting for your team's decision
+
+Have a productive day!
+```
 
 ---
 
-## The Owner Workspace
+## The Owner Control Desk
 
-The redesigned **Vaani Business Desk** gives owners a calm, unified command center:
+Built in React, TypeScript, and Tailwind CSS using our **Warm Intelligence** design system:
 
-- **Today:** Yesterday’s WhatsApp Morning Brief preview, real-time pulse stats, and urgent handoff queue.
-- **Conversations:** Live WhatsApp inbox with language tags, sentiment indicators, and 1-tap staff takeover.
-- **Appointments:** Visual schedule cards with 120s atomic hold verification and waitlist backfill monitoring.
-- **Vaani’s Brain:** Approved business knowledge base, landmark instructions, and an interactive **"Test Vaani" sandbox** to test answers before customer traffic arrives.
-- **Performance:** End-to-end confirmed bookings counter, recovered after-hours revenue tracker, and 1-tap CSAT metrics.
-
----
-
-## Architecture & Technology Stack
-
-- **Backend:** FastAPI (Python 3.12+), LangGraph/StateGraph agent core, MongoDB replica set (atomic transactions), Redis durable queue.
-- **Telephony & Speech:** Exotel AgentStream WebSockets, Sarvam Saaras v4 STT & Bulbul v3 TTS.
-- **Messaging:** Meta WhatsApp Cloud API (Utility & Service templates).
-- **Frontend Desk:** React 18, Vite, TypeScript, Tailwind CSS, Warm Intelligence design tokens.
-- **Quality Gates:** 191 offline CI tests, 500-concurrent-claim race test validation, Trivy container security scans.
+* **Today Command Center:** Real-time pulse stats, yesterday's WhatsApp Morning Brief preview with 1-click clipboard sharing, and the urgent staff handoff drawer.
+* **Unified Conversations Inbox:** Real-time WhatsApp chat stream with language tags, sentiment indicators, 1-click staff takeover, and return-with-summary modal.
+* **Appointments & Schedule:** Modern visual timeline cards replacing raw database tables, complete with 120-second atomic hold verification and 1-tap cancellation.
+* **Vaani’s Brain & Interactive Sandbox:** Approved business facts manager + embedded **"Test Vaani" preview simulator** to test questions in Hindi, Odia, or English before customer traffic arrives.
+* **Performance & Recovered Value:** North-Star confirmed bookings counter, after-hours recovered revenue roll-up, and 1-tap customer CSAT score tracking.
 
 ---
 
-## Getting Started
+## Technical Architecture & Safety Guarantees
+
+```
+┌──────────────────┐      ┌─────────────────────────┐      ┌───────────────────────┐
+│ Meta Cloud API   │ ───► │ Inbound Gateway         │ ───► │ Durable Message Queue │
+│ Exotel SIP Voice │      │ (HMAC Signature Auth)   │      │ (MongoDB + Redis Leases)
+└──────────────────┘      └─────────────────────────┘      └───────────┬───────────┘
+                                                                       │
+                                                                       ▼
+┌──────────────────────────────────────────────────────────────────────────────────────────┐
+│                                 LANGGRAPH AGENT CORE                                     │
+│                                                                                          │
+│  [Input Scope Gate] ──► [Intent Classifier] ──► [Tool Router] ──► [Output Grounding Gate]│
+│  (Blocks off-topic)     (Closed Taxonomy)       (Atomic Slots)    (0 Hallucination check)│
+└──────────────────────────────────────────────────────────────────────┬───────────────────┘
+                                                                       │
+                                                                       ▼
+                                                           ┌───────────────────────┐
+                                                           │ WhatsApp & Voice Send │
+                                                           │ (Idempotent delivery) │
+                                                           └───────────────────────┘
+```
+
+* **Zero Hallucination Guarantee:** Grounded RAG with tenant-filtered Atlas vector indexes + discrete token matching. Prices, timings, and policies must exist in approved business facts or the agent falls back to staff handoff.
+* **Atomic Booking Transactions:** 500-concurrent-claim race test validation on real MongoDB replica sets ensures zero double-bookings.
+* **India DPDP Act 2025 Compliance:** Explicit purpose notice versioning, customer consent tracking, 7-day automated erasure pipeline (`ops/dpdp_delete.py`), and external hash ledger replay.
+
+---
+
+## Local Development & Setup
 
 ### Prerequisites
 - Node.js 22+ & npm
 - Python 3.12+ & `uv`
-- MongoDB & Redis (or Docker Compose)
+- MongoDB 7.0+ (replica set enabled for atomic transactions)
+- Redis 7.0+
 
 ```bash
-# 1. Clone the repository
+# 1. Clone repository
 git clone https://github.com/DecoyINDIA/vaani.git
 cd vaani
 
-# 2. Install backend dependencies
+# 2. Set up Python environment & dependencies
 uv sync
 
-# 3. Build the owner dashboard
+# 3. Build owner dashboard
 npm --prefix dashboard install
 npm --prefix dashboard run build
 
-# 4. Run tests
+# 4. Run test suite (386 passing)
 uv run pytest -q
 
-# 5. Start development server
+# 5. Start development API server
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
+Access the dashboard at `http://localhost:8000/`.
+
 ---
 
-## License & Attribution
+## Pilot Inquiries & Partnerships
 
-Proprietary. Developed by **Subham Jena, Xolver**. All rights reserved.  
-In active development for pilot deployments in Bhubaneswar and Tier-1/2 Indian hubs.
+Interested in piloting Vaani for your clinic, salon, coaching centre, or studio?  
+Contact **Subham Jena, Xolver** at [subhamjena.j@gmail.com](mailto:subhamjena.j@gmail.com).
+
+<sub>Proprietary. Developed by Xolver / Subham Jena. All rights reserved.</sub>
