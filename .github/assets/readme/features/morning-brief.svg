@@ -1,0 +1,287 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 520" width="840" height="520" fill="none" style="background:#071612; font-family:'Plus Jakarta Sans', Aptos, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Noto Sans Oriya', sans-serif;">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bg-grad-brief" x1="0" y1="0" x2="840" y2="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#061410"/>
+      <stop offset="50%" stop-color="#0a1d17"/>
+      <stop offset="100%" stop-color="#05120e"/>
+    </linearGradient>
+
+    <!-- Radial aura for Sunrise Gold -->
+    <radialGradient id="aura-gold-brief" cx="240" cy="180" r="320" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#b37e28" stop-opacity="0.22"/>
+      <stop offset="60%" stop-color="#d97736" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#071612" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Radial aura for Emerald -->
+    <radialGradient id="aura-emerald-brief" cx="680" cy="300" r="280" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1d6d56" stop-opacity="0.20"/>
+      <stop offset="100%" stop-color="#071612" stop-opacity="0"/>
+    </radialGradient>
+
+    <pattern id="grid-dots-brief" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#1d6d56" fill-opacity="0.16"/>
+    </pattern>
+
+    <linearGradient id="card-grad-brief" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#103227"/>
+      <stop offset="100%" stop-color="#0b221a"/>
+    </linearGradient>
+
+    <linearGradient id="border-glow-brief" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2a7d65"/>
+      <stop offset="50%" stop-color="#1d4e40"/>
+      <stop offset="100%" stop-color="#13362c"/>
+    </linearGradient>
+
+    <!-- Gold Gradients -->
+    <linearGradient id="gold-grad-brief" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="30%" stop-color="#f59e0b"/>
+      <stop offset="70%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#b37e28"/>
+    </linearGradient>
+
+    <!-- Shimmer linear gradient -->
+    <linearGradient id="gold-shimmer" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="40%" stop-color="#fef08a"/>
+      <stop offset="60%" stop-color="#ffffff"/>
+      <stop offset="80%" stop-color="#fef08a"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+
+    <linearGradient id="emerald-grad-brief" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="50%" stop-color="#25d366"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+
+    <filter id="shadow-brief" x="-6%" y="-6%" width="112%" height="116%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+
+    <filter id="glow-gold-brief" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <style>
+      /* Keyframe animations */
+      @keyframes sun-pulse {
+        0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.85; }
+        50% { transform: scale(1.08) rotate(15deg); opacity: 1; filter: drop-shadow(0 0 10px rgba(245,158,11,0.8)); }
+      }
+
+      @keyframes ticker-glow {
+        0%, 100% { filter: drop-shadow(0 0 6px rgba(254,240,138,0.4)); }
+        50% { filter: drop-shadow(0 0 16px rgba(254,240,138,0.9)); }
+      }
+
+      @keyframes badge-jump {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-2px); }
+      }
+
+      @keyframes pulse-dot-b {
+        0%, 100% { opacity: 0.5; }
+        50% { opacity: 1; }
+      }
+
+      .sun-anim { animation: sun-pulse 6s ease-in-out infinite; transform-origin: 34px 21px; }
+      .ticker-val { animation: ticker-glow 3.5s ease-in-out infinite; }
+      .badge-anim { animation: badge-jump 4s ease-in-out infinite; }
+      .dot-glow-b { animation: pulse-dot-b 2.5s infinite; }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, .sun-anim, .ticker-val, .badge-anim, .dot-glow-b {
+          animation: none !important;
+          transform: none !important;
+        }
+      }
+    </style>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="840" height="520" fill="url(#bg-grad-brief)"/>
+  <rect width="840" height="520" fill="url(#aura-gold-brief)"/>
+  <rect width="840" height="520" fill="url(#aura-emerald-brief)"/>
+  <rect width="840" height="520" fill="url(#grid-dots-brief)"/>
+
+  <!-- Border Frame -->
+  <rect x="12" y="12" width="816" height="496" rx="16" fill="none" stroke="url(#border-glow-brief)" stroke-width="1.2" stroke-opacity="0.7"/>
+
+  <!-- ======================================================== -->
+  <!-- HEADER BAR                                               -->
+  <!-- ======================================================== -->
+  <g transform="translate(36, 32)">
+    <rect x="0" y="0" width="28" height="28" rx="6" fill="#0d2921" stroke="#b37e28" stroke-width="1.2"/>
+    <text x="14" y="19" text-anchor="middle" fill="#f59e0b" font-size="13" font-weight="700">वा</text>
+
+    <text x="38" y="14" fill="#fbf9f5" font-size="16" font-weight="800" letter-spacing="1">08:00 AM MORNING BRIEF &amp; RECOVERED REVENUE TICKER</text>
+    <text x="38" y="27" fill="#a7c4bc" font-size="11" font-weight="400">The Clinic Owner's Daily Intelligence · ROI Proof &amp; ASCI-Compliant Audit Trail</text>
+
+    <!-- Top Right Meta Pills -->
+    <g transform="translate(540, 0)">
+      <rect x="0" y="0" width="128" height="26" rx="13" fill="#241e0f" stroke="#b37e28" stroke-width="1"/>
+      <circle cx="12" cy="13" r="3.5" fill="#f59e0b" class="dot-glow-b"/>
+      <text x="22" y="17" fill="#fbf9f5" font-size="10" font-weight="600">08:00 AM Dispatch</text>
+
+      <rect x="136" y="0" width="108" height="26" rx="13" fill="#0b281f" stroke="#1d6d56" stroke-width="1"/>
+      <circle cx="148" cy="13" r="3.5" fill="#25d366" class="dot-glow-b"/>
+      <text x="158" y="17" fill="#fbf9f5" font-size="10" font-weight="600">ASCI Audited</text>
+    </g>
+  </g>
+
+  <!-- Horizontal Divider -->
+  <line x1="36" y1="72" x2="804" y2="72" stroke="#1d4e40" stroke-width="1" stroke-opacity="0.4"/>
+  <line x1="36" y1="72" x2="260" y2="72" stroke="url(#gold-grad-brief)" stroke-width="1.5"/>
+
+  <!-- ======================================================== -->
+  <!-- LEFT: WHATSAPP MORNING REPORT DISPATCH CARD (460px width)-->
+  <!-- ======================================================== -->
+  <g transform="translate(36, 88)">
+    <rect x="0" y="0" width="460" height="404" rx="14" fill="url(#card-grad-brief)" stroke="url(#border-glow-brief)" stroke-width="1.2" filter="url(#shadow-brief)"/>
+
+    <!-- WhatsApp Top Header Bar -->
+    <rect x="0" y="0" width="460" height="42" rx="14" fill="#0d2b22"/>
+    <g class="sun-anim">
+      <circle cx="24" cy="21" r="11" fill="#b37e28" fill-opacity="0.3"/>
+      <circle cx="24" cy="21" r="6" fill="#f59e0b"/>
+    </g>
+    <text x="44" y="19" fill="#fbf9f5" font-size="11.5" font-weight="700">Dr. Priya (Apex Dental) · Owner Desk</text>
+    <text x="44" y="31" fill="#fbbf24" font-size="9">Vaani Reporting Agent · Daily Brief</text>
+    <text x="390" y="25" fill="#a7c4bc" font-size="9.5">08:00 AM</text>
+
+    <!-- Message Bubble Body -->
+    <g transform="translate(14, 52)">
+      <!-- Main WhatsApp Bubble Frame -->
+      <rect x="0" y="0" width="432" height="336" rx="12" fill="#0c261e" stroke="#1d6d56" stroke-width="0.8"/>
+
+      <!-- Bubble Salutation -->
+      <g transform="translate(14, 14)">
+        <text x="0" y="14" fill="#fbbf24" font-size="12" font-weight="700">🌅 सुप्रभात डॉ. प्रिया! (Good morning Dr. Priya)</text>
+        <text x="0" y="30" fill="#fbf9f5" font-size="10.5">यहाँ कल की दैनिक रिपोर्ट (<tspan font-weight="700">Mon, 18 Jul</tspan>) है — वाणी AI ने संभाला:</text>
+      </g>
+
+      <!-- HERO RECOVERED REVENUE TICKER CARD (In-chat embed) -->
+      <g transform="translate(14, 56)">
+        <rect x="0" y="0" width="404" height="106" rx="10" fill="#143c2f" stroke="url(#gold-grad-brief)" stroke-width="1.4"/>
+
+        <g transform="translate(16, 18)">
+          <text x="0" y="12" fill="#a7c4bc" font-size="9.5" font-weight="700" letter-spacing="1">AFTER-HOURS RECOVERED REVENUE</text>
+          <text x="0" y="26" fill="#689084" font-size="8.5">Bookings captured while clinic was shut (8:00 PM – 8:00 AM)</text>
+
+          <!-- Large Gold Ticker -->
+          <g transform="translate(0, 36)">
+            <text class="ticker-val" x="0" y="30" fill="#fef08a" font-size="34" font-weight="900" letter-spacing="0.5">₹8,500</text>
+            <!-- Badge pill next to ticker -->
+            <g class="badge-anim" transform="translate(150, 8)">
+              <rect x="0" y="0" width="132" height="24" rx="12" fill="#082218" stroke="#25d366" stroke-width="1"/>
+              <circle cx="12" cy="12" r="3.5" fill="#25d366"/>
+              <text x="22" y="16" fill="#25d366" font-size="9.5" font-weight="700">+9 Bookings Saved</text>
+            </g>
+          </g>
+        </g>
+      </g>
+
+      <!-- 2x2 OPERATIONAL METRICS -->
+      <g transform="translate(14, 172)">
+        <!-- Box 1: Convs -->
+        <g transform="translate(0, 0)">
+          <rect x="0" y="0" width="196" height="42" rx="6" fill="#081e17" stroke="#174436" stroke-width="0.8"/>
+          <text x="10" y="16" fill="#689084" font-size="8.5">CONVERSATIONS HANDLED</text>
+          <text x="10" y="34" fill="#fbf9f5" font-size="15" font-weight="800">42</text>
+          <text x="36" y="34" fill="#25d366" font-size="9">100% Automated</text>
+        </g>
+
+        <!-- Box 2: Confirmed Appointments -->
+        <g transform="translate(208, 0)">
+          <rect x="0" y="0" width="196" height="42" rx="6" fill="#081e17" stroke="#174436" stroke-width="0.8"/>
+          <text x="10" y="16" fill="#689084" font-size="8.5">CONFIRMED APPOINTMENTS</text>
+          <text x="10" y="34" fill="#fbf9f5" font-size="15" font-weight="800">18</text>
+          <text x="36" y="34" fill="#f59e0b" font-size="9">Day Chairs Full</text>
+        </g>
+
+        <!-- Box 3: Open Escalations -->
+        <g transform="translate(0, 48)">
+          <rect x="0" y="0" width="196" height="42" rx="6" fill="#081e17" stroke="#174436" stroke-width="0.8"/>
+          <text x="10" y="16" fill="#689084" font-size="8.5">OPEN ESCALATIONS</text>
+          <text x="10" y="34" fill="#34d399" font-size="15" font-weight="800">0</text>
+          <text x="26" y="34" fill="#689084" font-size="9">All under 10m SLA</text>
+        </g>
+
+        <!-- Box 4: CSAT Score -->
+        <g transform="translate(208, 48)">
+          <rect x="0" y="0" width="196" height="42" rx="6" fill="#081e17" stroke="#174436" stroke-width="0.8"/>
+          <text x="10" y="16" fill="#689084" font-size="8.5">PATIENT CSAT SCORE</text>
+          <text x="10" y="34" fill="#fef08a" font-size="15" font-weight="800">4.9 ★</text>
+          <text x="54" y="34" fill="#689084" font-size="9">(38 reviews)</text>
+        </g>
+      </g>
+
+      <!-- INTERACTIVE WHATSAPP BUTTONS -->
+      <g transform="translate(14, 274)">
+        <g transform="translate(0, 0)">
+          <rect x="0" y="0" width="220" height="38" rx="8" fill="url(#emerald-grad-brief)"/>
+          <text x="28" y="23" fill="#061812" font-size="11" font-weight="800">📊 Open Control Desk</text>
+        </g>
+
+        <g transform="translate(230, 0)">
+          <rect x="0" y="0" width="174" height="38" rx="8" fill="#12382c" stroke="#1d6d56" stroke-width="1"/>
+          <text x="18" y="23" fill="#fbf9f5" font-size="10.5" font-weight="600">🤝 Refer a Doctor</text>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- ======================================================== -->
+  <!-- RIGHT: ASCI AUDIT TRACE & ROI ANALYSIS (308px width)     -->
+  <!-- ======================================================== -->
+  <g transform="translate(516, 88)">
+    <rect x="0" y="0" width="288" height="404" rx="14" fill="url(#card-grad-brief)" stroke="url(#border-glow-brief)" stroke-width="1.2" filter="url(#shadow-brief)"/>
+
+    <!-- Header -->
+    <rect x="0" y="0" width="288" height="42" rx="14" fill="#133d30" fill-opacity="0.4"/>
+    <text x="18" y="26" fill="#fbf9f5" font-size="12" font-weight="700" letter-spacing="0.5">ROI MATH &amp; ASCI AUDIT TRACE</text>
+
+    <!-- Economic ROI Card -->
+    <g transform="translate(18, 54)">
+      <rect x="0" y="0" width="252" height="108" rx="8" fill="#091f18" stroke="#b37e28" stroke-width="1"/>
+      <text x="12" y="18" fill="#fbbf24" font-size="10.5" font-weight="700">THE REVENUE MULTIPLIER</text>
+
+      <text x="12" y="36" fill="#a7c4bc" font-size="9">9 Recovered Bookings × ₹944 Avg Ticket</text>
+      <text x="12" y="52" fill="#fef08a" font-size="14" font-weight="800">= ₹8,500 Gross Added Value</text>
+
+      <line x1="12" y1="64" x2="240" y2="64" stroke="#174436" stroke-width="1"/>
+
+      <text x="12" y="80" fill="#689084" font-size="8.5">Vaani Subscription: ₹2,999 / month</text>
+      <text x="12" y="96" fill="#25d366" font-size="11" font-weight="800">2.83× Monthly Cost Recovered in 1 Night</text>
+    </g>
+
+    <!-- Cryptographic Verification Box -->
+    <g transform="translate(18, 172)">
+      <rect x="0" y="0" width="252" height="114" rx="8" fill="#05140f" stroke="#174436" stroke-width="0.8"/>
+      <text x="12" y="18" fill="#34d399" font-size="9" font-weight="700">CRYPTOGRAPHIC AUDIT PROOF</text>
+
+      <text x="12" y="34" fill="#689084" font-size="8" font-family="monospace">KEY: daily-brief:apex-dental:2026-07-18</text>
+      <text x="12" y="48" fill="#a7c4bc" font-size="8">Worker: app/workers/daily_brief.py</text>
+      <text x="12" y="62" fill="#a7c4bc" font-size="8">Lock: Idempotent operation_key</text>
+      <text x="12" y="76" fill="#25d366" font-size="8">Ledger: ASCI-Verified Audit Collection</text>
+      <text x="12" y="90" fill="#fbbf24" font-size="8">Dispatched: 08:00:03.118 IST via WhatsApp</text>
+      <text x="12" y="104" fill="#a7c4bc" font-size="8">Recipient: Owner (Dr. Priya) Verified WA</text>
+    </g>
+
+    <!-- Doctor Testimonial Quote -->
+    <g transform="translate(18, 296)">
+      <rect x="0" y="0" width="252" height="92" rx="8" fill="#081e17" stroke="#1d6d56" stroke-width="0.8"/>
+      <text x="12" y="18" fill="#fbbf24" font-size="12">“</text>
+      <text x="24" y="24" fill="#fbf9f5" font-size="9" font-style="italic">I used to wake up to 6 missed calls</text>
+      <text x="12" y="38" fill="#fbf9f5" font-size="9" font-style="italic">and lost revenue. Now I wake up to</text>
+      <text x="12" y="52" fill="#34d399" font-size="9" font-weight="700" font-style="italic">a full schedule and ₹8,500 saved.</text>
+      <text x="12" y="72" fill="#a7c4bc" font-size="8.5" font-weight="600">— Dr. Priya, Apex Dental Studio</text>
+      <text x="12" y="84" fill="#689084" font-size="7.5">Bhubaneswar Pilot Clinic Reference</text>
+    </g>
+  </g>
+</svg>

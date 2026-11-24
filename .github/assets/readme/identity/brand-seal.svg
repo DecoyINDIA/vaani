@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80" role="img" aria-label="Vaani Certified Engineering Seal">
+  <defs>
+    <linearGradient id="sealBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#183F35"/>
+      <stop offset="100%" stop-color="#0E2822"/>
+    </linearGradient>
+    <linearGradient id="goldBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E2B86E"/>
+      <stop offset="50%" stop-color="#B37E28"/>
+      <stop offset="100%" stop-color="#D97736"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="320" height="80" rx="14" fill="url(#sealBg)" stroke="url(#goldBorder)" stroke-width="1.2"/>
+
+  <!-- Left: Gold Icon -->
+  <g transform="translate(16, 16)">
+    <circle cx="24" cy="24" r="22" fill="rgba(179, 126, 40, 0.18)" stroke="#B37E28" stroke-width="1.2"/>
+    <!-- Shield / Checkmark -->
+    <path d="M 24 13 L 34 18 V 26 C 34 32 29 36 24 38 C 19 36 14 32 14 26 V 18 Z" fill="none" stroke="#E2B86E" stroke-width="1.8" stroke-linejoin="round"/>
+    <path d="M 19 25 L 22.5 28.5 L 29 21" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Right: Trust Copy -->
+  <g transform="translate(74, 18)">
+    <text x="0" y="14" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="12" font-weight="800" fill="#E2B86E" letter-spacing="0.06em" text-transform="uppercase">DPDP ACT 2025 COMPLIANT</text>
+    <text x="0" y="32" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="13.5" font-weight="700" fill="#FFFFFF">Zero Hallucinations · 120s Hold</text>
+    <text x="0" y="47" font-family="'JetBrains Mono', Consolas, monospace" font-size="10.5" fill="#A0C9B9">500-Claim Race Tested · Strict RAG</text>
+  </g>
+</svg>

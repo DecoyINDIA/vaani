@@ -1,0 +1,322 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 880" width="100%" height="100%">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Noto+Sans+Devanagari:wght@600;700&amp;display=swap');
+      
+      .canvas { fill: #FBF9F5; }
+      
+      /* Typography */
+      .font-sans { font-family: 'Plus Jakarta Sans', Aptos, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+      .font-mono { font-family: 'JetBrains Mono', 'Cascadia Code', 'SFMono-Regular', Consolas, monospace; }
+      .font-devanagari { font-family: 'Noto Sans Devanagari', 'Anek Devanagari', 'Rozha One', serif; }
+      
+      .title-main { font-weight: 800; font-size: 21px; fill: #183F35; letter-spacing: -0.02em; }
+      .title-sub { font-weight: 500; font-size: 13px; fill: #485C54; }
+      .badge-text { font-weight: 700; font-size: 11px; letter-spacing: 0.02em; }
+      
+      .actor-title { font-weight: 700; font-size: 12px; fill: #183F35; }
+      .actor-sub { font-weight: 500; font-size: 10px; fill: #485C54; }
+      
+      .step-num { font-weight: 800; font-size: 11px; fill: #FFFFFF; }
+      .step-title { font-weight: 700; font-size: 12px; fill: #183F35; }
+      .step-desc { font-weight: 500; font-size: 10.5px; fill: #485C54; }
+      .code-text { font-weight: 500; font-size: 9.5px; fill: #1D6D56; }
+      
+      .card-bg { fill: #FFFFFF; stroke: rgba(24, 63, 53, 0.12); stroke-width: 1.2; rx: 10px; }
+      .swimlane-line { stroke: rgba(24, 63, 53, 0.10); stroke-width: 1.2; stroke-dasharray: 4,4; }
+      
+      .seq-line { fill: none; stroke: #1D6D56; stroke-width: 1.8; stroke-linecap: round; }
+      .seq-line-orange { fill: none; stroke: #D97736; stroke-width: 1.8; stroke-linecap: round; }
+      .seq-line-red { fill: none; stroke: #A43A31; stroke-width: 1.8; stroke-linecap: round; stroke-dasharray: 4,3; }
+      .seq-line-return { fill: none; stroke: #485C54; stroke-width: 1.5; stroke-dasharray: 4,3; stroke-linecap: round; }
+    </style>
+
+    <!-- Filters for drop shadows -->
+    <filter id="shadow-card" x="-6%" y="-6%" width="112%" height="116%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#183F35" flood-opacity="0.06"/>
+    </filter>
+    <filter id="shadow-elevated" x="-8%" y="-6%" width="116%" height="118%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#183F35" flood-opacity="0.09"/>
+    </filter>
+
+    <!-- Markers for arrows -->
+    <marker id="arr-jade" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#1D6D56"/>
+    </marker>
+    <marker id="arr-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#D97736"/>
+    </marker>
+    <marker id="arr-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#A43A31"/>
+    </marker>
+    <marker id="arr-muted" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#485C54"/>
+    </marker>
+
+    <!-- Dot Pattern -->
+    <pattern id="dot-grid" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#183F35" fill-opacity="0.06"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="880" class="canvas"/>
+  <rect width="1200" height="880" fill="url(#dot-grid)"/>
+  <rect x="16" y="16" width="1168" height="848" rx="16" fill="none" stroke="rgba(24, 63, 53, 0.12)" stroke-width="1.5"/>
+
+  <!-- ==================== HEADER ==================== -->
+  <g transform="translate(36, 32)">
+    <!-- Brand Glyph -->
+    <rect x="0" y="2" width="46" height="46" rx="12" fill="#183F35" filter="url(#shadow-card)"/>
+    <rect x="2" y="4" width="42" height="42" rx="10" fill="none" stroke="#B37E28" stroke-width="1.2"/>
+    <text x="23" y="32" class="font-devanagari" font-size="24" font-weight="700" fill="#FCF6EB" text-anchor="middle">वा</text>
+    
+    <!-- Title -->
+    <text x="60" y="24" class="font-sans title-main">DISTRIBUTED TRANSACTION &amp; 120s ATOMIC HOLD SEQUENCE</text>
+    <text x="60" y="44" class="font-sans title-sub">Race-Safe Concurrency Architecture · <tspan class="font-mono" fill="#1D6D56">app/booking/engine.py</tspan> · Multi-Document ACID Transactions</text>
+    
+    <!-- Header Badges -->
+    <g transform="translate(735, 6)">
+      <rect x="0" y="0" width="185" height="28" rx="14" fill="#ECF7F1" stroke="#207E56" stroke-width="1.2"/>
+      <circle cx="14" cy="14" r="4.5" fill="#207E56"/>
+      <text x="26" y="18" class="font-sans badge-text" fill="#14493A">500-CLAIM RACE TESTED</text>
+      
+      <rect x="195" y="0" width="195" height="28" rx="14" fill="#FDF3ED" stroke="#D97736" stroke-width="1.2"/>
+      <circle cx="209" cy="14" r="4.5" fill="#D97736"/>
+      <text x="221" y="18" class="font-sans badge-text" fill="#B85E24">120s DISTRIBUTED TTL LOCK</text>
+    </g>
+  </g>
+
+  <!-- Header Divider -->
+  <line x1="36" y1="94" x2="1164" y2="94" stroke="rgba(24, 63, 53, 0.10)" stroke-width="1"/>
+
+  <!-- ==================== ACTORS & SWIMLANES ==================== -->
+  <!-- Actor 1: Patient (x=110) -->
+  <!-- Actor 2: Delivery Worker (x=300) -->
+  <!-- Actor 3: Booking Engine (x=500) -->
+  <!-- Actor 4: Slots Collection (x=710) -->
+  <!-- Actor 5: Bookings Collection (x=910) -->
+  <!-- Actor 6: Metering & Audit (x=1080) -->
+
+  <!-- Swimlane Vertical Lines -->
+  <line x1="110" y1="170" x2="110" y2="615" class="swimlane-line"/>
+  <line x1="300" y1="170" x2="300" y2="615" class="swimlane-line"/>
+  <line x1="500" y1="170" x2="500" y2="615" class="swimlane-line"/>
+  <line x1="710" y1="170" x2="710" y2="615" class="swimlane-line"/>
+  <line x1="910" y1="170" x2="910" y2="615" class="swimlane-line"/>
+  <line x1="1080" y1="170" x2="1080" y2="615" class="swimlane-line"/>
+
+  <!-- Actor Header Cards -->
+  <g transform="translate(36, 110)">
+    <!-- Actor 1 -->
+    <g transform="translate(20, 0)">
+      <rect x="0" y="0" width="108" height="52" rx="8" fill="#FFFFFF" stroke="rgba(24, 63, 53, 0.15)" stroke-width="1.2" filter="url(#shadow-card)"/>
+      <rect x="0" y="0" width="108" height="4" rx="2" fill="#25D366"/>
+      <text x="54" y="24" class="font-sans actor-title" text-anchor="middle">Patient / Client</text>
+      <text x="54" y="40" class="font-sans actor-sub" text-anchor="middle">WhatsApp / Voice</text>
+    </g>
+
+    <!-- Actor 2 -->
+    <g transform="translate(210, 0)">
+      <rect x="0" y="0" width="108" height="52" rx="8" fill="#FFFFFF" stroke="rgba(24, 63, 53, 0.15)" stroke-width="1.2" filter="url(#shadow-card)"/>
+      <rect x="0" y="0" width="108" height="4" rx="2" fill="#1D6D56"/>
+      <text x="54" y="24" class="font-sans actor-title" text-anchor="middle">Delivery Worker</text>
+      <text x="54" y="40" class="font-mono actor-sub" text-anchor="middle">delivery.py</text>
+    </g>
+
+    <!-- Actor 3 -->
+    <g transform="translate(410, 0)">
+      <rect x="0" y="0" width="108" height="52" rx="8" fill="#FFFFFF" stroke="rgba(24, 63, 53, 0.15)" stroke-width="1.2" filter="url(#shadow-card)"/>
+      <rect x="0" y="0" width="108" height="4" rx="2" fill="#D97736"/>
+      <text x="54" y="24" class="font-sans actor-title" text-anchor="middle">Booking Engine</text>
+      <text x="54" y="40" class="font-mono actor-sub" text-anchor="middle">booking/engine.py</text>
+    </g>
+
+    <!-- Actor 4 -->
+    <g transform="translate(620, 0)">
+      <rect x="0" y="0" width="108" height="52" rx="8" fill="#FFFFFF" stroke="rgba(24, 63, 53, 0.15)" stroke-width="1.2" filter="url(#shadow-card)"/>
+      <rect x="0" y="0" width="108" height="4" rx="2" fill="#183F35"/>
+      <text x="54" y="24" class="font-sans actor-title" text-anchor="middle">MongoDB Replica</text>
+      <text x="54" y="40" class="font-mono actor-sub" text-anchor="middle">db['slots']</text>
+    </g>
+
+    <!-- Actor 5 -->
+    <g transform="translate(820, 0)">
+      <rect x="0" y="0" width="108" height="52" rx="8" fill="#FFFFFF" stroke="rgba(24, 63, 53, 0.15)" stroke-width="1.2" filter="url(#shadow-card)"/>
+      <rect x="0" y="0" width="108" height="4" rx="2" fill="#183F35"/>
+      <text x="54" y="24" class="font-sans actor-title" text-anchor="middle">MongoDB Replica</text>
+      <text x="54" y="40" class="font-mono actor-sub" text-anchor="middle">db['bookings']</text>
+    </g>
+
+    <!-- Actor 6 -->
+    <g transform="translate(990, 0)">
+      <rect x="0" y="0" width="108" height="52" rx="8" fill="#FFFFFF" stroke="rgba(24, 63, 53, 0.15)" stroke-width="1.2" filter="url(#shadow-card)"/>
+      <rect x="0" y="0" width="108" height="4" rx="2" fill="#B37E28"/>
+      <text x="54" y="24" class="font-sans actor-title" text-anchor="middle">Billing &amp; Audit</text>
+      <text x="54" y="40" class="font-mono actor-sub" text-anchor="middle">meters.py</text>
+    </g>
+  </g>
+
+  <!-- ==================== SEQUENCE INTERACTIONS ==================== -->
+
+  <!-- STEP 1: Inbound Selection with operation_id (y=190) -->
+  <g transform="translate(0, 185)">
+    <!-- Arrow 1: Patient -> Delivery Worker -->
+    <line x1="110" y1="15" x2="295" y2="15" class="seq-line" marker-end="url(#arr-jade)"/>
+    <text x="202" y="9" class="font-sans step-title" text-anchor="middle">1. Taps Slot Button (WhatsApp Quick Reply)</text>
+    
+    <!-- Callout Box for operation_id -->
+    <g transform="translate(135, 18)">
+      <rect x="0" y="0" width="135" height="24" rx="4" fill="#EAF3EF" stroke="#1D6D56" stroke-width="0.8"/>
+      <text x="67" y="16" class="font-mono" font-size="9" fill="#1D6D56" text-anchor="middle">operation_id: UUIDv4</text>
+    </g>
+  </g>
+
+  <!-- STEP 2: Delivery Worker delegates to Booking Engine (y=240) -->
+  <g transform="translate(0, 235)">
+    <line x1="300" y1="15" x2="495" y2="15" class="seq-line" marker-end="url(#arr-jade)"/>
+    <text x="400" y="9" class="font-sans step-title" text-anchor="middle">2. hold_slot(tenant_id, slot_id, op_id)</text>
+  </g>
+
+  <!-- STEP 3: Atomic Hold on Slots Collection (y=280) -->
+  <g transform="translate(0, 275)">
+    <!-- Line from Engine to db['slots'] -->
+    <line x1="500" y1="15" x2="705" y2="15" class="seq-line-orange" marker-end="url(#arr-orange)"/>
+    <text x="605" y="9" class="font-sans step-title" fill="#B85E24" text-anchor="middle">3. find_one_and_update(query, update)</text>
+    
+    <!-- Code Box for Atomic Condition -->
+    <g transform="translate(490, 22)">
+      <rect x="0" y="0" width="230" height="74" rx="6" fill="#FDF3ED" stroke="#D97736" stroke-width="1"/>
+      <text x="8" y="15" class="font-mono" font-size="8.5" font-weight="700" fill="#B85E24">ATOMIC MUTEX QUERY (MongoDB):</text>
+      <text x="8" y="28" class="font-mono" font-size="8" fill="#183F35">query: { _id: slot_id, start: {$gt: now},</text>
+      <text x="8" y="40" class="font-mono" font-size="8" fill="#183F35">  $or: [ {status:'open'},</text>
+      <text x="8" y="52" class="font-mono" font-size="8" fill="#183F35">         {status:'held', hold_expiry:{$lt:now}},</text>
+      <text x="8" y="64" class="font-mono" font-size="8" fill="#183F35">         {status:'held', hold_owner: op_id} ] }</text>
+    </g>
+
+    <!-- State Mutation Callout on Slots -->
+    <g transform="translate(725, 22)">
+      <rect x="0" y="0" width="165" height="54" rx="6" fill="#FFFFFF" stroke="#1D6D56" stroke-width="1" filter="url(#shadow-card)"/>
+      <text x="8" y="15" class="font-mono" font-size="8.5" font-weight="700" fill="#1D6D56">ATOMIC $set:</text>
+      <text x="8" y="28" class="font-mono" font-size="8" fill="#485C54">• status: "held"</text>
+      <text x="8" y="40" class="font-mono" font-size="8" fill="#485C54">• hold_expiry: now + 120s</text>
+      <text x="8" y="50" class="font-mono" font-size="8" fill="#485C54">• hold_owner: operation_id</text>
+    </g>
+  </g>
+
+  <!-- STEP 4: Parallel Race Condition Visualization (Worker B fails) (y=380) -->
+  <g transform="translate(0, 375)">
+    <!-- Competitor Worker B trying concurrent hold -->
+    <rect x="360" y="0" width="370" height="42" rx="6" fill="#FCF1F0" stroke="#A43A31" stroke-width="1"/>
+    <circle cx="376" cy="21" r="7" fill="#A43A31"/>
+    <text x="376" y="25" class="font-sans" font-size="9" font-weight="800" fill="#FFFFFF" text-anchor="middle">✕</text>
+    <text x="392" y="16" class="font-sans" font-weight="700" font-size="10.5" fill="#A43A31">CONCURRENT COMPETITOR COLLISION (500-Claim Race Condition)</text>
+    <text x="392" y="32" class="font-sans" font-size="9.5" fill="#788A82">Worker B attempts hold on same slot → Query matches 0 docs → Returns <tspan class="font-mono" fill="#A43A31">None</tspan> (Slot Taken!)</text>
+  </g>
+
+  <!-- STEP 5: 120-Second Atomic Hold Window Bar (y=435) -->
+  <g transform="translate(100, 430)">
+    <rect x="0" y="0" width="990" height="46" rx="8" fill="#FDF9F5" stroke="#D97736" stroke-width="1.2" stroke-dasharray="5,4"/>
+    
+    <!-- Stop Watch Icon -->
+    <circle cx="30" cy="23" r="14" fill="#D97736"/>
+    <text x="30" y="28" class="font-mono" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">⏱</text>
+    
+    <text x="56" y="20" class="font-sans" font-weight="800" font-size="12" fill="#D97736">120-SECOND HARD TTL DISTRIBUTED HOLD WINDOW</text>
+    <text x="56" y="35" class="font-sans" font-size="10" fill="#485C54">Guaranteed reservation while patient confirms service or completes UPI payment · Slot is locked against all other callers</text>
+
+    <!-- Visual Countdown Bar -->
+    <g transform="translate(710, 10)">
+      <rect x="0" y="4" width="240" height="18" rx="9" fill="#F4EFE8"/>
+      <rect x="0" y="4" width="160" height="18" rx="9" fill="#D97736"/>
+      <text x="80" y="17" class="font-mono" font-size="9" font-weight="700" fill="#FFFFFF" text-anchor="middle">HOLD ACTIVE (t ≤ 120s)</text>
+      <text x="200" y="17" class="font-mono" font-size="9" fill="#788A82" text-anchor="middle">EXPIRES</text>
+    </g>
+  </g>
+
+  <!-- STEP 6: ACID Multi-Document Confirmation Transaction (y=495) -->
+  <g transform="translate(0, 490)">
+    <!-- Transaction Container Box across Engine, Slots, Bookings -->
+    <rect x="470" y="0" width="460" height="120" rx="10" fill="#F4F9F7" stroke="#1D6D56" stroke-width="1.5" filter="url(#shadow-elevated)"/>
+    
+    <path d="M 470 10 Q 470 0 480 0 L 920 0 Q 930 0 930 10 L 930 26 L 470 26 Z" fill="#1D6D56"/>
+    <text x="485" y="18" class="font-sans" font-weight="800" font-size="11" fill="#FFFFFF">ACID MULTI-DOCUMENT TRANSACTION: async with _transaction() as session</text>
+
+    <!-- Sub-step 6a: Confirm Slot -->
+    <g transform="translate(485, 36)">
+      <circle cx="8" cy="8" r="7" fill="#1D6D56"/>
+      <text x="8" y="12" class="font-mono" font-size="9" font-weight="700" fill="#FFFFFF" text-anchor="middle">A</text>
+      <text x="22" y="11" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">Slots.find_one_and_update(session=session)</text>
+      <text x="22" y="24" class="font-mono" font-size="8.5" fill="#485C54">Match: { _id: slot_id, status: "held", hold_owner: op_id, hold_expiry: {$gt: now} }</text>
+      <text x="22" y="36" class="font-mono" font-size="8.5" fill="#1D6D56">Mutate: { $set: { status: "booked", booking_id: new_id }, $unset: { hold_owner, hold_expiry } }</text>
+    </g>
+
+    <!-- Sub-step 6b: Insert Booking -->
+    <g transform="translate(485, 78)">
+      <circle cx="8" cy="8" r="7" fill="#1D6D56"/>
+      <text x="8" y="12" class="font-mono" font-size="9" font-weight="700" fill="#FFFFFF" text-anchor="middle">B</text>
+      <text x="22" y="11" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">Bookings.insert_one(session=session)</text>
+      <text x="22" y="24" class="font-mono" font-size="8.5" fill="#485C54">Insert: { _id: new_id, slot_id, contact_id, service, status: "confirmed", request_id: op_id }</text>
+      <text x="22" y="36" class="font-mono" font-size="8.5" fill="#207E56">Commit Transaction · All-or-nothing atomicity guaranteed across both collections</text>
+    </g>
+  </g>
+
+  <!-- STEP 7: Metering & Inbound Notification (y=625) -->
+  <g transform="translate(0, 620)">
+    <!-- Metering call to Billing -->
+    <line x1="500" y1="15" x2="1075" y2="15" class="seq-line" stroke="#B37E28" marker-end="url(#arr-orange)"/>
+    <text x="790" y="9" class="font-mono" font-size="9.5" fill="#96671E" text-anchor="middle">record_usage(metric="confirmed_bookings", quantity=1)</text>
+
+    <!-- Return Confirmation to Patient -->
+    <path d="M 500 28 L 300 28 L 115 28" class="seq-line-return" marker-end="url(#arr-muted)"/>
+    <text x="200" y="42" class="font-sans" font-size="10.5" font-weight="700" fill="#207E56" text-anchor="middle">✓ Booking Confirmed &amp; WhatsApp Receipt Sent</text>
+  </g>
+
+  <!-- ==================== BOTTOM ARCHITECTURAL LEDGER ==================== -->
+  <g transform="translate(36, 675)">
+    <rect x="0" y="0" width="1128" height="175" rx="14" fill="#FFFFFF" stroke="rgba(24, 63, 53, 0.12)" stroke-width="1.2" filter="url(#shadow-card)"/>
+    
+    <path d="M 0 14 Q 0 0 14 0 L 1114 0 Q 1128 0 1128 14 L 1128 36 L 0 36 Z" fill="#183F35"/>
+    <text x="20" y="23" class="font-sans" font-weight="700" font-size="12.5" fill="#FCF6EB">DISTRIBUTED TRANSACTION SPECIFICATION · CONCURRENCY ASSURANCE INVARIANTS</text>
+    <text x="1098" y="23" class="font-mono" font-size="10.5" fill="#B37E28" text-anchor="end">TRD §3 · Week 4 Task 4.2 · tests/integration/test_booking_transactions.py</text>
+
+    <!-- Pillar 1 -->
+    <g transform="translate(24, 48)">
+      <rect x="0" y="0" width="344" height="112" rx="8" fill="#FDF9F5" stroke="rgba(217, 119, 54, 0.25)" stroke-width="1"/>
+      <text x="14" y="22" class="font-sans" font-weight="700" font-size="11.5" fill="#183F35">1. RACE-SAFE ATOMIC MUTEX</text>
+      <text x="14" y="36" class="font-mono" font-size="9.5" fill="#B85E24">MongoDB find_one_and_update() isolation</text>
+      <text x="14" y="54" class="font-sans" font-size="10.5" fill="#485C54">
+        <tspan x="14" dy="0">Evaluated atomically at the storage engine layer.</tspan>
+        <tspan x="14" dy="15">500 simultaneous workers attempting to claim the</tspan>
+        <tspan x="14" dy="15">same slot results in exactly 1 hold and 499 clean</tspan>
+        <tspan x="14" dy="15" font-weight="600" fill="#183F35">rejections with zero dirty writes or double-bookings.</tspan>
+      </text>
+    </g>
+
+    <!-- Pillar 2 -->
+    <g transform="translate(392, 48)">
+      <rect x="0" y="0" width="344" height="112" rx="8" fill="#F4F9F7" stroke="rgba(29, 109, 86, 0.25)" stroke-width="1"/>
+      <text x="14" y="22" class="font-sans" font-weight="700" font-size="11.5" fill="#183F35">2. MULTI-DOCUMENT ACID COMMIT</text>
+      <text x="14" y="36" class="font-mono" font-size="9.5" fill="#1D6D56">Two-Phase session.start_transaction()</text>
+      <text x="14" y="54" class="font-sans" font-size="10.5" fill="#485C54">
+        <tspan x="14" dy="0">Slot state transition (held → booked) and booking</tspan>
+        <tspan x="14" dy="15">creation are coupled in a single replica-set transaction.</tspan>
+        <tspan x="14" dy="15">Any transient network failure, deadlock, or duplicate</tspan>
+        <tspan x="14" dy="15" font-weight="600" fill="#183F35">causes immediate clean rollback with 0 orphan slots.</tspan>
+      </text>
+    </g>
+
+    <!-- Pillar 3 -->
+    <g transform="translate(760, 48)">
+      <rect x="0" y="0" width="344" height="112" rx="8" fill="#FBF8F2" stroke="rgba(179, 126, 40, 0.25)" stroke-width="1"/>
+      <text x="14" y="22" class="font-sans" font-weight="700" font-size="11.5" fill="#183F35">3. ZERO-JANITOR AUTO-EXPIRY</text>
+      <text x="14" y="36" class="font-mono" font-size="9.5" fill="#96671E">Dynamic TTL Query Overwrite</text>
+      <text x="14" y="54" class="font-sans" font-size="10.5" fill="#485C54">
+        <tspan x="14" dy="0">No periodic background cleaner or cron loop is needed</tspan>
+        <tspan x="14" dy="15">to reset abandoned holds. The query condition</tspan>
+        <tspan x="14" dy="15">{ hold_expiry: {$lt: now} } allows any subsequent</tspan>
+        <tspan x="14" dy="15" font-weight="600" fill="#183F35">patient to atomically reclaim the expired slot on-the-fly.</tspan>
+      </text>
+    </g>
+  </g>
+</svg>

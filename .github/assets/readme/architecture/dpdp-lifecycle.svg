@@ -1,0 +1,333 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 880" width="100%" height="100%">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Noto+Sans+Devanagari:wght@600;700&amp;display=swap');
+      
+      .canvas { fill: #FBF9F5; }
+      
+      /* Typography */
+      .font-sans { font-family: 'Plus Jakarta Sans', Aptos, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+      .font-mono { font-family: 'JetBrains Mono', 'Cascadia Code', 'SFMono-Regular', Consolas, monospace; }
+      .font-devanagari { font-family: 'Noto Sans Devanagari', 'Anek Devanagari', 'Rozha One', serif; }
+      
+      .title-main { font-weight: 800; font-size: 20px; fill: #183F35; letter-spacing: -0.02em; }
+      .title-sub { font-weight: 500; font-size: 13px; fill: #485C54; }
+      .badge-text { font-weight: 700; font-size: 11px; letter-spacing: 0.02em; }
+      .section-header { font-weight: 700; font-size: 13px; fill: #183F35; letter-spacing: -0.01em; }
+      
+      .card-bg { fill: #FFFFFF; stroke: rgba(24, 63, 53, 0.12); stroke-width: 1.2; rx: 12px; }
+      .stage-card { fill: #FFFFFF; stroke: rgba(24, 63, 53, 0.15); stroke-width: 1.2; rx: 10px; }
+      
+      .pipeline-line { fill: none; stroke: #1D6D56; stroke-width: 2; stroke-linecap: round; }
+      .pipeline-line-dashed { fill: none; stroke: #D97736; stroke-width: 1.8; stroke-dasharray: 4,3; stroke-linecap: round; }
+    </style>
+
+    <!-- Drop Shadows -->
+    <filter id="shadow-card" x="-6%" y="-6%" width="112%" height="116%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#183F35" flood-opacity="0.06"/>
+    </filter>
+    <filter id="shadow-elevated" x="-8%" y="-6%" width="116%" height="118%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#183F35" flood-opacity="0.09"/>
+    </filter>
+
+    <!-- Arrow Markers -->
+    <marker id="arr-jade" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#1D6D56"/>
+    </marker>
+    <marker id="arr-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#D97736"/>
+    </marker>
+
+    <!-- Dot Pattern -->
+    <pattern id="dot-grid" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#183F35" fill-opacity="0.06"/>
+    </pattern>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect width="1200" height="880" class="canvas"/>
+  <rect width="1200" height="880" fill="url(#dot-grid)"/>
+  <rect x="16" y="16" width="1168" height="848" rx="16" fill="none" stroke="rgba(24, 63, 53, 0.12)" stroke-width="1.5"/>
+
+  <!-- ==================== HEADER ==================== -->
+  <g transform="translate(36, 32)">
+    <rect x="0" y="2" width="46" height="46" rx="12" fill="#183F35" filter="url(#shadow-card)"/>
+    <rect x="2" y="4" width="42" height="42" rx="10" fill="none" stroke="#B37E28" stroke-width="1.2"/>
+    <text x="23" y="32" class="font-devanagari" font-size="24" font-weight="700" fill="#FCF6EB" text-anchor="middle">वा</text>
+    
+    <text x="60" y="24" class="font-sans title-main">INDIA DPDP ACT 2025 COMPLIANCE &amp; 7-DAY ERASURE PIPELINE</text>
+    <text x="60" y="44" class="font-sans title-sub">Section 12 Patient Right to Erasure · <tspan class="font-mono" fill="#1D6D56">ops/dpdp_delete.py</tspan> · Multi-Hop Graph Traversal &amp; Cryptographic Suppression</text>
+    
+    <!-- Top Badges -->
+    <g transform="translate(755, 6)">
+      <rect x="0" y="0" width="160" height="28" rx="14" fill="#FCF6EB" stroke="#B37E28" stroke-width="1.2"/>
+      <circle cx="14" cy="14" r="4.5" fill="#B37E28"/>
+      <text x="26" y="18" class="font-sans badge-text" fill="#96671E">DPDP 2025 §12 SLA</text>
+      
+      <rect x="170" y="0" width="200" height="28" rx="14" fill="#EAF3EF" stroke="#1D6D56" stroke-width="1.2"/>
+      <circle cx="184" cy="14" r="4.5" fill="#1D6D56"/>
+      <text x="196" y="18" class="font-sans badge-text" fill="#14493A">DRY-RUN SAFETY GATE</text>
+    </g>
+  </g>
+
+  <line x1="36" y1="94" x2="1164" y2="94" stroke="rgba(24, 63, 53, 0.10)" stroke-width="1"/>
+
+  <!-- ==================== HORIZONTAL 5-STAGE PIPELINE ==================== -->
+  <g transform="translate(36, 115)">
+    <text x="0" y="0" class="font-sans section-header">THE 5-STAGE STATUTORY ERASURE CASCADE</text>
+    <text x="0" y="16" class="font-sans" font-size="11" fill="#485C54">From customer consent revocation or privacy request to irreversible cryptographic erasure within statutory 7 days</text>
+
+    <!-- Stage 1: Auth & Ingress -->
+    <g transform="translate(0, 30)">
+      <rect x="0" y="0" width="205" height="150" class="stage-card" filter="url(#shadow-card)"/>
+      <path d="M 0 10 Q 0 0 10 0 L 195 0 Q 205 0 205 10 L 205 28 L 0 28 Z" fill="#183F35"/>
+      <text x="12" y="19" class="font-sans" font-weight="700" font-size="11" fill="#FFFFFF">STAGE 1: AUTH &amp; INTAKE</text>
+      <rect x="156" y="6" width="42" height="16" rx="8" fill="#F4EFE8"/>
+      <text x="177" y="17" class="font-mono" font-size="9" fill="#183F35" font-weight="700" text-anchor="middle">S1</text>
+      
+      <text x="12" y="48" class="font-sans" font-weight="700" font-size="11.5" fill="#183F35">Erasure Request Input</text>
+      <text x="12" y="66" class="font-mono" font-size="9" fill="#485C54">• tenant_id</text>
+      <text x="12" y="80" class="font-mono" font-size="9" fill="#485C54">• contact_id (phone / wa_id)</text>
+      <text x="12" y="94" class="font-mono" font-size="9" fill="#485C54">• request_id (UUID)</text>
+      <text x="12" y="108" class="font-mono" font-size="9" fill="#B85E24">• authorized_by (Required)</text>
+      
+      <rect x="10" y="120" width="185" height="20" rx="4" fill="#FDF3ED"/>
+      <text x="16" y="134" class="font-sans" font-size="9" font-weight="600" fill="#B85E24">Zero-auth execution rejected</text>
+    </g>
+
+    <!-- Arrow S1 -> S2 -->
+    <path d="M 205 105 L 225 105" class="pipeline-line" marker-end="url(#arr-jade)"/>
+
+    <!-- Stage 2: Entity Graph Traversal -->
+    <g transform="translate(230, 30)">
+      <rect x="0" y="0" width="205" height="150" class="stage-card" filter="url(#shadow-card)"/>
+      <path d="M 0 10 Q 0 0 10 0 L 195 0 Q 205 0 205 10 L 205 28 L 0 28 Z" fill="#183F35"/>
+      <text x="12" y="19" class="font-sans" font-weight="700" font-size="11" fill="#FFFFFF">STAGE 2: GRAPH DISCOVERY</text>
+      <rect x="156" y="6" width="42" height="16" rx="8" fill="#F4EFE8"/>
+      <text x="177" y="17" class="font-mono" font-size="9" fill="#183F35" font-weight="700" text-anchor="middle">S2</text>
+      
+      <text x="12" y="48" class="font-sans" font-weight="700" font-size="11.5" fill="#183F35">Deep Identifier Traversal</text>
+      <text x="12" y="66" class="font-sans" font-size="10" fill="#485C54">Crawls all related entity edges:</text>
+      <text x="12" y="80" class="font-mono" font-size="9" fill="#1D6D56">_contact() → identifiers</text>
+      <text x="12" y="94" class="font-mono" font-size="9" fill="#485C54">• contact_id → phone, wa_id</text>
+      <text x="12" y="108" class="font-mono" font-size="9" fill="#485C54">• conversations → conv_ids</text>
+      <text x="12" y="122" class="font-mono" font-size="9" fill="#485C54">• bookings → booking_ids</text>
+      <text x="12" y="136" class="font-mono" font-size="9" fill="#485C54">• voice_grants &amp; payments</text>
+    </g>
+
+    <!-- Arrow S2 -> S3 -->
+    <path d="M 435 105 L 455 105" class="pipeline-line" marker-end="url(#arr-jade)"/>
+
+    <!-- Stage 3: Mandatory Dry-Run Simulation -->
+    <g transform="translate(460, 30)">
+      <rect x="0" y="0" width="205" height="150" class="stage-card" filter="url(#shadow-card)"/>
+      <path d="M 0 10 Q 0 0 10 0 L 195 0 Q 205 0 205 10 L 205 28 L 0 28 Z" fill="#D97736"/>
+      <text x="12" y="19" class="font-sans" font-weight="700" font-size="11" fill="#FFFFFF">STAGE 3: DRY-RUN GATE</text>
+      <rect x="156" y="6" width="42" height="16" rx="8" fill="#FDF3ED"/>
+      <text x="177" y="17" class="font-mono" font-size="9" fill="#D97736" font-weight="700" text-anchor="middle">S3</text>
+      
+      <text x="12" y="48" class="font-sans" font-weight="700" font-size="11.5" fill="#183F35">Mandatory Pre-Flight Audit</text>
+      <text x="12" y="66" class="font-sans" font-size="10" fill="#485C54">Computes document counts across</text>
+      <text x="12" y="80" class="font-sans" font-weight="600" font-size="10" fill="#183F35">all 11 MongoDB collections.</text>
+      <text x="12" y="98" class="font-mono" font-size="9" fill="#B85E24">status: "dry_run" (apply=False)</text>
+      
+      <rect x="10" y="112" width="185" height="28" rx="4" fill="#FDF3ED" stroke="#D97736" stroke-width="0.8"/>
+      <text x="14" y="124" class="font-sans" font-size="9" font-weight="700" fill="#B85E24">ZERO DATA RETENTION</text>
+      <text x="14" y="135" class="font-sans" font-size="8.5" fill="#485C54">Report contains NO patient PII</text>
+    </g>
+
+    <!-- Arrow S3 -> S4 -->
+    <path d="M 665 105 L 685 105" class="pipeline-line" marker-end="url(#arr-jade)"/>
+
+    <!-- Stage 4: Cryptographic Suppression -->
+    <g transform="translate(690, 30)">
+      <rect x="0" y="0" width="205" height="150" class="stage-card" filter="url(#shadow-card)"/>
+      <path d="M 0 10 Q 0 0 10 0 L 195 0 Q 205 0 205 10 L 205 28 L 0 28 Z" fill="#183F35"/>
+      <text x="12" y="19" class="font-sans" font-weight="700" font-size="11" fill="#FFFFFF">STAGE 4: SHA-256 BARRIER</text>
+      <rect x="156" y="6" width="42" height="16" rx="8" fill="#F4EFE8"/>
+      <text x="177" y="17" class="font-mono" font-size="9" fill="#183F35" font-weight="700" text-anchor="middle">S4</text>
+      
+      <text x="12" y="48" class="font-sans" font-weight="700" font-size="11.5" fill="#183F35">Hashed Suppression DB</text>
+      <text x="12" y="66" class="font-mono" font-size="8.5" fill="#1D6D56">identifier_hash(tenant, val)</text>
+      <text x="12" y="80" class="font-sans" font-size="10" fill="#485C54">Salted SHA-256 irreversibly</text>
+      <text x="12" y="94" class="font-sans" font-size="10" fill="#485C54">stored in <tspan class="font-mono" fill="#183F35">erasure_suppression</tspan></text>
+      
+      <rect x="10" y="108" width="185" height="32" rx="4" fill="#EAF3EF" stroke="#1D6D56" stroke-width="0.8"/>
+      <text x="14" y="122" class="font-sans" font-size="9" font-weight="700" fill="#14493A">AUTOMATIC SUPPRESSION</text>
+      <text x="14" y="134" class="font-mono" font-size="8.5" fill="#1D6D56">is_suppressed() blocks reuse</text>
+    </g>
+
+    <!-- Arrow S4 -> S5 -->
+    <path d="M 895 105 L 915 105" class="pipeline-line" marker-end="url(#arr-jade)"/>
+
+    <!-- Stage 5: Downstream Vendor Obligations -->
+    <g transform="translate(920, 30)">
+      <rect x="0" y="0" width="208" height="150" class="stage-card" filter="url(#shadow-card)"/>
+      <path d="M 0 10 Q 0 0 10 0 L 198 0 Q 208 0 208 10 L 208 28 L 0 28 Z" fill="#B37E28"/>
+      <text x="12" y="19" class="font-sans" font-weight="700" font-size="11" fill="#FFFFFF">STAGE 5: VENDOR OBLIGATIONS</text>
+      <rect x="160" y="6" width="40" height="16" rx="8" fill="#FCF6EB"/>
+      <text x="180" y="17" class="font-mono" font-size="9" fill="#B37E28" font-weight="700" text-anchor="middle">S5</text>
+      
+      <text x="12" y="48" class="font-sans" font-weight="700" font-size="11.5" fill="#183F35">Third-Party Cascade</text>
+      <text x="12" y="66" class="font-sans" font-size="10" fill="#485C54">Tracks external case IDs:</text>
+      <text x="12" y="80" class="font-mono" font-size="8.5" fill="#485C54">• meta_whatsapp (chat purge)</text>
+      <text x="12" y="94" class="font-mono" font-size="8.5" fill="#485C54">• exotel (audio/SIP recordings)</text>
+      <text x="12" y="108" class="font-mono" font-size="8.5" fill="#485C54">• sarvam_ai (Indic STT cache)</text>
+      <text x="12" y="122" class="font-mono" font-size="8.5" fill="#485C54">• razorpay (customer PII)</text>
+      <text x="12" y="138" class="font-mono" font-size="8.5" fill="#96671E">provider_case_ids tracked</text>
+    </g>
+  </g>
+
+  <!-- ==================== 3-WAY DATA LIFECYCLE MATRIX ==================== -->
+  <g transform="translate(36, 330)">
+    <text x="0" y="0" class="font-sans section-header">THE 3-TIER DATA TAXONOMY &amp; TARGET RESOLUTION MATRIX</text>
+    <text x="0" y="16" class="font-sans" font-size="11" fill="#485C54">Granular separation of unrecoverable hard deletion, slot capacity reclamation, and lawful financial audit exceptions</text>
+
+    <!-- Column 1: Permanent Hard Deletion (Red/Terracotta) -->
+    <g transform="translate(0, 30)">
+      <rect x="0" y="0" width="360" height="270" rx="12" fill="#FCF1F0" stroke="#A43A31" stroke-width="1.2" filter="url(#shadow-elevated)"/>
+      <path d="M 0 12 Q 0 0 12 0 L 348 0 Q 360 0 360 12 L 360 36 L 0 36 Z" fill="#A43A31"/>
+      <text x="16" y="24" class="font-sans" font-weight="800" font-size="12" fill="#FFFFFF">PERMANENT HARD DELETION (IRREVERSIBLE)</text>
+      
+      <g transform="translate(16, 50)">
+        <rect x="0" y="0" width="328" height="40" rx="6" fill="#FFFFFF" stroke="rgba(164, 58, 49, 0.2)" stroke-width="0.8"/>
+        <text x="12" y="18" class="font-mono" font-size="10" font-weight="700" fill="#A43A31">db['messages'].delete_many()</text>
+        <text x="12" y="32" class="font-sans" font-size="9.5" fill="#485C54">Purges all patient WhatsApp chat transcripts &amp; voice notes</text>
+      </g>
+
+      <g transform="translate(16, 96)">
+        <rect x="0" y="0" width="328" height="40" rx="6" fill="#FFFFFF" stroke="rgba(164, 58, 49, 0.2)" stroke-width="0.8"/>
+        <text x="12" y="18" class="font-mono" font-size="10" font-weight="700" fill="#A43A31">db['conversations'].delete_many()</text>
+        <text x="12" y="32" class="font-sans" font-size="9.5" fill="#485C54">Deletes conversational state machine histories &amp; intents</text>
+      </g>
+
+      <g transform="translate(16, 142)">
+        <rect x="0" y="0" width="328" height="40" rx="6" fill="#FFFFFF" stroke="rgba(164, 58, 49, 0.2)" stroke-width="0.8"/>
+        <text x="12" y="18" class="font-mono" font-size="10" font-weight="700" fill="#A43A31">db['contacts'].delete_one()</text>
+        <text x="12" y="32" class="font-sans" font-size="9.5" fill="#485C54">Removes patient name, phone number, and WhatsApp identity</text>
+      </g>
+
+      <g transform="translate(16, 188)">
+        <rect x="0" y="0" width="328" height="40" rx="6" fill="#FFFFFF" stroke="rgba(164, 58, 49, 0.2)" stroke-width="0.8"/>
+        <text x="12" y="18" class="font-mono" font-size="10" font-weight="700" fill="#A43A31">db['bookings', 'escalations', 'waitlist']</text>
+        <text x="12" y="32" class="font-sans" font-size="9.5" fill="#485C54">Removes appointment rows, waitlist entries, and staff alerts</text>
+      </g>
+
+      <g transform="translate(16, 234)">
+        <rect x="0" y="0" width="328" height="26" rx="4" fill="#FDF3ED"/>
+        <text x="12" y="17" class="font-sans" font-size="9.5" font-weight="700" fill="#B85E24">Zero residual patient PII in production replica sets</text>
+      </g>
+    </g>
+
+    <!-- Column 2: Slot Capacity Recovery (Emerald Jade) -->
+    <g transform="translate(384, 30)">
+      <rect x="0" y="0" width="360" height="270" rx="12" fill="#F4F9F7" stroke="#1D6D56" stroke-width="1.2" filter="url(#shadow-elevated)"/>
+      <path d="M 0 12 Q 0 0 12 0 L 348 0 Q 360 0 360 12 L 360 36 L 0 36 Z" fill="#1D6D56"/>
+      <text x="16" y="24" class="font-sans" font-weight="800" font-size="12" fill="#FFFFFF">SLOT CAPACITY RECOVERY (UNLINKING)</text>
+      
+      <g transform="translate(16, 50)">
+        <rect x="0" y="0" width="328" height="60" rx="6" fill="#FFFFFF" stroke="rgba(29, 109, 86, 0.2)" stroke-width="0.8"/>
+        <text x="12" y="18" class="font-mono" font-size="10" font-weight="700" fill="#1D6D56">db['slots'].update_many()</text>
+        <text x="12" y="32" class="font-mono" font-size="9" fill="#183F35">$set: { status: "open" }</text>
+        <text x="12" y="46" class="font-mono" font-size="9" fill="#183F35">$unset: { booking_id: "" }</text>
+        <text x="12" y="56" class="font-sans" font-size="9" fill="#485C54">Unlinks appointment without destroying practitioner calendar</text>
+      </g>
+
+      <g transform="translate(16, 120)">
+        <rect x="0" y="0" width="328" height="70" rx="6" fill="#FFFFFF" stroke="rgba(29, 109, 86, 0.2)" stroke-width="0.8"/>
+        <text x="12" y="18" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">Practitioner Schedule Integrity</text>
+        <text x="12" y="34" class="font-sans" font-size="9.5" fill="#485C54">
+          <tspan x="12" dy="0">Erasing a patient must not collapse the clinic's</tspan>
+          <tspan x="12" dy="14">capacity. The slot automatically returns to "open"</tspan>
+          <tspan x="12" dy="14">status, allowing waitlisted patients to claim it.</tspan>
+        </text>
+      </g>
+
+      <g transform="translate(16, 200)">
+        <rect x="0" y="0" width="328" height="60" rx="6" fill="#EAF3EF" stroke="#1D6D56" stroke-width="0.8"/>
+        <text x="12" y="18" class="font-sans" font-weight="700" font-size="10" fill="#14493A">ZERO CALENDAR CORRUPTION</text>
+        <text x="12" y="34" class="font-sans" font-size="9.5" fill="#1D6D56">Practitioner schedule template remains intact.</text>
+        <text x="12" y="48" class="font-sans" font-size="9.5" fill="#1D6D56">No dangling foreign keys to deleted booking.</text>
+      </g>
+    </g>
+
+    <!-- Column 3: Lawful Retained Exceptions (Temple Gold) -->
+    <g transform="translate(768, 30)">
+      <rect x="0" y="0" width="360" height="270" rx="12" fill="#FCF6EB" stroke="#B37E28" stroke-width="1.2" filter="url(#shadow-elevated)"/>
+      <path d="M 0 12 Q 0 0 12 0 L 348 0 Q 360 0 360 12 L 360 36 L 0 36 Z" fill="#B37E28"/>
+      <text x="16" y="24" class="font-sans" font-weight="800" font-size="12" fill="#FFFFFF">LAWFUL RETAINED EXCEPTIONS (PSEUDONYMIZATION)</text>
+      
+      <g transform="translate(16, 50)">
+        <rect x="0" y="0" width="328" height="60" rx="6" fill="#FFFFFF" stroke="rgba(179, 126, 40, 0.25)" stroke-width="0.8"/>
+        <text x="12" y="18" class="font-mono" font-size="10" font-weight="700" fill="#96671E">db['payments'].replace_one()</text>
+        <text x="12" y="32" class="font-mono" font-size="9" fill="#183F35">contact_id = "[erased]", PII = "[erased]"</text>
+        <text x="12" y="46" class="font-sans" font-size="9" fill="#485C54">Financial transaction ledger retained for GST &amp; PMLA statutory tax compliance</text>
+      </g>
+
+      <g transform="translate(16, 120)">
+        <rect x="0" y="0" width="328" height="60" rx="6" fill="#FFFFFF" stroke="rgba(179, 126, 40, 0.25)" stroke-width="0.8"/>
+        <text x="12" y="18" class="font-mono" font-size="10" font-weight="700" fill="#96671E">db['audit_log'].replace_one()</text>
+        <text x="12" y="32" class="font-mono" font-size="9" fill="#183F35">_scrub() identifiers, pop conversation_id</text>
+        <text x="12" y="46" class="font-sans" font-size="9" fill="#485C54">Immutable operational ledger preserved without PII</text>
+      </g>
+
+      <g transform="translate(16, 190)">
+        <rect x="0" y="0" width="328" height="70" rx="6" fill="#FFFFFF" stroke="rgba(179, 126, 40, 0.25)" stroke-width="0.8"/>
+        <text x="12" y="18" class="font-sans" font-weight="700" font-size="10" fill="#96671E">DPDP §12 Proviso Compliance</text>
+        <text x="12" y="34" class="font-sans" font-size="9.5" fill="#485C54">
+          <tspan x="12" dy="0">Data Fiduciary retains financial records strictly</tspan>
+          <tspan x="12" dy="14">as mandated by Indian tax and accounting laws,</tspan>
+          <tspan x="12" dy="14">completely scrubbed of personal identifiers.</tspan>
+        </text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ==================== BOTTOM STATUTORY GUARANTEES ==================== -->
+  <g transform="translate(36, 675)">
+    <rect x="0" y="0" width="1128" height="175" rx="14" fill="#FFFFFF" stroke="rgba(24, 63, 53, 0.12)" stroke-width="1.2" filter="url(#shadow-card)"/>
+    
+    <path d="M 0 14 Q 0 0 14 0 L 1114 0 Q 1128 0 1128 14 L 1128 36 L 0 36 Z" fill="#183F35"/>
+    <text x="20" y="23" class="font-sans" font-weight="700" font-size="12.5" fill="#FCF6EB">DPDP ACT 2025 COMPLIANCE SPECIFICATION · DATA FIDUCIARY ARCHITECTURAL ASSURANCE</text>
+    <text x="1098" y="23" class="font-mono" font-size="10.5" fill="#B37E28" text-anchor="end">ops/dpdp_delete.py · app/privacy.py · Section 12 Verification</text>
+
+    <!-- Guarantee 1 -->
+    <g transform="translate(24, 48)">
+      <rect x="0" y="0" width="344" height="112" rx="8" fill="#FDF9F5" stroke="rgba(217, 119, 54, 0.25)" stroke-width="1"/>
+      <text x="14" y="22" class="font-sans" font-weight="700" font-size="11.5" fill="#183F35">1. MANDATORY SIMULATION GATE</text>
+      <text x="14" y="36" class="font-mono" font-size="9.5" fill="#B85E24">Dry-Run Enforced by CLI &amp; API</text>
+      <text x="14" y="54" class="font-sans" font-size="10.5" fill="#485C54">
+        <tspan x="14" dy="0">Erasure operations default to apply=False.</tspan>
+        <tspan x="14" dy="15">Calculates exact impact counts across all collections</tspan>
+        <tspan x="14" dy="15">before a single byte is deleted. Execution requires</tspan>
+        <tspan x="14" dy="15" font-weight="600" fill="#183F35">explicit authorized_by staff identity for the audit log.</tspan>
+      </text>
+    </g>
+
+    <!-- Guarantee 2 -->
+    <g transform="translate(392, 48)">
+      <rect x="0" y="0" width="344" height="112" rx="8" fill="#F4F9F7" stroke="rgba(29, 109, 86, 0.25)" stroke-width="1"/>
+      <text x="14" y="22" class="font-sans" font-weight="700" font-size="11.5" fill="#183F35">2. ZERO-PII AUDIT CERTIFICATE</text>
+      <text x="14" y="36" class="font-mono" font-size="9.5" fill="#1D6D56">Non-Reversible Cryptographic Proof</text>
+      <text x="14" y="54" class="font-sans" font-size="10.5" fill="#485C54">
+        <tspan x="14" dy="0">The final completion record in erasure_requests</tspan>
+        <tspan x="14" dy="15">contains only contact_hash, request_id, and</tspan>
+        <tspan x="14" dy="15">scrubbed counts. Proves full statutory compliance</tspan>
+        <tspan x="14" dy="15" font-weight="600" fill="#183F35">without storing the patient's data as evidence.</tspan>
+      </text>
+    </g>
+
+    <!-- Guarantee 3 -->
+    <g transform="translate(760, 48)">
+      <rect x="0" y="0" width="344" height="112" rx="8" fill="#FCF6EB" stroke="rgba(179, 126, 40, 0.25)" stroke-width="1"/>
+      <text x="14" y="22" class="font-sans" font-weight="700" font-size="11.5" fill="#183F35">3. VENDOR DELETION OBLIGATIONS</text>
+      <text x="14" y="36" class="font-mono" font-size="9.5" fill="#96671E">Cascade across 4 Third-Party APIs</text>
+      <text x="14" y="54" class="font-sans" font-size="10.5" fill="#485C54">
+        <tspan x="14" dy="0">Explicit tracking of downstream deletion requests</tspan>
+        <tspan x="14" dy="15">for Meta WhatsApp, Exotel telephony, Sarvam AI,</tspan>
+        <tspan x="14" dy="15">and Razorpay. Ensures data is purged across</tspan>
+        <tspan x="14" dy="15" font-weight="600" fill="#183F35">all data processors under Section 8(4) &amp; Section 12.</tspan>
+      </text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,342 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 520" width="840" height="520" fill="none" style="background:#071612; font-family:'Plus Jakarta Sans', Aptos, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Noto Sans Oriya', sans-serif;">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bg-grad-bridge" x1="0" y1="0" x2="840" y2="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#061410"/>
+      <stop offset="50%" stop-color="#0a1d17"/>
+      <stop offset="100%" stop-color="#05120e"/>
+    </linearGradient>
+
+    <!-- Radial aura Left (Terracotta for Inbound Call) -->
+    <radialGradient id="aura-terra-bridge" cx="180" cy="240" r="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#d97736" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#071612" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Radial aura Right (Emerald for WhatsApp) -->
+    <radialGradient id="aura-emerald-bridge" cx="660" cy="240" r="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1d6d56" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#071612" stop-opacity="0"/>
+    </radialGradient>
+
+    <pattern id="grid-dots-bridge" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#1d6d56" fill-opacity="0.16"/>
+    </pattern>
+
+    <linearGradient id="card-grad-bridge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#103227"/>
+      <stop offset="100%" stop-color="#0b221a"/>
+    </linearGradient>
+
+    <linearGradient id="border-glow-bridge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2a7d65"/>
+      <stop offset="50%" stop-color="#1d4e40"/>
+      <stop offset="100%" stop-color="#13362c"/>
+    </linearGradient>
+
+    <linearGradient id="terra-grad-bridge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#f97316"/>
+      <stop offset="100%" stop-color="#d97736"/>
+    </linearGradient>
+
+    <linearGradient id="emerald-grad-bridge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="50%" stop-color="#25d366"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+
+    <filter id="shadow-bridge" x="-6%" y="-6%" width="112%" height="116%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+
+    <filter id="glow-emerald-bridge" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <style>
+      /* Motion Choreography */
+      @keyframes phone-ring {
+        0%, 15% { transform: rotate(0deg); }
+        3%, 7%, 11% { transform: rotate(-5deg); }
+        5%, 9%, 13% { transform: rotate(5deg); }
+        16%, 100% { transform: rotate(0deg); }
+      }
+
+      @keyframes ring-pulse {
+        0%, 5% { r: 16px; opacity: 0; stroke-width: 2px; }
+        8% { r: 24px; opacity: 0.9; stroke-width: 2px; }
+        15% { r: 44px; opacity: 0; stroke-width: 0.5px; }
+        100% { r: 44px; opacity: 0; }
+      }
+
+      @keyframes bridge-flow {
+        0%, 15% { transform: translateX(0); opacity: 0; }
+        22% { opacity: 1; }
+        45% { opacity: 1; }
+        55%, 100% { transform: translateX(190px); opacity: 0; }
+      }
+
+      @keyframes wa-pop {
+        0%, 30% { opacity: 0.2; transform: translateY(8px); }
+        42%, 88% { opacity: 1; transform: translateY(0); }
+        96%, 100% { opacity: 0.2; transform: translateY(8px); }
+      }
+
+      @keyframes button-hover-glow {
+        0%, 45% { transform: scale(1); filter: brightness(1); }
+        55%, 75% { transform: scale(1.02); filter: drop-shadow(0 0 8px rgba(37,211,102,0.8)); }
+        85%, 100% { transform: scale(1); filter: brightness(1); }
+      }
+
+      @keyframes pulse-live {
+        0%, 100% { opacity: 0.6; }
+        50% { opacity: 1; }
+      }
+
+      .phone-icon-anim { animation: phone-ring 9s ease-in-out infinite; transform-origin: 195px 190px; }
+      .ring-wave { animation: ring-pulse 9s ease-out infinite; }
+      .packet-bridge { animation: bridge-flow 9s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+      .wa-card-anim { animation: wa-pop 9s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
+      .btn-target { animation: button-hover-glow 9s ease-in-out infinite; transform-origin: 620px 380px; }
+      .live-dot { animation: pulse-live 2.5s infinite; }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, .phone-icon-anim, .ring-wave, .packet-bridge, .wa-card-anim, .btn-target, .live-dot {
+          animation: none !important;
+          transform: none !important;
+          opacity: 1 !important;
+        }
+        .wa-card-anim { opacity: 1 !important; transform: translateY(0) !important; }
+      }
+    </style>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="840" height="520" fill="url(#bg-grad-bridge)"/>
+  <rect width="840" height="520" fill="url(#aura-terra-bridge)"/>
+  <rect width="840" height="520" fill="url(#aura-emerald-bridge)"/>
+  <rect width="840" height="520" fill="url(#grid-dots-bridge)"/>
+
+  <!-- Border Frame -->
+  <rect x="12" y="12" width="816" height="496" rx="16" fill="none" stroke="url(#border-glow-bridge)" stroke-width="1.2" stroke-opacity="0.7"/>
+
+  <!-- ======================================================== -->
+  <!-- HEADER BAR                                               -->
+  <!-- ======================================================== -->
+  <g transform="translate(36, 32)">
+    <rect x="0" y="0" width="28" height="28" rx="6" fill="#0d2921" stroke="#b37e28" stroke-width="1.2"/>
+    <text x="14" y="19" text-anchor="middle" fill="#f59e0b" font-size="13" font-weight="700">वा</text>
+
+    <text x="38" y="14" fill="#fbf9f5" font-size="16" font-weight="800" letter-spacing="1">MISSED-CALL-TO-WHATSAPP BRIDGE</text>
+    <text x="38" y="27" fill="#a7c4bc" font-size="11" font-weight="400">Zero Lost Leads · India's Missed-Call Habit Turned Into Instant Bookings</text>
+
+    <!-- Top Right Meta Pills -->
+    <g transform="translate(520, 0)">
+      <rect x="0" y="0" width="138" height="26" rx="13" fill="#24170d" stroke="#d97736" stroke-width="1"/>
+      <circle cx="12" cy="13" r="3.5" fill="#f97316" class="live-dot"/>
+      <text x="22" y="17" fill="#fbf9f5" font-size="10" font-weight="600">8kHz Voice PSTN</text>
+
+      <rect x="146" y="0" width="118" height="26" rx="13" fill="#0b281f" stroke="#1d6d56" stroke-width="1"/>
+      <circle cx="158" cy="13" r="3.5" fill="#25d366" class="live-dot"/>
+      <text x="168" y="17" fill="#fbf9f5" font-size="10" font-weight="600">Meta Cloud API</text>
+    </g>
+  </g>
+
+  <!-- Horizontal Divider -->
+  <line x1="36" y1="72" x2="804" y2="72" stroke="#1d4e40" stroke-width="1" stroke-opacity="0.4"/>
+  <line x1="36" y1="72" x2="260" y2="72" stroke="url(#terra-grad-bridge)" stroke-width="1.5"/>
+
+  <!-- ======================================================== -->
+  <!-- 3-STAGE EVENT ARCHITECTURE PIPELINE                      -->
+  <!-- ======================================================== -->
+
+  <!-- STAGE 1 (LEFT): INBOUND CALL MISSED / LINE BUSY (245px) -->
+  <g transform="translate(36, 88)">
+    <rect x="0" y="0" width="245" height="340" rx="14" fill="url(#card-grad-bridge)" stroke="url(#border-glow-bridge)" stroke-width="1.2" filter="url(#shadow-bridge)"/>
+
+    <!-- Stage 1 Header -->
+    <rect x="0" y="0" width="245" height="42" rx="14" fill="#23170e"/>
+    <rect x="14" y="13" width="5" height="16" rx="2.5" fill="url(#terra-grad-bridge)"/>
+    <text x="26" y="26" fill="#fbf9f5" font-size="11.5" font-weight="700">STAGE 1: INBOUND CALL</text>
+
+    <!-- Caller Identity Card -->
+    <g transform="translate(14, 54)">
+      <rect x="0" y="0" width="217" height="66" rx="8" fill="#091b15" stroke="#d97736" stroke-width="0.8"/>
+      <!-- Caller avatar -->
+      <circle cx="24" cy="33" r="14" fill="#2b1a10"/>
+      <text x="24" y="38" text-anchor="middle" fill="#f97316" font-size="12" font-weight="700">RK</text>
+      <text x="46" y="28" fill="#fbf9f5" font-size="12" font-weight="700">Ravi Kumar</text>
+      <text x="46" y="42" fill="#a7c4bc" font-size="10">+91 98765 43210</text>
+      <text x="46" y="54" fill="#689084" font-size="8.5">Returning Patient · Apex Dental</text>
+    </g>
+
+    <!-- Call State Animation Box -->
+    <g transform="translate(14, 130)">
+      <rect x="0" y="0" width="217" height="114" rx="8" fill="#05120e" stroke="#2a1a12" stroke-width="0.8"/>
+
+      <!-- Animated Phone with Ring Waves -->
+      <g transform="translate(108, 48)">
+        <!-- Expanding ring ripples -->
+        <circle class="ring-wave" cx="0" cy="0" r="16" fill="none" stroke="#f97316"/>
+        <circle class="ring-wave" cx="0" cy="0" r="16" fill="none" stroke="#fbbf24" style="animation-delay: 0.5s;"/>
+
+        <!-- Phone Icon Circle -->
+        <circle cx="0" cy="0" r="22" fill="#a43a31"/>
+        <g class="phone-icon-anim">
+          <!-- Telephone handset vector -->
+          <path d="M -8 -8 C -10 -4, -6 6, 2 8 C 8 10, 10 6, 8 4 L 5 2 C 4 1, 3 2, 2 3 C 0 2, -2 0, -3 -2 C -2 -3, -1 -4, -2 -5 L -4 -8 C -6 -10, -7 -9, -8 -8 Z" fill="#ffffff" transform="scale(1.2) translate(-2, -2)"/>
+        </g>
+      </g>
+
+      <!-- Status banner -->
+      <rect x="12" y="82" width="193" height="24" rx="4" fill="#2b1410"/>
+      <circle cx="22" cy="94" r="3" fill="#ef4444"/>
+      <text x="32" y="98" fill="#fca5a5" font-size="9.5" font-weight="700">Line Busy · Call Unanswered</text>
+    </g>
+
+    <!-- Timestamp Tag -->
+    <g transform="translate(14, 254)">
+      <rect x="0" y="0" width="217" height="72" rx="8" fill="#081e17" stroke="#174436" stroke-width="0.8"/>
+      <text x="12" y="20" fill="#689084" font-size="8.5">TELEPHONY EVENT LOG</text>
+      <text x="12" y="36" fill="#fbf9f5" font-size="10.5" font-weight="600">Event: call.busy_or_missed</text>
+      <text x="12" y="50" fill="#f97316" font-size="9" font-family="monospace">ts: 14:32:01.420 IST</text>
+      <text x="12" y="64" fill="#a7c4bc" font-size="8.5">No redial required · Bridge engaged</text>
+    </g>
+  </g>
+
+  <!-- STAGE 2 (CENTER): EVENT GATEWAY & INTENT ROUTER (254px) -->
+  <g transform="translate(293, 88)">
+    <rect x="0" y="0" width="254" height="340" rx="14" fill="url(#card-grad-bridge)" stroke="url(#border-glow-bridge)" stroke-width="1.2" filter="url(#shadow-bridge)"/>
+
+    <!-- Stage 2 Header -->
+    <rect x="0" y="0" width="254" height="42" rx="14" fill="#133d30" fill-opacity="0.4"/>
+    <rect x="14" y="13" width="5" height="16" rx="2.5" fill="url(#emerald-grad-bridge)"/>
+    <text x="26" y="26" fill="#fbf9f5" font-size="11.5" font-weight="700">STAGE 2: VAANI BRIDGE</text>
+
+    <!-- In-flight Conduit Line across cards -->
+    <g transform="translate(14, 54)">
+      <!-- Animated pipeline bus -->
+      <rect x="0" y="0" width="226" height="52" rx="8" fill="#061611" stroke="#1d4e40" stroke-width="0.8"/>
+      <text x="12" y="20" fill="#a7c4bc" font-size="9" font-weight="700">REAL-TIME WEBHOOK PIPELINE</text>
+      <line x1="12" y1="36" x2="214" y2="36" stroke="#174436" stroke-width="3" stroke-linecap="round"/>
+
+      <!-- Traveling data packets -->
+      <circle class="packet-bridge" cx="16" cy="36" r="5.5" fill="#f97316"/>
+      <circle class="packet-bridge" cx="16" cy="36" r="4.5" fill="#25d366" style="animation-delay: 0.6s;"/>
+      <circle class="packet-bridge" cx="16" cy="36" r="3.5" fill="#fbbf24" style="animation-delay: 1.2s;"/>
+    </g>
+
+    <!-- Middle Core Architecture Logic -->
+    <g transform="translate(14, 116)">
+      <!-- Box 1: Lead Match & Consent -->
+      <rect x="0" y="0" width="226" height="58" rx="8" fill="#091f18" stroke="#1d6d56" stroke-width="0.8"/>
+      <circle cx="18" cy="22" r="8" fill="#164d3c"/>
+      <path d="M 15 22 L 17 24 L 21 19" stroke="#34d399" stroke-width="1.8" fill="none"/>
+      <text x="34" y="20" fill="#fbf9f5" font-size="10.5" font-weight="700">Caller ID &amp; CRM Match</text>
+      <text x="34" y="34" fill="#a7c4bc" font-size="9">Matched: Ravi Kumar (History loaded)</text>
+      <text x="34" y="47" fill="#fbbf24" font-size="8.5">DPDP Consent Record: Active</text>
+
+      <!-- Box 2: Template Dispatch -->
+      <g transform="translate(0, 66)">
+        <rect x="0" y="0" width="226" height="74" rx="8" fill="#091f18" stroke="#1d6d56" stroke-width="0.8"/>
+        <circle cx="18" cy="22" r="8" fill="#164d3c"/>
+        <text x="18" y="26" text-anchor="middle" fill="#25d366" font-size="10" font-weight="700">⚡</text>
+        <text x="34" y="20" fill="#fbf9f5" font-size="10.5" font-weight="700">Meta Cloud API Trigger</text>
+        <text x="34" y="34" fill="#a7c4bc" font-size="9">Template: utility_missed_call</text>
+
+        <!-- Code tag -->
+        <rect x="10" y="42" width="206" height="22" rx="4" fill="#040e0b"/>
+        <text x="18" y="57" fill="#34d399" font-size="8.5" font-family="monospace">send_template(wa_id, "missed_call")</text>
+      </g>
+    </g>
+
+    <!-- Latency Benchmark Tag -->
+    <g transform="translate(14, 266)">
+      <rect x="0" y="0" width="226" height="60" rx="8" fill="#081e17" stroke="#174436" stroke-width="0.8"/>
+      <g transform="translate(12, 14)">
+        <text x="0" y="14" fill="#689084" font-size="8.5">WEBHOOK LATENCY</text>
+        <text x="0" y="34" fill="#25d366" font-size="18" font-weight="800">420ms</text>
+
+        <line x1="95" y1="0" x2="95" y2="38" stroke="#174436" stroke-width="1"/>
+
+        <text x="108" y="14" fill="#689084" font-size="8.5">TURNAROUND</text>
+        <text x="108" y="34" fill="#fbbf24" font-size="18" font-weight="800">&lt; 15s</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- STAGE 3 (RIGHT): AUTOMATED WHATSAPP RECOVERY (245px) -->
+  <g transform="translate(559, 88)">
+    <rect x="0" y="0" width="245" height="340" rx="14" fill="url(#card-grad-bridge)" stroke="url(#border-glow-bridge)" stroke-width="1.2" filter="url(#shadow-bridge)"/>
+
+    <!-- Stage 3 Header -->
+    <rect x="0" y="0" width="245" height="42" rx="14" fill="#0d2b22"/>
+    <circle cx="20" cy="21" r="10" fill="#128c7e"/>
+    <path d="M 16 21 L 19 24 L 24 17" stroke="#ffffff" stroke-width="1.6" fill="none"/>
+    <text x="36" y="19" fill="#fbf9f5" font-size="11" font-weight="700">STAGE 3: WHATSAPP</text>
+    <text x="36" y="31" fill="#34d399" font-size="8.5">Instant Proactive Reachout</text>
+
+    <!-- Animated WhatsApp Message Conversation -->
+    <g class="wa-card-anim" transform="translate(12, 52)">
+      <!-- Incoming Message Bubble -->
+      <rect x="0" y="0" width="221" height="126" rx="10" fill="#14362c" stroke="#1d6d56" stroke-width="0.8"/>
+
+      <text x="10" y="18" fill="#fbbf24" font-size="10.5" font-weight="700">नमस्ते Ravi जी! 🙏</text>
+      <text x="10" y="34" fill="#fbf9f5" font-size="9.5">आपने Apex Dental को call किया था;</text>
+      <text x="10" y="48" fill="#fbf9f5" font-size="9.5">उस समय line व्यस्त थी।</text>
+      <text x="10" y="68" fill="#a7c4bc" font-size="9.5">मैं <tspan fill="#fbf9f5" font-weight="700">वाणी</tspan> — AI सहायक।</text>
+      <text x="10" y="82" fill="#a7c4bc" font-size="9.5">क्या appointment book करूँ?</text>
+
+      <text x="10" y="102" fill="#34d399" font-size="8.5">कल शनिवार: शाम 5:00 बजे का slot खाली है</text>
+      <text x="176" y="118" fill="#689084" font-size="8">14:32 ✓✓</text>
+    </g>
+
+    <!-- Interactive Native Buttons in WhatsApp -->
+    <g transform="translate(12, 190)">
+      <!-- Button 1: PRIMARY ACTION (Target) -->
+      <g class="btn-target" transform="translate(0, 0)">
+        <rect x="0" y="0" width="221" height="38" rx="8" fill="url(#emerald-grad-bridge)" filter="url(#glow-emerald-bridge)"/>
+        <text x="24" y="23" fill="#061812" font-size="11" font-weight="800">📅 हाँ, Slot दिखाओ (1 Tap)</text>
+      </g>
+
+      <!-- Button 2: Dismiss Later -->
+      <g transform="translate(0, 46)">
+        <rect x="0" y="0" width="221" height="34" rx="8" fill="#0c251e" stroke="#174436" stroke-width="1"/>
+        <text x="74" y="21" fill="#a7c4bc" font-size="10" font-weight="600">🕒 बाद में</text>
+      </g>
+    </g>
+
+    <!-- Follow-up Result Micro Card -->
+    <g transform="translate(12, 280)">
+      <rect x="0" y="0" width="221" height="46" rx="8" fill="#071e16" stroke="#25d366" stroke-width="0.8"/>
+      <circle cx="16" cy="23" r="8" fill="#25d366"/>
+      <path d="M 12 23 L 15 26 L 20 19" stroke="#061812" stroke-width="1.8" fill="none"/>
+      <text x="30" y="18" fill="#fbf9f5" font-size="9.5" font-weight="700">68% Booking Conversion</text>
+      <text x="30" y="32" fill="#fbbf24" font-size="8.5">Zero customer churn from busy lines</text>
+    </g>
+  </g>
+
+  <!-- ======================================================== -->
+  <!-- BOTTOM ROI STRIP                                         -->
+  <!-- ======================================================== -->
+  <g transform="translate(36, 442)">
+    <rect x="0" y="0" width="768" height="50" rx="10" fill="#0b241c" stroke="#1d4e40" stroke-width="1"/>
+
+    <!-- Key Metrics in 3 Columns -->
+    <g transform="translate(24, 16)">
+      <text x="0" y="14" fill="#a7c4bc" font-size="9.5" font-weight="700">INDIA MISSED-CALL PARADIGM</text>
+      <text x="0" y="26" fill="#689084" font-size="8.5">Turn 100% of abandoned calls into revenue</text>
+
+      <line x1="230" y1="0" x2="230" y2="24" stroke="#174436" stroke-width="1"/>
+
+      <text x="250" y="14" fill="#f59e0b" font-size="9.5" font-weight="700">SALES DEMO CLOSER</text>
+      <text x="250" y="26" fill="#fbf9f5" font-size="8.5">Owner tests with spare phone in &lt; 3 mins</text>
+
+      <line x1="490" y1="0" x2="490" y2="24" stroke="#174436" stroke-width="1"/>
+
+      <text x="510" y="14" fill="#25d366" font-size="9.5" font-weight="700">PROVEN REVENUE RECOVERY</text>
+      <text x="510" y="26" fill="#34d399" font-size="8.5">Avg +₹12,400 monthly recovered per clinic</text>
+    </g>
+  </g>
+</svg>

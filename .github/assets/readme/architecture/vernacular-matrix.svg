@@ -1,0 +1,465 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 880" width="100%" height="100%">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Noto+Sans+Devanagari:wght@400;600;700&amp;family=Noto+Sans+Oriya:wght@400;600;700&amp;display=swap');
+      
+      .canvas { fill: #FBF9F5; }
+      
+      /* Typography */
+      .font-sans { font-family: 'Plus Jakarta Sans', Aptos, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+      .font-mono { font-family: 'JetBrains Mono', 'Cascadia Code', 'SFMono-Regular', Consolas, monospace; }
+      .font-devanagari { font-family: 'Noto Sans Devanagari', 'Plus Jakarta Sans', sans-serif; }
+      .font-odia { font-family: 'Noto Sans Oriya', 'Plus Jakarta Sans', sans-serif; }
+      
+      .title-main { font-weight: 800; font-size: 21px; fill: #183F35; letter-spacing: -0.02em; }
+      .title-sub { font-weight: 500; font-size: 13px; fill: #485C54; }
+      .badge-text { font-weight: 700; font-size: 11px; letter-spacing: 0.02em; }
+      .section-header { font-weight: 700; font-size: 13px; fill: #183F35; letter-spacing: -0.01em; }
+      
+      .card-bg { fill: #FFFFFF; stroke: rgba(24, 63, 53, 0.12); stroke-width: 1.2; rx: 12px; }
+      .lang-card { fill: #FFFFFF; stroke: rgba(24, 63, 53, 0.15); stroke-width: 1.2; rx: 10px; }
+      
+      .flow-line { fill: none; stroke: #1D6D56; stroke-width: 1.8; stroke-linecap: round; }
+    </style>
+
+    <!-- Filters for drop shadows -->
+    <filter id="shadow-card" x="-6%" y="-6%" width="112%" height="116%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#183F35" flood-opacity="0.06"/>
+    </filter>
+    <filter id="shadow-elevated" x="-8%" y="-6%" width="116%" height="118%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#183F35" flood-opacity="0.09"/>
+    </filter>
+
+    <!-- Markers -->
+    <marker id="arr-jade" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#1D6D56"/>
+    </marker>
+    <marker id="arr-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#D97736"/>
+    </marker>
+
+    <!-- Dot Pattern -->
+    <pattern id="dot-grid" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#183F35" fill-opacity="0.06"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="880" class="canvas"/>
+  <rect width="1200" height="880" fill="url(#dot-grid)"/>
+  <rect x="16" y="16" width="1168" height="848" rx="16" fill="none" stroke="rgba(24, 63, 53, 0.12)" stroke-width="1.5"/>
+
+  <!-- ==================== HEADER ==================== -->
+  <g transform="translate(36, 32)">
+    <rect x="0" y="2" width="46" height="46" rx="12" fill="#183F35" filter="url(#shadow-card)"/>
+    <rect x="2" y="4" width="42" height="42" rx="10" fill="none" stroke="#B37E28" stroke-width="1.2"/>
+    <text x="23" y="32" class="font-devanagari" font-size="24" font-weight="700" fill="#FCF6EB" text-anchor="middle">वा</text>
+    
+    <text x="60" y="24" class="font-sans title-main">THE VERNACULAR TONE &amp; REGISTER MATRIX</text>
+    <text x="60" y="44" class="font-sans title-sub">Indic Multilingual Intelligence · <tspan class="font-mono" fill="#1D6D56">app/agent/nodes/lang_detect.py</tspan> · Dynamic Code-Switching &amp; Respectful Honorifics</text>
+    
+    <!-- Top Badges -->
+    <g transform="translate(735, 6)">
+      <rect x="0" y="0" width="180" height="28" rx="14" fill="#EAF3EF" stroke="#1D6D56" stroke-width="1.2"/>
+      <circle cx="14" cy="14" r="4.5" fill="#1D6D56"/>
+      <text x="26" y="18" class="font-sans badge-text" fill="#14493A">4 VERNACULAR REGISTERS</text>
+      
+      <rect x="190" y="0" width="205" height="28" rx="14" fill="#FDF3ED" stroke="#D97736" stroke-width="1.2"/>
+      <circle cx="204" cy="14" r="4.5" fill="#D97736"/>
+      <text x="216" y="18" class="font-sans badge-text" fill="#B85E24">ZERO-TU ENFORCEMENT (आप/ଆପଣ)</text>
+    </g>
+  </g>
+
+  <line x1="36" y1="94" x2="1164" y2="94" stroke="rgba(24, 63, 53, 0.10)" stroke-width="1"/>
+
+  <!-- ==================== LEFT: DETECTION ENGINE (x=36, w=270) ==================== -->
+  <g transform="translate(36, 115)">
+    <text x="0" y="0" class="font-sans section-header">DYNAMIC INBOUND DETECTION</text>
+    <text x="0" y="15" class="font-sans" font-size="11" fill="#485C54">Script regex + 28+ Hinglish phonetic markers</text>
+
+    <!-- Detection Container -->
+    <g transform="translate(0, 26)">
+      <rect x="0" y="0" width="270" height="495" rx="12" fill="#FFFFFF" stroke="rgba(24, 63, 53, 0.15)" stroke-width="1.2" filter="url(#shadow-elevated)"/>
+      <path d="M 0 12 Q 0 0 12 0 L 258 0 Q 270 0 270 12 L 270 34 L 0 34 Z" fill="#183F35"/>
+      <text x="14" y="22" class="font-sans" font-weight="700" font-size="11.5" fill="#FFFFFF">lang_detect.py HEURISTIC ENGINE</text>
+
+      <!-- Step 1: Script Regex -->
+      <g transform="translate(12, 46)">
+        <rect x="0" y="0" width="246" height="88" rx="8" fill="#F4F9F7" stroke="#1D6D56" stroke-width="1"/>
+        <text x="10" y="18" class="font-sans" font-weight="700" font-size="11" fill="#183F35">1. Native Script Regex Test</text>
+        <text x="10" y="34" class="font-mono" font-size="9" fill="#1D6D56">[ऀ-ॿ] → 'hi' (Hindi)</text>
+        <text x="10" y="48" class="font-sans" font-size="9.5" fill="#485C54">Matches Devanagari Unicode block</text>
+        <text x="10" y="66" class="font-mono" font-size="9" fill="#1D6D56">[଀-୿] → 'or' (Odia)</text>
+        <text x="10" y="80" class="font-sans" font-size="9.5" fill="#485C54">Matches Odia Unicode block</text>
+      </g>
+
+      <!-- Step 2: Hinglish Lexical Markers -->
+      <g transform="translate(12, 144)">
+        <rect x="0" y="0" width="246" height="136" rx="8" fill="#FDF9F5" stroke="#D97736" stroke-width="1"/>
+        <text x="10" y="18" class="font-sans" font-weight="700" font-size="11" fill="#183F35">2. Hinglish Lexical Markers</text>
+        <text x="10" y="32" class="font-mono" font-size="8.5" fill="#B85E24">Latin Script Indicator Tokens:</text>
+        
+        <!-- Keyword Pills Grid -->
+        <g transform="translate(10, 42)">
+          <rect x="0" y="0" width="38" height="18" rx="4" fill="#FDF3ED"/>
+          <text x="19" y="13" class="font-mono" font-size="8.5" fill="#B85E24" text-anchor="middle">hai</text>
+
+          <rect x="44" y="0" width="40" height="18" rx="4" fill="#FDF3ED"/>
+          <text x="64" y="13" class="font-mono" font-size="8.5" fill="#B85E24" text-anchor="middle">kya</text>
+
+          <rect x="90" y="0" width="44" height="18" rx="4" fill="#FDF3ED"/>
+          <text x="112" y="13" class="font-mono" font-size="8.5" fill="#B85E24" text-anchor="middle">baje</text>
+
+          <rect x="140" y="0" width="38" height="18" rx="4" fill="#FDF3ED"/>
+          <text x="159" y="13" class="font-mono" font-size="8.5" fill="#B85E24" text-anchor="middle">aap</text>
+
+          <rect x="184" y="0" width="42" height="18" rx="4" fill="#FDF3ED"/>
+          <text x="205" y="13" class="font-mono" font-size="8.5" fill="#B85E24" text-anchor="middle">mera</text>
+        </g>
+
+        <g transform="translate(10, 66)">
+          <rect x="0" y="0" width="48" height="18" rx="4" fill="#FDF3ED"/>
+          <text x="24" y="13" class="font-mono" font-size="8.5" fill="#B85E24" text-anchor="middle">dijiye</text>
+
+          <rect x="54" y="0" width="46" height="18" rx="4" fill="#FDF3ED"/>
+          <text x="77" y="13" class="font-mono" font-size="8.5" fill="#B85E24" text-anchor="middle">parso</text>
+
+          <rect x="106" y="0" width="56" height="18" rx="4" fill="#FDF3ED"/>
+          <text x="134" y="13" class="font-mono" font-size="8.5" fill="#B85E24" text-anchor="middle">namaste</text>
+
+          <rect x="168" y="0" width="42" height="18" rx="4" fill="#FDF3ED"/>
+          <text x="189" y="13" class="font-mono" font-size="8.5" fill="#B85E24" text-anchor="middle">karna</text>
+        </g>
+
+        <text x="10" y="104" class="font-sans" font-size="9.5" fill="#485C54">Any token match in Latin text</text>
+        <text x="10" y="118" class="font-mono" font-size="9" font-weight="700" fill="#D97736">→ Emits 'hi-Latn' register</text>
+        <text x="10" y="130" class="font-sans" font-size="8.5" fill="#788A82">Treated as dedicated first-class dialect</text>
+      </g>
+
+      <!-- Step 3: Fallback & Lingua -->
+      <g transform="translate(12, 290)">
+        <rect x="0" y="0" width="246" height="66" rx="8" fill="#F4EFE8"/>
+        <text x="10" y="18" class="font-sans" font-weight="700" font-size="11" fill="#183F35">3. Lingua Fallback</text>
+        <text x="10" y="34" class="font-sans" font-size="9.5" fill="#485C54">LanguageDetectorBuilder</text>
+        <text x="10" y="48" class="font-mono" font-size="9" fill="#183F35">HINDI → 'hi-Latn' | ENGLISH → 'en'</text>
+        <text x="10" y="60" class="font-sans" font-size="8.5" fill="#788A82">Default fallback: English ('en')</text>
+      </g>
+
+      <!-- Step 4: Code-Switching Rule -->
+      <g transform="translate(12, 366)">
+        <rect x="0" y="0" width="246" height="114" rx="8" fill="#EAF3EF" stroke="#1D6D56" stroke-width="1"/>
+        <text x="10" y="18" class="font-sans" font-weight="700" font-size="11" fill="#14493A">Per-Message Mirroring</text>
+        <text x="10" y="34" class="font-sans" font-size="9.5" fill="#485C54">
+          <tspan x="10" dy="0">Indian users frequently code-switch</tspan>
+          <tspan x="10" dy="14">within the same WhatsApp thread:</tspan>
+          <tspan x="10" dy="14" font-family="'JetBrains Mono'" font-size="8.5" fill="#1D6D56">Turn 1: "Available timings?" (en)</tspan>
+          <tspan x="10" dy="13" font-family="'JetBrains Mono'" font-size="8.5" fill="#D97736">Turn 2: "Kal shaam chalega?" (hi-Latn)</tspan>
+          <tspan x="10" dy="14" font-weight="600" fill="#183F35">Vaani mirrors language per message!</tspan>
+        </text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Flow Connector: Detection -> Registers -->
+  <path d="M 306 360 L 324 360" class="flow-line" marker-end="url(#arr-jade)"/>
+
+  <!-- ==================== RIGHT: THE 4-REGISTER MATRIX (x=330, w=834) ==================== -->
+  <g transform="translate(330, 115)">
+    <text x="0" y="0" class="font-sans section-header">THE 4 PRODUCTION REGISTERS · app/i18n/strings.py</text>
+    <text x="0" y="15" class="font-sans" font-size="11" fill="#485C54">Real repository strings, exact honorific forms, and colloquial time expressions</text>
+
+    <!-- Grid Container with 4 Columns (width 198 each, gap 14) -->
+    <!-- Col 1: Hindi (Devanagari) -->
+    <g transform="translate(0, 26)">
+      <rect x="0" y="0" width="198" height="495" rx="10" fill="#FFFFFF" stroke="rgba(24, 63, 53, 0.15)" stroke-width="1.2" filter="url(#shadow-elevated)"/>
+      <path d="M 0 10 Q 0 0 10 0 L 188 0 Q 198 0 198 10 L 198 42 L 0 42 Z" fill="#183F35"/>
+      <text x="14" y="20" class="font-sans" font-weight="800" font-size="12" fill="#FFFFFF">1. HINDI (हिन्दी)</text>
+      <text x="14" y="34" class="font-mono" font-size="9" fill="#B37E28">tag: "hi" · Devanagari</text>
+
+      <!-- Section: Pronoun & Greeting -->
+      <g transform="translate(10, 52)">
+        <text x="0" y="0" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">Respectful Pronoun</text>
+        <rect x="0" y="6" width="178" height="28" rx="5" fill="#ECF7F1" stroke="#207E56" stroke-width="0.8"/>
+        <text x="10" y="24" class="font-devanagari" font-size="12" font-weight="700" fill="#207E56">आप (Strictly NO तू/तुम)</text>
+      </g>
+
+      <!-- Section: Booking Prompt -->
+      <g transform="translate(10, 102)">
+        <text x="0" y="0" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">Slot Picker Prompt</text>
+        <rect x="0" y="6" width="178" height="66" rx="5" fill="#FBF9F5" stroke="rgba(24, 63, 53, 0.1)" stroke-width="0.8"/>
+        <text x="8" y="24" class="font-devanagari" font-size="10.5" fill="#183F35">{date} को {practitioner}</text>
+        <text x="8" y="40" class="font-devanagari" font-size="10.5" fill="#183F35">के साथ {service} के</text>
+        <text x="8" y="56" class="font-devanagari" font-size="10.5" fill="#183F35">लिए समय चुनें।</text>
+      </g>
+
+      <!-- Section: Confirmation Prompt -->
+      <g transform="translate(10, 188)">
+        <text x="0" y="0" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">Confirmation Echo</text>
+        <rect x="0" y="6" width="178" height="54" rx="5" fill="#FBF9F5" stroke="rgba(24, 63, 53, 0.1)" stroke-width="0.8"/>
+        <text x="8" y="24" class="font-devanagari" font-size="10.5" fill="#183F35">क्या आप {when} पर कन्फर्म</text>
+        <text x="8" y="42" class="font-devanagari" font-size="10.5" fill="#183F35">करना चाहते हैं?</text>
+      </g>
+
+      <!-- Section: Colloquial Time -->
+      <g transform="translate(10, 260)">
+        <text x="0" y="0" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">Colloquial Time Format</text>
+        <rect x="0" y="6" width="178" height="42" rx="5" fill="#EAF3EF" stroke="#1D6D56" stroke-width="0.8"/>
+        <text x="8" y="22" class="font-devanagari" font-size="11" font-weight="600" fill="#1D6D56">5:00 PM (शाम पाँच बजे)</text>
+        <text x="8" y="36" class="font-sans" font-size="9" fill="#485C54">Echoes weekday + period</text>
+      </g>
+
+      <!-- Section: De-escalation -->
+      <g transform="translate(10, 320)">
+        <text x="0" y="0" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">De-escalation Voice</text>
+        <rect x="0" y="6" width="178" height="66" rx="5" fill="#FDF3ED" stroke="#D97736" stroke-width="0.8"/>
+        <text x="8" y="24" class="font-devanagari" font-size="10" fill="#B85E24">"मैं मदद के लिए हूँ 🙏"</text>
+        <text x="8" y="40" class="font-devanagari" font-size="9.5" fill="#485C54">कुछ ग़लत हुआ है तो बताइए,</text>
+        <text x="8" y="56" class="font-devanagari" font-size="9.5" fill="#485C54">या staff से बात करा दूँ।</text>
+      </g>
+
+      <!-- Status Footer -->
+      <g transform="translate(10, 404)">
+        <rect x="0" y="0" width="178" height="78" rx="6" fill="#F4EFE8"/>
+        <text x="8" y="18" class="font-sans" font-weight="700" font-size="9.5" fill="#183F35">Script Invariant:</text>
+        <text x="8" y="32" class="font-sans" font-size="9" fill="#485C54">Pure Devanagari numerals</text>
+        <text x="8" y="46" class="font-sans" font-size="9" fill="#485C54">and strings. Never mix</text>
+        <text x="8" y="60" class="font-sans" font-size="9" fill="#485C54">Latin letters in Devanagari.</text>
+      </g>
+    </g>
+
+    <!-- Col 2: Hinglish (Latin-script Hindi) -->
+    <g transform="translate(212, 26)">
+      <rect x="0" y="0" width="198" height="495" rx="10" fill="#FFFFFF" stroke="rgba(24, 63, 53, 0.15)" stroke-width="1.2" filter="url(#shadow-elevated)"/>
+      <path d="M 0 10 Q 0 0 10 0 L 188 0 Q 198 0 198 10 L 198 42 L 0 42 Z" fill="#D97736"/>
+      <text x="14" y="20" class="font-sans" font-weight="800" font-size="12" fill="#FFFFFF">2. HINGLISH</text>
+      <text x="14" y="34" class="font-mono" font-size="9" fill="#FDF3ED">tag: "hi-Latn" · Colloquial</text>
+
+      <!-- Section: Pronoun & Greeting -->
+      <g transform="translate(10, 52)">
+        <text x="0" y="0" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">Respectful Pronoun</text>
+        <rect x="0" y="6" width="178" height="28" rx="5" fill="#ECF7F1" stroke="#207E56" stroke-width="0.8"/>
+        <text x="10" y="24" class="font-sans" font-size="12" font-weight="700" fill="#207E56">Aap (Strictly NO tu/tum)</text>
+      </g>
+
+      <!-- Section: Booking Prompt -->
+      <g transform="translate(10, 102)">
+        <text x="0" y="0" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">Slot Picker Prompt</text>
+        <rect x="0" y="6" width="178" height="66" rx="5" fill="#FBF9F5" stroke="rgba(24, 63, 53, 0.1)" stroke-width="0.8"/>
+        <text x="8" y="24" class="font-sans" font-size="10.5" fill="#183F35">{date} ko {practitioner}</text>
+        <text x="8" y="40" class="font-sans" font-size="10.5" fill="#183F35">ke saath {service} ke</text>
+        <text x="8" y="56" class="font-sans" font-size="10.5" fill="#183F35">liye time chunein.</text>
+      </g>
+
+      <!-- Section: Confirmation Prompt -->
+      <g transform="translate(10, 188)">
+        <text x="0" y="0" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">Confirmation Echo</text>
+        <rect x="0" y="6" width="178" height="54" rx="5" fill="#FBF9F5" stroke="rgba(24, 63, 53, 0.1)" stroke-width="0.8"/>
+        <text x="8" y="24" class="font-sans" font-size="10" fill="#183F35">Kya aap {when} par confirm</text>
+        <text x="8" y="42" class="font-sans" font-size="10" fill="#183F35">karna chahte hain?</text>
+      </g>
+
+      <!-- Section: Colloquial Time -->
+      <g transform="translate(10, 260)">
+        <text x="0" y="0" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">Colloquial Time Format</text>
+        <rect x="0" y="6" width="178" height="42" rx="5" fill="#FDF3ED" stroke="#D97736" stroke-width="0.8"/>
+        <text x="8" y="22" class="font-mono" font-size="10.5" font-weight="600" fill="#D97736">5:00 PM (shaam 5 baje)</text>
+        <text x="8" y="36" class="font-sans" font-size="9" fill="#485C54">Colloquial dayparts</text>
+      </g>
+
+      <!-- Section: De-escalation -->
+      <g transform="translate(10, 320)">
+        <text x="0" y="0" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">De-escalation Voice</text>
+        <rect x="0" y="6" width="178" height="66" rx="5" fill="#FDF3ED" stroke="#D97736" stroke-width="0.8"/>
+        <text x="8" y="22" class="font-sans" font-size="9.5" fill="#B85E24">"Main madad ke liye hoon 🙏"</text>
+        <text x="8" y="38" class="font-sans" font-size="9.5" fill="#485C54">Kuch galat hua hai to</text>
+        <text x="8" y="54" class="font-sans" font-size="9.5" fill="#485C54">batayein, ya staff se connect...</text>
+      </g>
+
+      <!-- Status Footer -->
+      <g transform="translate(10, 404)">
+        <rect x="0" y="0" width="178" height="78" rx="6" fill="#F4EFE8"/>
+        <text x="8" y="18" class="font-sans" font-weight="700" font-size="9.5" fill="#183F35">Phonetic Invariant:</text>
+        <text x="8" y="32" class="font-sans" font-size="9" fill="#485C54">Natural Indian English spelling</text>
+        <text x="8" y="46" class="font-sans" font-size="9" fill="#485C54">("chunein", "batayein").</text>
+        <text x="8" y="60" class="font-sans" font-size="9" fill="#485C54">Never robotic or archaic.</text>
+      </g>
+    </g>
+
+    <!-- Col 3: Odia (Odia Script) -->
+    <g transform="translate(424, 26)">
+      <rect x="0" y="0" width="198" height="495" rx="10" fill="#FFFFFF" stroke="rgba(24, 63, 53, 0.15)" stroke-width="1.2" filter="url(#shadow-elevated)"/>
+      <path d="M 0 10 Q 0 0 10 0 L 188 0 Q 198 0 198 10 L 198 42 L 0 42 Z" fill="#1D6D56"/>
+      <text x="14" y="20" class="font-sans" font-weight="800" font-size="12" fill="#FFFFFF">3. ODIA (ଓଡ଼ିଆ)</text>
+      <text x="14" y="34" class="font-mono" font-size="9" fill="#EAF3EF">tag: "or" · Odia Script</text>
+
+      <!-- Section: Pronoun & Greeting -->
+      <g transform="translate(10, 52)">
+        <text x="0" y="0" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">Respectful Pronoun</text>
+        <rect x="0" y="6" width="178" height="28" rx="5" fill="#ECF7F1" stroke="#207E56" stroke-width="0.8"/>
+        <text x="10" y="24" class="font-odia" font-size="12" font-weight="700" fill="#207E56">ଆପଣ (Strictly NO ତୁ/ତୁମେ)</text>
+      </g>
+
+      <!-- Section: Booking Prompt -->
+      <g transform="translate(10, 102)">
+        <text x="0" y="0" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">Slot Picker Prompt</text>
+        <rect x="0" y="6" width="178" height="66" rx="5" fill="#FBF9F5" stroke="rgba(24, 63, 53, 0.1)" stroke-width="0.8"/>
+        <text x="8" y="24" class="font-odia" font-size="10.5" fill="#183F35">{date} ରେ {practitioner} ଙ୍କ</text>
+        <text x="8" y="40" class="font-odia" font-size="10.5" fill="#183F35">ସହିତ {service} ପାଇଁ</text>
+        <text x="8" y="56" class="font-odia" font-size="10.5" fill="#183F35">ସମୟ ବାଛନ୍ତୁ।</text>
+      </g>
+
+      <!-- Section: Confirmation Prompt -->
+      <g transform="translate(10, 188)">
+        <text x="0" y="0" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">Confirmation Echo</text>
+        <rect x="0" y="6" width="178" height="54" rx="5" fill="#FBF9F5" stroke="rgba(24, 63, 53, 0.1)" stroke-width="0.8"/>
+        <text x="8" y="24" class="font-odia" font-size="10" fill="#183F35">ଆପଣ {when} ରେ ନିଶ୍ଚିତ</text>
+        <text x="8" y="42" class="font-odia" font-size="10" fill="#183F35">କରିବାକୁ ଚାହାଁନ୍ତି କି?</text>
+      </g>
+
+      <!-- Section: Colloquial Time -->
+      <g transform="translate(10, 260)">
+        <text x="0" y="0" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">Colloquial Time Format</text>
+        <rect x="0" y="6" width="178" height="42" rx="5" fill="#EAF3EF" stroke="#1D6D56" stroke-width="0.8"/>
+        <text x="8" y="22" class="font-odia" font-size="11" font-weight="600" fill="#1D6D56">5:00 PM (ସନ୍ଧ୍ୟା ୫:୦୦)</text>
+        <text x="8" y="36" class="font-sans" font-size="9" fill="#485C54">Includes Odia numerals ୦-୯</text>
+      </g>
+
+      <!-- Section: De-escalation -->
+      <g transform="translate(10, 320)">
+        <text x="0" y="0" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">De-escalation Voice</text>
+        <rect x="0" y="6" width="178" height="66" rx="5" fill="#FDF3ED" stroke="#D97736" stroke-width="0.8"/>
+        <text x="8" y="22" class="font-odia" font-size="10" fill="#B85E24">"ମୁଁ ସାହାଯ୍ୟ ପାଇଁ ଅଛି 🙏"</text>
+        <text x="8" y="38" class="font-odia" font-size="9.5" fill="#485C54">କିଛି ଅସୁବିଧା ହୋଇଛି କି,</text>
+        <text x="8" y="54" class="font-odia" font-size="9.5" fill="#485C54">ଷ୍ଟାଫ୍ ସହିତ କଥା କରାଇଦେବି କି?</text>
+      </g>
+
+      <!-- Status Footer -->
+      <g transform="translate(10, 404)">
+        <rect x="0" y="0" width="178" height="78" rx="6" fill="#F4EFE8"/>
+        <text x="8" y="18" class="font-sans" font-weight="700" font-size="9.5" fill="#183F35">Odisha First Support:</text>
+        <text x="8" y="32" class="font-sans" font-size="9" fill="#485C54">Seeded with local festival</text>
+        <text x="8" y="46" class="font-sans" font-size="9" fill="#485C54">calendars (Ratha Yatra,</text>
+        <text x="8" y="60" class="font-sans" font-size="9" fill="#485C54">Raja, Durga Puja closures).</text>
+      </g>
+    </g>
+
+    <!-- Col 4: English (Indian English) -->
+    <g transform="translate(636, 26)">
+      <rect x="0" y="0" width="198" height="495" rx="10" fill="#FFFFFF" stroke="rgba(24, 63, 53, 0.15)" stroke-width="1.2" filter="url(#shadow-elevated)"/>
+      <path d="M 0 10 Q 0 0 10 0 L 188 0 Q 198 0 198 10 L 198 42 L 0 42 Z" fill="#183F35"/>
+      <text x="14" y="20" class="font-sans" font-weight="800" font-size="12" fill="#FFFFFF">4. INDIAN ENGLISH</text>
+      <text x="14" y="34" class="font-mono" font-size="9" fill="#FCF6EB">tag: "en" · Warm Professional</text>
+
+      <!-- Section: Pronoun & Greeting -->
+      <g transform="translate(10, 52)">
+        <text x="0" y="0" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">Respectful Pronoun</text>
+        <rect x="0" y="6" width="178" height="28" rx="5" fill="#ECF7F1" stroke="#207E56" stroke-width="0.8"/>
+        <text x="10" y="24" class="font-sans" font-size="12" font-weight="700" fill="#207E56">You / Namaste</text>
+      </g>
+
+      <!-- Section: Booking Prompt -->
+      <g transform="translate(10, 102)">
+        <text x="0" y="0" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">Slot Picker Prompt</text>
+        <rect x="0" y="6" width="178" height="66" rx="5" fill="#FBF9F5" stroke="rgba(24, 63, 53, 0.1)" stroke-width="0.8"/>
+        <text x="8" y="24" class="font-sans" font-size="10.5" fill="#183F35">Choose a {service} time</text>
+        <text x="8" y="40" class="font-sans" font-size="10.5" fill="#183F35">with {practitioner}</text>
+        <text x="8" y="56" class="font-sans" font-size="10.5" fill="#183F35">on {date}.</text>
+      </g>
+
+      <!-- Section: Confirmation Prompt -->
+      <g transform="translate(10, 188)">
+        <text x="0" y="0" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">Confirmation Echo</text>
+        <rect x="0" y="6" width="178" height="54" rx="5" fill="#FBF9F5" stroke="rgba(24, 63, 53, 0.1)" stroke-width="0.8"/>
+        <text x="8" y="24" class="font-sans" font-size="10" fill="#183F35">Confirm {service} with</text>
+        <text x="8" y="42" class="font-sans" font-size="10" fill="#183F35">{practitioner} on {when}?</text>
+      </g>
+
+      <!-- Section: Colloquial Time -->
+      <g transform="translate(10, 260)">
+        <text x="0" y="0" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">Colloquial Time Format</text>
+        <rect x="0" y="6" width="178" height="42" rx="5" fill="#EAF3EF" stroke="#1D6D56" stroke-width="0.8"/>
+        <text x="8" y="22" class="font-mono" font-size="10.5" font-weight="600" fill="#1D6D56">5:00 PM (evening)</text>
+        <text x="8" y="36" class="font-sans" font-size="9" fill="#485C54">Standard Indian notation</text>
+      </g>
+
+      <!-- Section: De-escalation -->
+      <g transform="translate(10, 320)">
+        <text x="0" y="0" class="font-sans" font-weight="700" font-size="10.5" fill="#183F35">De-escalation Voice</text>
+        <rect x="0" y="6" width="178" height="66" rx="5" fill="#FDF3ED" stroke="#D97736" stroke-width="0.8"/>
+        <text x="8" y="22" class="font-sans" font-size="9.5" fill="#B85E24">"I'm here to help 🙏"</text>
+        <text x="8" y="38" class="font-sans" font-size="9.5" fill="#485C54">If something went wrong, let</text>
+        <text x="8" y="54" class="font-sans" font-size="9.5" fill="#485C54">me know or I'll connect staff.</text>
+      </g>
+
+      <!-- Status Footer -->
+      <g transform="translate(10, 404)">
+        <rect x="0" y="0" width="178" height="78" rx="6" fill="#F4EFE8"/>
+        <text x="8" y="18" class="font-sans" font-weight="700" font-size="9.5" fill="#183F35">Tone Invariant:</text>
+        <text x="8" y="32" class="font-sans" font-size="9" fill="#485C54">Warm, polite, authoritative.</text>
+        <text x="8" y="46" class="font-sans" font-size="9" fill="#485C54">No condescending jargon,</text>
+        <text x="8" y="60" class="font-sans" font-size="9" fill="#485C54">no corporate robotic apologies.</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ==================== BOTTOM: TONE GUARDRAILS & PERSONA ENGINE ==================== -->
+  <g transform="translate(36, 675)">
+    <rect x="0" y="0" width="1128" height="175" rx="14" fill="#FFFFFF" stroke="rgba(24, 63, 53, 0.12)" stroke-width="1.2" filter="url(#shadow-card)"/>
+    
+    <path d="M 0 14 Q 0 0 14 0 L 1114 0 Q 1128 0 1128 14 L 1128 36 L 0 36 Z" fill="#183F35"/>
+    <text x="20" y="23" class="font-sans" font-weight="700" font-size="12.5" fill="#FCF6EB">CONVERSATIONAL INTEGRITY GUARDRAILS · TONE, REGISTER &amp; MULTI-INDUSTRY PERSONAS</text>
+    <text x="1098" y="23" class="font-mono" font-size="10.5" fill="#B37E28" text-anchor="end">08-user-flows §5.1 · app/agent/profile.py · Register Tests (L7)</text>
+
+    <!-- Guardrail 1: Respectful Pronoun Hard Invariant -->
+    <g transform="translate(24, 48)">
+      <rect x="0" y="0" width="260" height="112" rx="8" fill="#F4F9F7" stroke="rgba(29, 109, 86, 0.25)" stroke-width="1"/>
+      <text x="14" y="22" class="font-sans" font-weight="700" font-size="11" fill="#183F35">1. RESPECTFUL PRONOUNS</text>
+      <text x="14" y="36" class="font-mono" font-size="9" fill="#1D6D56">आप / ଆପଣ Always Enforced</text>
+      <text x="14" y="54" class="font-sans" font-size="10" fill="#485C54">
+        <tspan x="14" dy="0">Informal pronouns (तू, तुम, ତୁ, ତୁମେ)</tspan>
+        <tspan x="14" dy="15">are banned from all system prompts</tspan>
+        <tspan x="14" dy="15">and templates. Tested across 100%</tspan>
+        <tspan x="14" dy="15" font-weight="600" fill="#183F35">of prompt regressions in CI test L7.</tspan>
+      </text>
+    </g>
+
+    <!-- Guardrail 2: Emoji & Script Purity -->
+    <g transform="translate(304, 48)">
+      <rect x="0" y="0" width="260" height="112" rx="8" fill="#FDF9F5" stroke="rgba(217, 119, 54, 0.25)" stroke-width="1"/>
+      <text x="14" y="22" class="font-sans" font-weight="700" font-size="11" fill="#183F35">2. EMOJI &amp; SCRIPT PURITY</text>
+      <text x="14" y="36" class="font-mono" font-size="9" fill="#B85E24">Budget ≤ 1 · Zero Script Mixing</text>
+      <text x="14" y="54" class="font-sans" font-size="10" fill="#485C54">
+        <tspan x="14" dy="0">Max 1 emoji per message. Folded hands 🙏</tspan>
+        <tspan x="14" dy="15">is reserved for greetings &amp; apologies.</tspan>
+        <tspan x="14" dy="15">Never mix Latin and Indic scripts in</tspan>
+        <tspan x="14" dy="15" font-weight="600" fill="#183F35">the same sentence (preserves dignity).</tspan>
+      </text>
+    </g>
+
+    <!-- Guardrail 3: Zero Moralizing -->
+    <g transform="translate(584, 48)">
+      <rect x="0" y="0" width="260" height="112" rx="8" fill="#FCF6EB" stroke="rgba(179, 126, 40, 0.25)" stroke-width="1"/>
+      <text x="14" y="22" class="font-sans" font-weight="700" font-size="11" fill="#183F35">3. ZERO MORALIZING</text>
+      <text x="14" y="36" class="font-mono" font-size="9" fill="#96671E">Non-Combative De-escalation</text>
+      <text x="14" y="54" class="font-sans" font-size="10" fill="#485C54">
+        <tspan x="14" dy="0">Never argues with an angry customer.</tspan>
+        <tspan x="14" dy="15">Never matches aggressive tone.</tspan>
+        <tspan x="14" dy="15">Single gentle de-escalation offer,</tspan>
+        <tspan x="14" dy="15" font-weight="600" fill="#183F35">then silent handoff to human staff.</tspan>
+      </text>
+    </g>
+
+    <!-- Guardrail 4: Tenant Persona Adaptability -->
+    <g transform="translate(864, 48)">
+      <rect x="0" y="0" width="240" height="112" rx="8" fill="#F4EFE8" stroke="rgba(24, 63, 53, 0.2)" stroke-width="1"/>
+      <text x="14" y="22" class="font-sans" font-weight="700" font-size="11" fill="#183F35">4. TENANT PERSONAS</text>
+      <text x="14" y="36" class="font-mono" font-size="9" fill="#485C54">app/agent/profile.py</text>
+      <text x="14" y="54" class="font-sans" font-size="9.5" fill="#485C54">
+        <tspan x="14" dy="0">• Clinic: patient / doctor</tspan>
+        <tspan x="14" dy="14">• Salon: client / stylist</tspan>
+        <tspan x="14" dy="14">• Legal: client / counsel</tspan>
+        <tspan x="14" dy="14" font-weight="600" fill="#183F35">Adapts vocabulary per tenant!</tspan>
+      </text>
+    </g>
+  </g>
+</svg>

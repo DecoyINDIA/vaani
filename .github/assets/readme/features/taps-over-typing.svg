@@ -1,0 +1,352 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 520" width="840" height="520" fill="none" style="background:#071612; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Kohinoor Devanagari', sans-serif;">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bg-grad-taps" x1="0" y1="0" x2="840" y2="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#061410"/>
+      <stop offset="50%" stop-color="#0a1d17"/>
+      <stop offset="100%" stop-color="#05120e"/>
+    </linearGradient>
+
+    <!-- Emerald Aura -->
+    <radialGradient id="aura-emerald-taps" cx="260" cy="240" r="320" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1d6d56" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#071612" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="aura-gold-taps" cx="680" cy="120" r="260" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#b37e28" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#071612" stop-opacity="0"/>
+    </radialGradient>
+
+    <pattern id="grid-dots-taps" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#1d6d56" fill-opacity="0.16"/>
+    </pattern>
+
+    <linearGradient id="card-grad-taps" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#103227"/>
+      <stop offset="100%" stop-color="#0b221a"/>
+    </linearGradient>
+
+    <linearGradient id="border-glow-taps" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2a7d65"/>
+      <stop offset="50%" stop-color="#1d4e40"/>
+      <stop offset="100%" stop-color="#13362c"/>
+    </linearGradient>
+
+    <linearGradient id="gold-grad-taps" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+
+    <linearGradient id="emerald-grad-taps" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="50%" stop-color="#25d366"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+
+    <filter id="shadow-card" x="-6%" y="-6%" width="112%" height="116%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+
+    <filter id="glow-emerald-taps" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <style>
+      /* Keyframe Choreography for 2-Tap Sequence */
+      @keyframes tap1-action {
+        0%, 15% { transform: scale(1); opacity: 0.9; }
+        20% { transform: scale(0.97); opacity: 1; }
+        25%, 75% { transform: scale(1.02); opacity: 1; }
+        85%, 100% { transform: scale(1); opacity: 0.9; }
+      }
+
+      @keyframes ripple1 {
+        0%, 18% { r: 6px; opacity: 0; stroke-width: 2px; }
+        20% { r: 10px; opacity: 1; stroke-width: 2.5px; }
+        35% { r: 32px; opacity: 0; stroke-width: 0.5px; }
+        100% { r: 32px; opacity: 0; }
+      }
+
+      @keyframes hold-reveal {
+        0%, 22% { opacity: 0.3; transform: translateY(4px); }
+        30%, 80% { opacity: 1; transform: translateY(0); }
+        90%, 100% { opacity: 0.3; transform: translateY(4px); }
+      }
+
+      @keyframes hold-sweep {
+        0%, 25% { stroke-dashoffset: 240; }
+        30% { stroke-dashoffset: 190; }
+        75% { stroke-dashoffset: 60; }
+        100% { stroke-dashoffset: 0; }
+      }
+
+      @keyframes tap2-action {
+        0%, 48% { transform: scale(1); opacity: 0.95; }
+        52% { transform: scale(0.96); filter: brightness(1.2); }
+        56%, 85% { transform: scale(1.02); filter: drop-shadow(0 0 10px rgba(37,211,102,0.8)); }
+        95%, 100% { transform: scale(1); opacity: 0.95; }
+      }
+
+      @keyframes ripple2 {
+        0%, 50% { r: 8px; opacity: 0; }
+        52% { r: 12px; opacity: 1; stroke-width: 2.5px; }
+        68% { r: 36px; opacity: 0; stroke-width: 0.5px; }
+        100% { r: 36px; opacity: 0; }
+      }
+
+      @keyframes confirm-pop {
+        0%, 55% { opacity: 0; transform: translateY(8px); }
+        62%, 85% { opacity: 1; transform: translateY(0); }
+        95%, 100% { opacity: 0; transform: translateY(8px); }
+      }
+
+      @keyframes pulse-dot {
+        0%, 100% { opacity: 0.6; }
+        50% { opacity: 1; }
+      }
+
+      .slot-tap1 { animation: tap1-action 10s ease-in-out infinite; transform-origin: 260px 245px; }
+      .ripple-tap1 { animation: ripple1 10s ease-out infinite; }
+      .hold-box { animation: hold-reveal 10s ease-in-out infinite; }
+      .hold-bar { animation: hold-sweep 10s linear infinite; }
+      .btn-tap2 { animation: tap2-action 10s ease-in-out infinite; transform-origin: 150px 420px; }
+      .ripple-tap2 { animation: ripple2 10s ease-out infinite; }
+      .toast-confirmed { animation: confirm-pop 10s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
+      .dot-glow { animation: pulse-dot 2.5s infinite; }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, .slot-tap1, .ripple-tap1, .hold-box, .hold-bar, .btn-tap2, .ripple-tap2, .toast-confirmed, .dot-glow {
+          animation: none !important;
+          transform: none !important;
+          opacity: 1 !important;
+        }
+        .toast-confirmed { opacity: 1 !important; transform: translateY(0) !important; }
+      }
+    </style>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="840" height="520" fill="url(#bg-grad-taps)"/>
+  <rect width="840" height="520" fill="url(#aura-emerald-taps)"/>
+  <rect width="840" height="520" fill="url(#aura-gold-taps)"/>
+  <rect width="840" height="520" fill="url(#grid-dots-taps)"/>
+
+  <!-- Border Frame -->
+  <rect x="12" y="12" width="816" height="496" rx="16" fill="none" stroke="url(#border-glow-taps)" stroke-width="1.2" stroke-opacity="0.7"/>
+
+  <!-- ======================================================== -->
+  <!-- HEADER BAR                                               -->
+  <!-- ======================================================== -->
+  <g transform="translate(36, 32)">
+    <!-- Brand Glyph mini badge -->
+    <rect x="0" y="0" width="28" height="28" rx="6" fill="#0d2921" stroke="#b37e28" stroke-width="1.2"/>
+    <text x="14" y="19" text-anchor="middle" fill="#f59e0b" font-size="13" font-weight="700">वा</text>
+
+    <!-- Title and Subtitle -->
+    <text x="38" y="14" fill="#fbf9f5" font-size="16" font-weight="800" letter-spacing="1">TAPS OVER TYPING · 2-TAP SLOT PICKER</text>
+    <text x="38" y="27" fill="#a7c4bc" font-size="11" font-weight="400">Zero Typing WhatsApp List Message + 120s Distributed Atomic Mutex</text>
+
+    <!-- Status Badges Right -->
+    <g transform="translate(560, 0)">
+      <rect x="0" y="0" width="112" height="26" rx="13" fill="#0b281f" stroke="#1d6d56" stroke-width="1"/>
+      <circle cx="12" cy="13" r="3.5" fill="#25d366" class="dot-glow"/>
+      <text x="22" y="17" fill="#fbf9f5" font-size="10" font-weight="600">p50 ≤ 2.8s</text>
+
+      <rect x="120" y="0" width="102" height="26" rx="13" fill="#22180c" stroke="#b37e28" stroke-width="1"/>
+      <circle cx="132" cy="13" r="3.5" fill="#f59e0b"/>
+      <text x="142" y="17" fill="#fbbf24" font-size="10" font-weight="600">Zero Typing</text>
+    </g>
+  </g>
+
+  <!-- Horizontal Divider -->
+  <line x1="36" y1="72" x2="804" y2="72" stroke="#1d4e40" stroke-width="1" stroke-opacity="0.4"/>
+  <line x1="36" y1="72" x2="260" y2="72" stroke="#25d366" stroke-width="1.5"/>
+
+  <!-- ======================================================== -->
+  <!-- LEFT: WHATSAPP PHONE INTERFACE (460px width)             -->
+  <!-- ======================================================== -->
+  <g transform="translate(36, 88)">
+    <!-- WhatsApp Window Frame -->
+    <rect x="0" y="0" width="460" height="404" rx="14" fill="url(#card-grad-taps)" stroke="url(#border-glow-taps)" stroke-width="1.2" filter="url(#shadow-card)"/>
+
+    <!-- WhatsApp Top Header Bar -->
+    <rect x="0" y="0" width="460" height="42" rx="14" fill="#0d2b22"/>
+    <circle cx="24" cy="21" r="12" fill="#128c7e"/>
+    <!-- Shield check icon -->
+    <path d="M 19 21 L 23 25 L 29 17" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <text x="44" y="19" fill="#fbf9f5" font-size="11.5" font-weight="700">Apex Dental Studio</text>
+    <text x="44" y="31" fill="#34d399" font-size="9">Vaani AI Assistant · Official WhatsApp</text>
+    <circle cx="438" cy="21" r="3" fill="#25d366"/>
+
+    <!-- WhatsApp Chat Messages -->
+    <g transform="translate(14, 52)">
+      <!-- Bubble 1: Customer Message (Right-aligned, green WhatsApp style) -->
+      <g transform="translate(130, 0)">
+        <rect x="0" y="0" width="302" height="34" rx="10" fill="#005c4b"/>
+        <text x="12" y="16" fill="#fbf9f5" font-size="10.5">kal shaam 5 baje dental cleaning ka slot?</text>
+        <text x="252" y="27" fill="#a7c4bc" font-size="8.5">14:20 ✓✓</text>
+      </g>
+
+      <!-- Bubble 2: Vaani Response (Left-aligned) -->
+      <g transform="translate(0, 42)">
+        <rect x="0" y="0" width="432" height="48" rx="10" fill="#14362c" stroke="#1d6d56" stroke-width="0.8"/>
+        <text x="12" y="18" fill="#fbf9f5" font-size="11">नमस्ते! कल यानी <tspan font-weight="700" fill="#fbbf24">शनिवार, 19 जुलाई</tspan> के slots उपलब्ध हैं:</text>
+        <text x="12" y="34" fill="#a7c4bc" font-size="10">Dr. Priya के पास 3 options हैं (सुविधाजनक slot चुनें):</text>
+      </g>
+
+      <!-- INTERACTIVE LIST MESSAGE SLOTS -->
+      <g transform="translate(0, 98)">
+        <!-- Slot A: Unselected -->
+        <g transform="translate(0, 0)">
+          <rect x="0" y="0" width="432" height="36" rx="8" fill="#091c16" stroke="#174436" stroke-width="1"/>
+          <text x="14" y="22" fill="#a7c4bc" font-size="11" font-weight="600">11:15 AM</text>
+          <text x="80" y="22" fill="#689084" font-size="9.5">· सुबह का समय (Morning)</text>
+          <rect x="355" y="7" width="65" height="22" rx="4" fill="#0f2f25"/>
+          <text x="372" y="21" fill="#34d399" font-size="9.5" font-weight="600">Select</text>
+        </g>
+
+        <!-- Slot B: TARGET (Selected via TAP 1) -->
+        <g class="slot-tap1" transform="translate(0, 44)">
+          <rect x="0" y="0" width="432" height="44" rx="8" fill="#133d30" stroke="#25d366" stroke-width="1.8" filter="url(#glow-emerald-taps)"/>
+          <circle cx="22" cy="22" r="10" fill="#25d366"/>
+          <path d="M 17 22 L 21 26 L 27 18" stroke="#061812" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+          <text x="40" y="21" fill="#fbf9f5" font-size="12" font-weight="700">05:00 PM (shaam)</text>
+          <text x="40" y="34" fill="#fbbf24" font-size="9.5" font-weight="600">Dr. Priya · Dental Cleaning (₹500)</text>
+
+          <!-- Tap button with TAP 1 badge -->
+          <rect x="335" y="9" width="85" height="26" rx="6" fill="#25d366"/>
+          <text x="348" y="25" fill="#061812" font-size="10.5" font-weight="800">TAP 1 👆</text>
+
+          <!-- Expanding ripple ring -->
+          <circle class="ripple-tap1" cx="377" cy="22" r="14" fill="none" stroke="#25d366"/>
+        </g>
+
+        <!-- Slot C: Unselected -->
+        <g transform="translate(0, 96)">
+          <rect x="0" y="0" width="432" height="36" rx="8" fill="#091c16" stroke="#174436" stroke-width="1"/>
+          <text x="14" y="22" fill="#a7c4bc" font-size="11" font-weight="600">06:30 PM</text>
+          <text x="80" y="22" fill="#689084" font-size="9.5">· शाम का समय (Evening)</text>
+          <rect x="355" y="7" width="65" height="22" rx="4" fill="#0f2f25"/>
+          <text x="372" y="21" fill="#34d399" font-size="9.5" font-weight="600">Select</text>
+        </g>
+      </g>
+
+      <!-- 120s ATOMIC HOLD BANNER (Appears after Tap 1) -->
+      <g class="hold-box" transform="translate(0, 246)">
+        <rect x="0" y="0" width="432" height="38" rx="8" fill="#081e17" stroke="#b37e28" stroke-width="1.2"/>
+        <circle cx="20" cy="19" r="10" fill="#b37e28" fill-opacity="0.3"/>
+        <!-- Lock icon -->
+        <path d="M 17 17 L 17 14 C 17 12 23 12 23 14 L 23 17 M 15 17 L 25 17 L 25 24 L 15 24 Z" fill="#f59e0b" stroke="#f59e0b" stroke-width="0.8"/>
+
+        <text x="38" y="17" fill="#fbbf24" font-size="10.5" font-weight="700">120s ATOMIC HOLD RESERVED</text>
+        <text x="38" y="29" fill="#a7c4bc" font-size="8.5">Exclusively locked · Concurrency race-safe</text>
+
+        <!-- Dynamic progress bar -->
+        <rect x="250" y="14" width="168" height="10" rx="5" fill="#123026"/>
+        <rect class="hold-bar" x="250" y="14" width="168" height="10" rx="5" fill="url(#gold-grad-taps)" stroke-dasharray="168"/>
+      </g>
+
+      <!-- ACTION BUTTONS: TAP 2 TO CONFIRM -->
+      <g transform="translate(0, 292)">
+        <!-- Button 1: CONFIRM (TAP 2) -->
+        <g class="btn-tap2" transform="translate(0, 0)">
+          <rect x="0" y="0" width="206" height="42" rx="8" fill="url(#emerald-grad-taps)" filter="url(#glow-emerald-taps)"/>
+          <text x="36" y="25" fill="#061812" font-size="12" font-weight="800">✅ पक्का करें (TAP 2)</text>
+          <!-- Ripple for Tap 2 -->
+          <circle class="ripple-tap2" cx="103" cy="21" r="14" fill="none" stroke="#25d366"/>
+        </g>
+
+        <!-- Button 2: Reschedule -->
+        <g transform="translate(216, 0)">
+          <rect x="0" y="0" width="102" height="42" rx="8" fill="#12382c" stroke="#1d6d56" stroke-width="1"/>
+          <text x="22" y="25" fill="#fbf9f5" font-size="11" font-weight="600">🔄 बदलें</text>
+        </g>
+
+        <!-- Button 3: Cancel -->
+        <g transform="translate(328, 0)">
+          <rect x="0" y="0" width="104" height="42" rx="8" fill="#241713" stroke="#d97736" stroke-width="1"/>
+          <text x="18" y="25" fill="#fbf9f5" font-size="11" font-weight="600">❌ रहने दें</text>
+        </g>
+      </g>
+
+      <!-- CONFIRMATION TOAST CARD (Slides in) -->
+      <g class="toast-confirmed" transform="translate(0, 244)">
+        <rect x="0" y="0" width="432" height="90" rx="10" fill="#09281e" stroke="#25d366" stroke-width="1.8" filter="url(#glow-emerald-taps)"/>
+        <circle cx="28" cy="28" r="14" fill="#25d366"/>
+        <path d="M 22 28 L 26 32 L 34 24" stroke="#061812" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <text x="52" y="25" fill="#fbf9f5" font-size="12.5" font-weight="800">🎉 Booking Confirmed! #VN-8842</text>
+        <text x="52" y="40" fill="#fbbf24" font-size="10">शनिवार, 19 जुलाई · शाम 5:00 बजे · Dr. Priya</text>
+        <text x="52" y="56" fill="#a7c4bc" font-size="9">📍 Bapuji Nagar, Near Ram Mandir · 24h Reminder Set</text>
+        <text x="52" y="74" fill="#34d399" font-size="9" font-weight="600">Total Steps: 2 Taps · Zero Keystrokes · Frictionless</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ======================================================== -->
+  <!-- RIGHT: ARCHITECTURAL DEEP-DIVE & TELEMETRY (308px width) -->
+  <!-- ======================================================== -->
+  <g transform="translate(516, 88)">
+    <rect x="0" y="0" width="288" height="404" rx="14" fill="url(#card-grad-taps)" stroke="url(#border-glow-taps)" stroke-width="1.2" filter="url(#shadow-card)"/>
+
+    <!-- Header -->
+    <rect x="0" y="0" width="288" height="42" rx="14" fill="#133d30" fill-opacity="0.4"/>
+    <text x="18" y="26" fill="#fbf9f5" font-size="12.5" font-weight="700" letter-spacing="0.5">ENGINEERING SPECIFICATION</text>
+
+    <!-- Step 1 Info -->
+    <g transform="translate(18, 54)">
+      <circle cx="10" cy="10" r="10" fill="#0d2b22" stroke="#25d366" stroke-width="1"/>
+      <text x="10" y="14" text-anchor="middle" fill="#25d366" font-size="10" font-weight="800">1</text>
+      <text x="28" y="14" fill="#fbf9f5" font-size="11" font-weight="700">TAP 1: INTENT MATCH</text>
+      <text x="28" y="28" fill="#a7c4bc" font-size="9.5">Relative-date parser converts "kal"</text>
+      <text x="28" y="40" fill="#a7c4bc" font-size="9.5">into confirmed ISO date + weekday.</text>
+    </g>
+
+    <line x1="28" y1="102" x2="28" y2="116" stroke="#1d4e40" stroke-width="1.5" stroke-dasharray="2 2"/>
+
+    <!-- Step 2 Info (Code Snippet) -->
+    <g transform="translate(18, 120)">
+      <circle cx="10" cy="10" r="10" fill="#22180c" stroke="#b37e28" stroke-width="1"/>
+      <text x="10" y="14" text-anchor="middle" fill="#f59e0b" font-size="10" font-weight="800">2</text>
+      <text x="28" y="14" fill="#fbbf24" font-size="11" font-weight="700">120s ATOMIC MUTEX HOLD</text>
+      <text x="28" y="28" fill="#a7c4bc" font-size="9.5">Distributed atomic lock in MongoDB:</text>
+
+      <!-- Code Well -->
+      <g transform="translate(0, 36)">
+        <rect x="0" y="0" width="252" height="74" rx="6" fill="#05140f" stroke="#174436" stroke-width="0.8"/>
+        <text x="10" y="16" fill="#34d399" font-size="8.5" font-family="monospace">Slots.findOneAndUpdate({</text>
+        <text x="18" y="29" fill="#fbf9f5" font-size="8.5" font-family="monospace">  _id: slot_id, status: "open"</text>
+        <text x="10" y="42" fill="#34d399" font-size="8.5" font-family="monospace">}, {</text>
+        <text x="18" y="55" fill="#f59e0b" font-size="8.5" font-family="monospace">  $set: { status: "held",</text>
+        <text x="24" y="66" fill="#f59e0b" font-size="8.5" font-family="monospace">          expiry: now + 120s }}</text>
+      </g>
+    </g>
+
+    <line x1="28" y1="236" x2="28" y2="250" stroke="#1d4e40" stroke-width="1.5" stroke-dasharray="2 2"/>
+
+    <!-- Step 3 Info -->
+    <g transform="translate(18, 254)">
+      <circle cx="10" cy="10" r="10" fill="#0d2b22" stroke="#25d366" stroke-width="1"/>
+      <text x="10" y="14" text-anchor="middle" fill="#25d366" font-size="10" font-weight="800">3</text>
+      <text x="28" y="14" fill="#fbf9f5" font-size="11" font-weight="700">TAP 2: IDEMPOTENT COMMIT</text>
+      <text x="28" y="28" fill="#a7c4bc" font-size="9.5">Locks booking with unique request_id.</text>
+      <text x="28" y="40" fill="#a7c4bc" font-size="9.5">Prevents double-booking across workers.</text>
+    </g>
+
+    <!-- Bottom KPI Summary Box -->
+    <g transform="translate(18, 318)">
+      <rect x="0" y="0" width="252" height="70" rx="8" fill="#081e17" stroke="#1d6d56" stroke-width="1"/>
+      <g transform="translate(14, 16)">
+        <text x="0" y="14" fill="#689084" font-size="9">AVG COMPLETION</text>
+        <text x="0" y="36" fill="#25d366" font-size="20" font-weight="800">3.4s</text>
+
+        <line x1="108" y1="0" x2="108" y2="42" stroke="#174436" stroke-width="1"/>
+
+        <text x="122" y="14" fill="#689084" font-size="9">DROP-OFF RATE</text>
+        <text x="122" y="36" fill="#34d399" font-size="20" font-weight="800">-42%</text>
+      </g>
+    </g>
+  </g>
+</svg>

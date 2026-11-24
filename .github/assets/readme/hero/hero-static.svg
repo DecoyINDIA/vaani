@@ -1,0 +1,489 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" fill="none" style="background:#071612; font-family:'Plus Jakarta Sans', Aptos, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Noto Sans Oriya', sans-serif;">
+  <defs>
+    <linearGradient id="bg-grad" x1="0" y1="0" x2="1200" y2="600" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#061410"/>
+      <stop offset="50%" stop-color="#0a1d17"/>
+      <stop offset="100%" stop-color="#05120e"/>
+    </linearGradient>
+
+    <!-- Radial aura top-right -->
+    <radialGradient id="aura-emerald" cx="950" cy="80" r="450" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1d6d56" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#1d6d56" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Radial aura bottom-left -->
+    <radialGradient id="aura-gold" cx="200" cy="520" r="400" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#b37e28" stop-opacity="0.18"/>
+      <stop offset="60%" stop-color="#d97736" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#071612" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Grid pattern -->
+    <pattern id="grid-dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#1d6d56" fill-opacity="0.18"/>
+    </pattern>
+
+    <!-- Gradients for cards -->
+    <linearGradient id="card-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#103227"/>
+      <stop offset="100%" stop-color="#0b221a"/>
+    </linearGradient>
+
+    <linearGradient id="card-border-glow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2a7d65"/>
+      <stop offset="50%" stop-color="#1d4e40"/>
+      <stop offset="100%" stop-color="#13362c"/>
+    </linearGradient>
+
+    <!-- Gold gradient for seal -->
+    <linearGradient id="gold-seal-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="30%" stop-color="#f59e0b"/>
+      <stop offset="70%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#b37e28"/>
+    </linearGradient>
+
+    <!-- Terracotta gradient -->
+    <linearGradient id="terra-grad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#f97316"/>
+      <stop offset="100%" stop-color="#d97736"/>
+    </linearGradient>
+
+    <!-- Emerald gradient -->
+    <linearGradient id="emerald-grad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="50%" stop-color="#25d366"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+
+    <!-- Glowing filters -->
+    <filter id="gold-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <filter id="emerald-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <filter id="card-shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+
+    <style>
+
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; }
+    }
+    
+    </style>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="1200" height="600" fill="url(#bg-grad)"/>
+  <rect width="1200" height="600" fill="url(#aura-emerald)"/>
+  <rect width="1200" height="600" fill="url(#aura-gold)"/>
+  <rect width="1200" height="600" fill="url(#grid-dots)"/>
+
+  <!-- Outer frame border with rounded corners -->
+  <rect x="12" y="12" width="1176" height="576" rx="20" fill="none" stroke="#1d4e40" stroke-width="1.2" stroke-opacity="0.5"/>
+  <rect x="14" y="14" width="1172" height="572" rx="18" fill="none" stroke="url(#card-border-glow)" stroke-width="0.8" stroke-opacity="0.8"/>
+
+  <!-- ======================================================== -->
+  <!-- HEADER BAR (Brand Identity, Glyphs, System Status)       -->
+  <!-- ======================================================== -->
+  <g id="header-bar">
+    <!-- Brand Seal with Glyph 'वा' -->
+    <g class="pulse-seal" transform="translate(45, 28)">
+      <!-- Outer aura glow ring -->
+      <circle cx="36" cy="36" r="32" fill="#1d6d56" fill-opacity="0.25" filter="url(#emerald-glow)"/>
+      <circle cx="36" cy="36" r="28" fill="#0d241d" stroke="url(#gold-seal-grad)" stroke-width="1.8"/>
+      <circle cx="36" cy="36" r="24" fill="none" stroke="#b37e28" stroke-width="0.75" stroke-dasharray="3 2"/>
+
+      <!-- Vector Articulated Glyph 'वा' -->
+      <!-- Shirorekha (top horizontal line) -->
+      <path d="M 22 23 L 50 23" stroke="url(#gold-seal-grad)" stroke-width="3" stroke-linecap="round"/>
+      <!-- Letter 'व' - vertical stem and rounded loop -->
+      <path d="M 34 23 L 34 49" stroke="url(#gold-seal-grad)" stroke-width="3" stroke-linecap="round"/>
+      <path d="M 34 31 C 27 31, 23 35, 23 40 C 23 45, 27 49, 34 49" fill="none" stroke="url(#gold-seal-grad)" stroke-width="2.8" stroke-linecap="round"/>
+      <!-- Matra 'ा' - vertical stem on right -->
+      <path d="M 46 23 L 46 49" stroke="url(#gold-seal-grad)" stroke-width="3" stroke-linecap="round"/>
+    </g>
+
+    <!-- Wordmark & Tagline -->
+    <text x="130" y="52" fill="#fbf9f5" font-size="28" font-weight="800" letter-spacing="2">VAANI</text>
+    <text x="236" y="52" fill="#f59e0b" font-size="24" font-weight="700" letter-spacing="1">वाणी</text>
+    <!-- Accent slash dot -->
+    <circle cx="288" cy="46" r="3" fill="#25d366"/>
+    <text x="300" y="52" fill="#a7c4bc" font-size="13" font-weight="600" letter-spacing="1.5">v2.0 PRODUCTION ENGINE</text>
+    <text x="130" y="74" fill="#689084" font-size="12.5" font-weight="400" letter-spacing="0.5">Autonomous Voice Telephony &amp; WhatsApp Front-Office for Indian SMBs</text>
+
+    <!-- Top Right Meta & Status Pills -->
+    <g transform="translate(710, 36)">
+      <!-- Pill 1: Meta Cloud API -->
+      <g transform="translate(0, 0)">
+        <rect x="0" y="0" width="148" height="30" rx="15" fill="#0d2c22" stroke="#1d6d56" stroke-width="1"/>
+        <circle cx="16" cy="15" r="4.5" fill="#25d366" class="badge-live"/>
+        <text x="28" y="19.5" fill="#fbf9f5" font-size="10.5" font-weight="600">Meta Cloud API</text>
+      </g>
+
+      <!-- Pill 2: 8kHz Voice PSTN -->
+      <g transform="translate(158, 0)">
+        <rect x="0" y="0" width="138" height="30" rx="15" fill="#23170e" stroke="#d97736" stroke-width="1"/>
+        <circle cx="16" cy="15" r="4.5" fill="#f97316"/>
+        <text x="28" y="19.5" fill="#fbf9f5" font-size="10.5" font-weight="600">8kHz Voice PSTN</text>
+      </g>
+
+      <!-- Pill 3: DPDP 2025 Ready -->
+      <g transform="translate(306, 0)">
+        <rect x="0" y="0" width="138" height="30" rx="15" fill="#241e0f" stroke="#b37e28" stroke-width="1"/>
+        <circle cx="16" cy="15" r="4.5" fill="#f59e0b"/>
+        <text x="28" y="19.5" fill="#fbf9f5" font-size="10.5" font-weight="600">DPDP 2025 Ready</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Horizontal divider rule -->
+  <line x1="45" y1="94" x2="1155" y2="94" stroke="#1d4e40" stroke-width="1" stroke-opacity="0.4"/>
+  <line x1="45" y1="94" x2="350" y2="94" stroke="url(#gold-seal-grad)" stroke-width="1.5" stroke-opacity="0.8"/>
+
+  <!-- ======================================================== -->
+  <!-- COLUMN 1: DUAL STREAM VOICE & WHATSAPP WAVE ENGINE       -->
+  <!-- ======================================================== -->
+  <g id="col-dual-stream" transform="translate(45, 112)">
+    <!-- Column Frame -->
+    <rect x="0" y="0" width="345" height="460" rx="16" fill="url(#card-grad)" stroke="url(#card-border-glow)" stroke-width="1.2" filter="url(#card-shadow)"/>
+
+    <!-- Header Section -->
+    <rect x="0" y="0" width="345" height="46" rx="16" fill="#133d30" fill-opacity="0.4"/>
+    <rect x="16" y="15" width="6" height="16" rx="3" fill="url(#terra-grad)"/>
+    <text x="30" y="28" fill="#fbf9f5" font-size="13" font-weight="700" letter-spacing="1">DUAL-STREAM SYNTHESIS</text>
+    <text x="30" y="40" fill="#a7c4bc" font-size="10" font-weight="500">Real-Time Telephony ⇄ WhatsApp State</text>
+
+    <!-- INBOUND VOICE WAVE SECTION -->
+    <g transform="translate(18, 56)">
+      <rect x="0" y="0" width="309" height="106" rx="10" fill="#091b15" stroke="#d97736" stroke-width="1" stroke-opacity="0.5"/>
+      <path d="M 0 0 L 110 0 L 120 18 L 0 18 Z" fill="#2b1a10"/>
+      <text x="12" y="13" fill="#f97316" font-size="9" font-weight="700" letter-spacing="0.5">8kHz VOICE INBOUND</text>
+      <text x="215" y="13" fill="#fbbf24" font-size="9" font-weight="600">STT 120ms</text>
+
+      <!-- Animated Voice Waveform Bars -->
+      <g transform="translate(8, 58)">
+        <!-- Voice line baseline -->
+        <line x1="0" y1="0" x2="293" y2="0" stroke="#d97736" stroke-width="1" stroke-opacity="0.25"/>
+        <!-- 16 Equalizer bars -->
+        <rect class="wb-1" x="15" y="-14" width="4" height="28" rx="2" fill="#f97316"/>
+        <rect class="wb-2" x="27" y="-20" width="4" height="40" rx="2" fill="#fb923c"/>
+        <rect class="wb-3" x="39" y="-26" width="4" height="52" rx="2" fill="#fdba74"/>
+        <rect class="wb-4" x="51" y="-16" width="4" height="32" rx="2" fill="#f97316"/>
+        <rect class="wb-5" x="63" y="-24" width="4" height="48" rx="2" fill="#fb923c"/>
+        <rect class="wb-6" x="75" y="-30" width="4" height="60" rx="2" fill="#fdba74"/>
+        <rect class="wb-7" x="87" y="-22" width="4" height="44" rx="2" fill="#f97316"/>
+        <rect class="wb-8" x="99" y="-12" width="4" height="24" rx="2" fill="#fb923c"/>
+        <rect class="wb-9" x="111" y="-26" width="4" height="52" rx="2" fill="#fdba74"/>
+        <rect class="wb-10" x="123" y="-18" width="4" height="36" rx="2" fill="#f97316"/>
+        <rect class="wb-11" x="135" y="-28" width="4" height="56" rx="2" fill="#fb923c"/>
+        <rect class="wb-12" x="147" y="-15" width="4" height="30" rx="2" fill="#fdba74"/>
+        <!-- Symmetrical right wing -->
+        <rect class="wb-7" x="159" y="-22" width="4" height="44" rx="2" fill="#f97316"/>
+        <rect class="wb-5" x="171" y="-26" width="4" height="52" rx="2" fill="#fb923c"/>
+        <rect class="wb-3" x="183" y="-19" width="4" height="38" rx="2" fill="#fdba74"/>
+        <rect class="wb-1" x="195" y="-11" width="4" height="22" rx="2" fill="#f97316"/>
+      </g>
+
+      <!-- Inbound text caption -->
+      <rect x="12" y="78" width="285" height="20" rx="4" fill="#14211a"/>
+      <text x="20" y="92" fill="#fbf9f5" font-size="10.5" font-style="italic">Caller: "कल शाम 5 बजे दाँत दिखाने के लिए slot?"</text>
+    </g>
+
+    <!-- BRIDGE / DUAL SCOPE GATE (Middle connecting flow) -->
+    <g transform="translate(18, 172)">
+      <rect x="0" y="0" width="309" height="58" rx="8" fill="#0d241d" stroke="#1d6d56" stroke-width="1"/>
+      <circle cx="24" cy="29" r="14" fill="#184e3e"/>
+      <!-- Shield lock icon inside circle -->
+      <path d="M 24 21 L 30 24 L 30 30 C 30 34 27 36 24 37 C 21 36 18 34 18 30 L 18 24 Z" fill="none" stroke="#25d366" stroke-width="1.4"/>
+      <text x="48" y="24" fill="#fbf9f5" font-size="11" font-weight="700">Dual Scope Gate Router</text>
+      <text x="48" y="38" fill="#a7c4bc" font-size="9.5">LangGraph State Machine · Closed Intent</text>
+      <text x="48" y="49" fill="#f59e0b" font-size="8.5" font-family="monospace">Zero Hallucination · Anti-Drift Guard</text>
+
+      <!-- Animated packet dot traveling -->
+      <g transform="translate(230, 20)">
+        <line x1="0" y1="9" x2="65" y2="9" stroke="#1d4e40" stroke-width="2" stroke-dasharray="2 3"/>
+        <circle class="packet-stream" cx="0" cy="9" r="4.5" fill="#25d366"/>
+        <circle class="packet-stream-2" cx="0" cy="9" r="3.5" fill="#fbbf24"/>
+      </g>
+    </g>
+
+    <!-- OUTBOUND WHATSAPP PACKET STREAM -->
+    <g transform="translate(18, 240)">
+      <rect x="0" y="0" width="309" height="106" rx="10" fill="#091b15" stroke="#1d6d56" stroke-width="1" stroke-opacity="0.6"/>
+      <path d="M 0 0 L 126 0 L 136 18 L 0 18 Z" fill="#154234"/>
+      <text x="12" y="13" fill="#25d366" font-size="9" font-weight="700" letter-spacing="0.5">WHATSAPP SYNTHESIS</text>
+      <text x="220" y="13" fill="#34d399" font-size="9" font-weight="600">p50 ≤ 2.8s</text>
+
+      <!-- Digital packet flow graphic -->
+      <g transform="translate(12, 34)">
+        <path d="M 10 18 Q 70 -5, 140 18 T 270 18" fill="none" stroke="#25d366" stroke-width="2" stroke-linecap="round" stroke-dasharray="6 4"/>
+        <circle cx="75" cy="8" r="4" fill="#25d366" filter="url(#emerald-glow)"/>
+        <circle cx="180" cy="18" r="4" fill="#34d399"/>
+        <circle cx="240" cy="12" r="3" fill="#fbbf24"/>
+      </g>
+
+      <!-- Message Outbound Preview -->
+      <rect x="12" y="64" width="285" height="32" rx="6" fill="#14362b" stroke="#1d6d56" stroke-width="0.8"/>
+      <text x="20" y="78" fill="#fbf9f5" font-size="10" font-weight="600">Vaani: "जी कल शनिवार, 19 जुलाई के लिए slots:"</text>
+      <text x="20" y="90" fill="#a7c4bc" font-size="9">[ Interactive List Message Dispatched ]</text>
+    </g>
+
+    <!-- Operational KPI strip at bottom of Col 1 -->
+    <g transform="translate(18, 358)">
+      <rect x="0" y="0" width="309" height="88" rx="10" fill="#0c231b" stroke="#1d4e40" stroke-width="0.8"/>
+      <text x="14" y="20" fill="#a7c4bc" font-size="10.5" font-weight="700">VERIFIED SYSTEM LATENCY</text>
+
+      <g transform="translate(14, 32)">
+        <!-- Metric 1 -->
+        <rect x="0" y="0" width="88" height="44" rx="6" fill="#071712"/>
+        <text x="10" y="18" fill="#689084" font-size="8.5">SEEN TIME</text>
+        <text x="10" y="36" fill="#25d366" font-size="14" font-weight="700">≤ 1.0s</text>
+
+        <!-- Metric 2 -->
+        <rect x="96" y="0" width="88" height="44" rx="6" fill="#071712"/>
+        <text x="10" y="18" fill="#689084" font-size="8.5">FULL REPLY</text>
+        <text x="10" y="36" fill="#f59e0b" font-size="14" font-weight="700">≤ 2.8s</text>
+
+        <!-- Metric 3 -->
+        <rect x="192" y="0" width="88" height="44" rx="6" fill="#071712"/>
+        <text x="10" y="18" fill="#689084" font-size="8.5">HALLUCINATION</text>
+        <text x="10" y="36" fill="#34d399" font-size="14" font-weight="700">0.0%</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ======================================================== -->
+  <!-- COLUMN 2: TAPS OVER TYPING & 120s ATOMIC HOLD            -->
+  <!-- ======================================================== -->
+  <g id="col-interactive-slot" transform="translate(410, 112)">
+    <!-- Column Frame -->
+    <rect x="0" y="0" width="415" height="460" rx="16" fill="url(#card-grad)" stroke="url(#card-border-glow)" stroke-width="1.2" filter="url(#card-shadow)"/>
+
+    <!-- Header Section -->
+    <rect x="0" y="0" width="415" height="46" rx="16" fill="#133d30" fill-opacity="0.4"/>
+    <rect x="16" y="15" width="6" height="16" rx="3" fill="url(#emerald-grad)"/>
+    <text x="30" y="28" fill="#fbf9f5" font-size="13" font-weight="700" letter-spacing="1">TAPS OVER TYPING</text>
+    <text x="30" y="40" fill="#a7c4bc" font-size="10" font-weight="500">2-Tap Booking UX + 120s Race-Safe Atomic Hold</text>
+
+    <!-- Simulated WhatsApp Message Container -->
+    <g transform="translate(18, 56)">
+      <!-- WhatsApp chat bubble -->
+      <rect x="0" y="0" width="379" height="74" rx="12" fill="#0d2b22" stroke="#1d6d56" stroke-width="1"/>
+      <!-- Verified green badge -->
+      <circle cx="22" cy="22" r="10" fill="#128c7e"/>
+      <path d="M 18 22 L 21 25 L 26 19" stroke="#ffffff" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      <text x="38" y="20" fill="#fbf9f5" font-size="11.5" font-weight="700">Dr. Priya's Dental Studio</text>
+      <text x="38" y="32" fill="#a7c4bc" font-size="9.5">Vaani AI Assistant · Official WhatsApp</text>
+
+      <text x="14" y="52" fill="#fbf9f5" font-size="11">नमस्ते! कल यानी <tspan font-weight="700" fill="#fbbf24">शनिवार, 19 जुलाई</tspan> के slots उपलब्ध हैं:</text>
+      <text x="14" y="66" fill="#a7c4bc" font-size="10">कृपया अपना सुविधाजनक समय चुनें (Tap to pick):</text>
+    </g>
+
+    <!-- INTERACTIVE SLOT LIST PICKER -->
+    <g transform="translate(18, 140)">
+      <!-- Slot 1: Unselected -->
+      <g transform="translate(0, 0)">
+        <rect x="0" y="0" width="379" height="38" rx="8" fill="#091c16" stroke="#19483b" stroke-width="1"/>
+        <text x="18" y="23" fill="#a7c4bc" font-size="11" font-weight="600">11:15 AM</text>
+        <text x="85" y="23" fill="#689084" font-size="10">· सुबह का समय (Morning)</text>
+        <rect x="305" y="8" width="60" height="22" rx="4" fill="#0f2e24"/>
+        <text x="318" y="22" fill="#34d399" font-size="9.5" font-weight="600">Select</text>
+      </g>
+
+      <!-- Slot 2: ACTIVE TARGET (Selected with Tap Effect & 120s Hold) -->
+      <g class="tap-target" transform="translate(0, 48)">
+        <rect x="0" y="0" width="379" height="44" rx="8" fill="#133d30" stroke="#25d366" stroke-width="1.8" filter="url(#emerald-glow)"/>
+        <!-- Checkmark icon inside green circle -->
+        <circle cx="24" cy="22" r="10" fill="#25d366"/>
+        <path d="M 19 22 L 23 26 L 29 18" stroke="#071612" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+
+        <text x="44" y="21" fill="#fbf9f5" font-size="12.5" font-weight="700">05:00 PM (shaam)</text>
+        <text x="44" y="34" fill="#fbbf24" font-size="9.5" font-weight="600">Dr. Priya · Dental Cleaning (₹500)</text>
+
+        <!-- Tap target button with glowing pill -->
+        <rect x="290" y="9" width="76" height="26" rx="6" fill="#25d366"/>
+        <text x="302" y="25" fill="#061812" font-size="10.5" font-weight="800">TAP 1 ✓</text>
+
+        <!-- Ripple rings from tap -->
+        <circle class="ripple-effect" cx="328" cy="22" r="14" fill="none" stroke="#25d366"/>
+      </g>
+
+      <!-- Slot 3: Unselected -->
+      <g transform="translate(0, 102)">
+        <rect x="0" y="0" width="379" height="38" rx="8" fill="#091c16" stroke="#19483b" stroke-width="1"/>
+        <text x="18" y="23" fill="#a7c4bc" font-size="11" font-weight="600">06:30 PM</text>
+        <text x="85" y="23" fill="#689084" font-size="10">· शाम का समय (Evening)</text>
+        <rect x="305" y="8" width="60" height="22" rx="4" fill="#0f2e24"/>
+        <text x="318" y="22" fill="#34d399" font-size="9.5" font-weight="600">Select</text>
+      </g>
+    </g>
+
+    <!-- 120s ATOMIC HOLD RADAR & MUTEX ENGINE (Highlight Box) -->
+    <g transform="translate(18, 296)">
+      <rect x="0" y="0" width="379" height="92" rx="10" fill="#091f18" stroke="#b37e28" stroke-width="1.2"/>
+
+      <!-- Circular Timer HUD Gauge -->
+      <g transform="translate(46, 46)">
+        <!-- Background track circle -->
+        <circle cx="0" cy="0" r="32" fill="none" stroke="#174134" stroke-width="5"/>
+        <!-- Animated countdown sweep ring -->
+        <circle class="timer-ring" cx="0" cy="0" r="32" fill="none" stroke="url(#gold-seal-grad)" stroke-width="5" stroke-linecap="round" stroke-dasharray="201" transform="rotate(-90)"/>
+        <!-- Lock icon & digits in center -->
+        <path d="M -5 -2 L -5 -7 C -5 -11 5 -11 5 -7 L 5 -2 M -7 -2 L 7 -2 L 7 8 L -7 8 Z" fill="#f59e0b" stroke="#f59e0b" stroke-width="1"/>
+        <text x="0" y="19" text-anchor="middle" fill="#fbf9f5" font-size="9" font-weight="800">118s</text>
+      </g>
+
+      <!-- Atomic Hold Specs & Code Reference -->
+      <g transform="translate(94, 18)">
+        <text x="0" y="10" fill="#fbbf24" font-size="12" font-weight="800" letter-spacing="0.5">120s ATOMIC HOLD ACTIVE</text>
+        <text x="0" y="24" fill="#fbf9f5" font-size="9.5">Slot reserved exclusively during customer checkout</text>
+
+        <!-- Real Code snippet tag -->
+        <rect x="0" y="32" width="270" height="22" rx="4" fill="#040d0a" stroke="#1d4e40" stroke-width="0.8"/>
+        <text x="8" y="46" fill="#34d399" font-size="8.5" font-family="monospace">findOneAndUpdate(status: "open" → "held", +120s)</text>
+
+        <text x="0" y="67" fill="#a7c4bc" font-size="8.5">Concurrency: Race-safe under 500 simultaneous claims</text>
+      </g>
+    </g>
+
+    <!-- TAP 2: CONFIRMATION ACTIONS -->
+    <g transform="translate(18, 400)">
+      <!-- Button 1: Confirm (Emerald CTA) -->
+      <g transform="translate(0, 0)">
+        <rect x="0" y="0" width="182" height="42" rx="8" fill="url(#emerald-grad)" filter="url(#emerald-glow)"/>
+        <text x="36" y="25" fill="#061812" font-size="12" font-weight="800">✅ पक्का करें (TAP 2)</text>
+      </g>
+
+      <!-- Button 2: Reschedule -->
+      <g transform="translate(192, 0)">
+        <rect x="0" y="0" width="90" height="42" rx="8" fill="#13362c" stroke="#1d6d56" stroke-width="1"/>
+        <text x="14" y="25" fill="#fbf9f5" font-size="11" font-weight="600">🔄 बदलें</text>
+      </g>
+
+      <!-- Button 3: Cancel -->
+      <g transform="translate(290, 0)">
+        <rect x="0" y="0" width="89" height="42" rx="8" fill="#261815" stroke="#d97736" stroke-width="1"/>
+        <text x="12" y="25" fill="#fbf9f5" font-size="11" font-weight="600">❌ रहने दें</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ======================================================== -->
+  <!-- COLUMN 3: 08:00 AM MORNING BRIEF & REVENUE TICKER        -->
+  <!-- ======================================================== -->
+  <g id="col-morning-brief" transform="translate(845, 112)">
+    <!-- Column Frame -->
+    <rect x="0" y="0" width="310" height="460" rx="16" fill="url(#card-grad)" stroke="url(#card-border-glow)" stroke-width="1.2" filter="url(#card-shadow)"/>
+
+    <!-- Header Section -->
+    <rect x="0" y="0" width="310" height="46" rx="16" fill="#133d30" fill-opacity="0.4"/>
+    <rect x="16" y="15" width="6" height="16" rx="3" fill="url(#gold-seal-grad)"/>
+    <text x="30" y="28" fill="#fbf9f5" font-size="13" font-weight="700" letter-spacing="1">08:00 AM MORNING BRIEF</text>
+    <text x="30" y="40" fill="#a7c4bc" font-size="10" font-weight="500">The Business Owner's Daily Intelligence</text>
+
+    <!-- Morning Dispatch WhatsApp Header -->
+    <g transform="translate(16, 56)">
+      <rect x="0" y="0" width="278" height="48" rx="8" fill="#091b15" stroke="#b37e28" stroke-width="0.8"/>
+      <circle cx="20" cy="24" r="10" fill="#b37e28" fill-opacity="0.3"/>
+      <!-- Sun icon -->
+      <circle cx="20" cy="24" r="5" fill="#f59e0b"/>
+      <text x="38" y="20" fill="#fbf9f5" font-size="11" font-weight="700">🌅 दैनिक रिपोर्ट (Daily Brief)</text>
+      <text x="38" y="34" fill="#fbbf24" font-size="9.5">Dispatched 08:00 AM IST · Dr. Priya</text>
+    </g>
+
+    <!-- RECOVERED REVENUE HERO TICKER CARD -->
+    <g transform="translate(16, 114)">
+      <rect x="0" y="0" width="278" height="118" rx="12" fill="#173e31" stroke="url(#gold-seal-grad)" stroke-width="1.4" filter="url(#card-shadow)"/>
+
+      <text x="16" y="22" fill="#a7c4bc" font-size="10" font-weight="700" letter-spacing="1">RECOVERED REVENUE</text>
+      <text x="16" y="36" fill="#689084" font-size="9">From after-hours &amp; missed calls</text>
+
+      <!-- Large Bold Ticker Value -->
+      <g transform="translate(16, 44)">
+        <text x="0" y="34" fill="#fef08a" font-size="36" font-weight="900" letter-spacing="0.5" filter="url(#gold-glow)">₹8,500</text>
+        <rect x="140" y="12" width="108" height="24" rx="12" fill="#072218" stroke="#25d366" stroke-width="1"/>
+        <text x="152" y="27" fill="#25d366" font-size="10" font-weight="700">+9 Bookings</text>
+      </g>
+
+      <!-- Subtext / Callout -->
+      <rect x="12" y="86" width="254" height="22" rx="4" fill="#092018"/>
+      <text x="20" y="100" fill="#fbbf24" font-size="9">Booked between 8 PM - 8 AM while closed</text>
+    </g>
+
+    <!-- 2x2 OPERATIONAL STATS GRID -->
+    <g transform="translate(16, 242)">
+      <!-- Box 1: Conversations -->
+      <g transform="translate(0, 0)">
+        <rect x="0" y="0" width="133" height="48" rx="8" fill="#081d16" stroke="#174436" stroke-width="0.8"/>
+        <text x="10" y="16" fill="#689084" font-size="8.5">CONVERSATIONS</text>
+        <text x="10" y="36" fill="#fbf9f5" font-size="16" font-weight="800">42</text>
+        <text x="38" y="36" fill="#25d366" font-size="9">100% Auto</text>
+      </g>
+
+      <!-- Box 2: Total Bookings -->
+      <g transform="translate(145, 0)">
+        <rect x="0" y="0" width="133" height="48" rx="8" fill="#081d16" stroke="#174436" stroke-width="0.8"/>
+        <text x="10" y="16" fill="#689084" font-size="8.5">CONFIRMED</text>
+        <text x="10" y="36" fill="#fbf9f5" font-size="16" font-weight="800">18</text>
+        <text x="38" y="36" fill="#f59e0b" font-size="9">Slots Filled</text>
+      </g>
+
+      <!-- Box 3: Open Escalations -->
+      <g transform="translate(0, 56)">
+        <rect x="0" y="0" width="133" height="48" rx="8" fill="#081d16" stroke="#174436" stroke-width="0.8"/>
+        <text x="10" y="16" fill="#689084" font-size="8.5">ESCALATIONS</text>
+        <text x="10" y="36" fill="#34d399" font-size="16" font-weight="800">0</text>
+        <text x="28" y="36" fill="#689084" font-size="9">Under 10m SLA</text>
+      </g>
+
+      <!-- Box 4: CSAT Rating -->
+      <g transform="translate(145, 56)">
+        <rect x="0" y="0" width="133" height="48" rx="8" fill="#081d16" stroke="#174436" stroke-width="0.8"/>
+        <text x="10" y="16" fill="#689084" font-size="8.5">CSAT RATING</text>
+        <text x="10" y="36" fill="#fef08a" font-size="16" font-weight="800">4.9 ★</text>
+        <text x="56" y="36" fill="#689084" font-size="9">38 ratings</text>
+      </g>
+    </g>
+
+    <!-- BOTTOM ACTION CARD & AUDIT HASH -->
+    <g transform="translate(16, 356)">
+      <rect x="0" y="0" width="278" height="40" rx="8" fill="#143e31" stroke="#1d6d56" stroke-width="1"/>
+      <text x="14" y="24" fill="#fbf9f5" font-size="11" font-weight="700">📊 Open Owner Control Desk</text>
+      <path d="M 252 20 L 257 24 L 252 28" stroke="#fbf9f5" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+
+      <!-- Audit key tag -->
+      <rect x="0" y="48" width="278" height="40" rx="6" fill="#05140f" stroke="#163e32" stroke-width="0.8"/>
+      <text x="8" y="63" fill="#689084" font-size="8" font-family="monospace">AUDIT: daily-brief:apex-dental:2026-07-18</text>
+      <text x="8" y="78" fill="#25d366" font-size="8">✓ ASCI Compliant · 100% Cryptographic Ledger Trace</text>
+    </g>
+  </g>
+
+  <!-- ======================================================== -->
+  <!-- FOOTER STATUS & TRUST BANNER                             -->
+  <!-- ======================================================== -->
+  <g id="footer-status" transform="translate(45, 574)">
+    <circle cx="6" cy="6" r="3.5" fill="#25d366" class="badge-live"/>
+    <text x="16" y="9" fill="#a7c4bc" font-size="9.5" font-weight="500">Bhubaneswar Pilot Production Fleet</text>
+
+    <text x="320" y="9" fill="#689084" font-size="9.5">·</text>
+    <text x="335" y="9" fill="#fbf9f5" font-size="9.5" font-weight="600">386 Passing Tests</text>
+
+    <text x="460" y="9" fill="#689084" font-size="9.5">·</text>
+    <text x="475" y="9" fill="#a7c4bc" font-size="9.5">p50 Latency ≤ 2.8s</text>
+
+    <text x="610" y="9" fill="#689084" font-size="9.5">·</text>
+    <text x="625" y="9" fill="#fbbf24" font-size="9.5" font-weight="600">500-Claim Atomic Race Test Verified</text>
+
+    <text x="880" y="9" fill="#689084" font-size="9.5">·</text>
+    <text x="895" y="9" fill="#34d399" font-size="9.5">India DPDP Act 2025 7-Day Erasure Pipeline</text>
+  </g>
+</svg>

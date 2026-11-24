@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 100" width="640" height="100" role="img" aria-label="Vaani Dark Spruce Wordmark">
+  <defs>
+    <linearGradient id="spruceCardBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#183F35"/>
+      <stop offset="100%" stop-color="#0E2822"/>
+    </linearGradient>
+
+    <linearGradient id="glyphGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#238267"/>
+      <stop offset="100%" stop-color="#14493A"/>
+    </linearGradient>
+
+    <linearGradient id="goldLuster" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E2B86E"/>
+      <stop offset="50%" stop-color="#B37E28"/>
+      <stop offset="100%" stop-color="#D97736"/>
+    </linearGradient>
+
+    <style>
+      .title-text {
+        font-family: 'Plus Jakarta Sans', Aptos, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-weight: 800;
+        letter-spacing: -0.035em;
+        fill: #FFFFFF;
+      }
+      .tag-text {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-weight: 500;
+        fill: #A0C9B9;
+      }
+      .spec-text {
+        font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', 'Noto Sans Oriya', system-ui, sans-serif;
+        font-weight: 600;
+        fill: #EAF3EF;
+      }
+    </style>
+  </defs>
+
+  <!-- Container Box -->
+  <rect width="640" height="100" rx="16" fill="url(#spruceCardBg)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+
+  <!-- Left Glyph: Asymmetrical Squircle -->
+  <g transform="translate(18, 14)">
+    <path d="M 24 5 H 64 C 68 5 70 7 70 11 V 50 C 70 61 61 70 50 70 H 11 C 7 70 5 68 5 64 V 24 C 5 13 13 5 24 5 Z" 
+          fill="url(#glyphGrad)" 
+          stroke="url(#goldLuster)" 
+          stroke-width="1.5"/>
+    <path d="M 51 25 C 56 30 56 44 51 49" fill="none" stroke="#E2B86E" stroke-width="1.6" stroke-linecap="round" opacity="0.6"/>
+    <text x="34" y="42" font-size="33" font-family="'Noto Sans Devanagari', sans-serif" font-weight="800" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">वा</text>
+    <circle cx="34" cy="14" r="2" fill="#E2B86E"/>
+  </g>
+
+  <!-- Wordmark -->
+  <g transform="translate(108, 0)">
+    <text x="0" y="48" font-size="38" class="title-text">Vaani</text>
+    <circle cx="95" cy="26" r="3.5" fill="#D97736"/>
+    <text x="0" y="73" font-size="14.5" class="tag-text">Your business, always answered.</text>
+
+    <!-- Right Side Badges -->
+    <g transform="translate(255, 26)">
+      <rect x="0" y="0" width="250" height="28" rx="14" fill="rgba(29, 109, 86, 0.4)" stroke="rgba(226, 184, 110, 0.4)" stroke-width="1"/>
+      <circle cx="14" cy="14" r="4" fill="#25D366"/>
+      <text x="26" y="18" font-size="11.5" class="spec-text">WhatsApp &amp; Voice · Hindi · Odia · English</text>
+      <text x="0" y="46" font-size="11" font-weight="500" fill="#788A82">DPDP 2025 · 0 Hallucinations · 120s Hold</text>
+    </g>
+  </g>
+</svg>

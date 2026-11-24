@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96" role="img" aria-label="Vaani Brand Glyph - Odia Ba">
+  <defs>
+    <!-- Background Gradient: Emerald Jade to Deep Forest -->
+    <linearGradient id="glyphBgOdia" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1D6D56"/>
+      <stop offset="60%" stop-color="#14493A"/>
+      <stop offset="100%" stop-color="#0E2822"/>
+    </linearGradient>
+
+    <!-- Subtle Golden Rim Accent -->
+    <linearGradient id="goldRimOdia" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#B37E28" stop-opacity="0.8"/>
+      <stop offset="40%" stop-color="#D97736" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#1D6D56" stop-opacity="0.1"/>
+    </linearGradient>
+
+    <!-- Drop Shadow Filter for Depth -->
+    <filter id="glyphShadowOdia" x="-15%" y="-15%" width="130%" height="130%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#183F35" flood-opacity="0.28"/>
+    </filter>
+
+    <style>
+      .glyph-text-odia {
+        font-family: 'Noto Sans Oriya', 'Anek Odia', 'Kalinga', 'Plus Jakarta Sans', system-ui, sans-serif;
+        font-weight: 800;
+        fill: #FFFFFF;
+        text-anchor: middle;
+        dominant-baseline: central;
+      }
+      .sound-ring-odia {
+        fill: none;
+        stroke: #B37E28;
+        stroke-linecap: round;
+        opacity: 0.45;
+      }
+    </style>
+  </defs>
+
+  <!-- Outer Asymmetrical Brand Squircle Container -->
+  <path d="M 30 6 
+           H 82 
+           C 87.5 6 90 8.5 90 14 
+           V 66 
+           C 90 79.5 79.5 90 66 90 
+           H 14 
+           C 8.5 90 6 87.5 6 82 
+           V 30 
+           C 6 16.5 16.5 6 30 6 
+           Z" 
+        fill="url(#glyphBgOdia)" 
+        stroke="url(#goldRimOdia)" 
+        stroke-width="1.5" 
+        filter="url(#glyphShadowOdia)"/>
+
+  <!-- Acoustic Aura / Subtle Voice Resonance Arcs -->
+  <path d="M 66 32 C 73 39 73 57 66 64" class="sound-ring-odia" stroke-width="2"/>
+  <path d="M 72 26 C 81 35 81 61 72 70" class="sound-ring-odia" stroke-width="1.5" opacity="0.25"/>
+
+  <!-- Odia 'ବା' (Ba/Va) Glyph -->
+  <text x="44" y="50" font-size="42" class="glyph-text-odia" letter-spacing="-0.02em">ବା</text>
+
+  <!-- Auspicious Micro Dot / Bindu in Temple Gold -->
+  <circle cx="44" cy="18" r="2.5" fill="#B37E28"/>
+</svg>

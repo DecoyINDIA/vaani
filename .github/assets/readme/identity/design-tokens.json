@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json.schemastore.org/design-tokens.json",
+  "name": "Vaani Warm Intelligence Design System",
+  "version": "1.0.0",
+  "description": "Design token specification for the Vaani AI front office platform, embodying 'Warm Intelligence'—an authoritative, deeply Indian, precision-engineered visual identity.",
+  "tokens": {
+    "color": {
+      "canvas": {
+        "warm": { "value": "#FBF9F5", "description": "Base warm paper canvas for editorial clarity and human warmth" },
+        "surface": { "value": "#FFFFFF", "description": "Elevated pure card surface" },
+        "subtle": { "value": "#F4EFE8", "description": "Secondary tint for recessed panels and table headers" },
+        "elevated": { "value": "#FFFFFF", "description": "Floating modals and popovers" }
+      },
+      "ink": {
+        "primary": { "value": "#183F35", "description": "Deep spruce ink for authoritative headings and high-contrast body" },
+        "secondary": { "value": "#485C54", "description": "Earthy forest tone for supporting descriptions and metadata" },
+        "muted": { "value": "#788A82", "description": "Slate-spruce for captions, timestamps, and subtle borders" },
+        "inverse": { "value": "#FBF9F5", "description": "Text rendered over deep spruce or dark backgrounds" }
+      },
+      "brand": {
+        "jade": { "value": "#1D6D56", "description": "Primary emerald jade brand voltage for CTAs and focus states" },
+        "jade_dark": { "value": "#14493A", "description": "Deep forest gradient stop for brand tiles and buttons" },
+        "jade_deep": { "value": "#0E2822", "description": "Deepest spruce for night backgrounds and terminal panels" },
+        "jade_hover": { "value": "#155543", "description": "Hover state for primary actions" },
+        "jade_subtle": { "value": "#EAF3EF", "description": "Soft jade wash for active chips and selected states" }
+      },
+      "accent": {
+        "terracotta": { "value": "#D97736", "description": "Terracotta earthenware accent for urgency, recovered revenue, and energy" },
+        "terracotta_hover": { "value": "#B85E24", "description": "Hover state for terracotta actions" },
+        "terracotta_subtle": { "value": "#FDF3ED", "description": "Soft peach-terracotta background wash for revenue badges" },
+        "gold": { "value": "#B37E28", "description": "Temple brass/gold accent for trust seals, morning briefs, and ratings" },
+        "gold_hover": { "value": "#96671E", "description": "Hover state for gold accents" },
+        "gold_subtle": { "value": "#FCF6EB", "description": "Soft temple cream wash for verified guarantees" }
+      },
+      "semantic": {
+        "success": { "value": "#207E56", "description": "Positive state for confirmed bookings and passing tests" },
+        "success_subtle": { "value": "#ECF7F1", "description": "Success chip background" },
+        "danger": { "value": "#A43A31", "description": "Critical alerts, cancellations, and handoff escalations" },
+        "danger_subtle": { "value": "#FCF1F0", "description": "Danger chip background" },
+        "warning": { "value": "#E09F3E", "description": "Approaching timeout or pending staff action" },
+        "info": { "value": "#2B6CB0", "description": "Informational notices" }
+      },
+      "whatsapp": {
+        "green": { "value": "#25D366", "description": "Official WhatsApp brand green" },
+        "dark": { "value": "#075E54", "description": "WhatsApp header dark teal" },
+        "light_bubble": { "value": "#DCF8C6", "description": "Outgoing message bubble green" },
+        "white_bubble": { "value": "#FFFFFF", "description": "Incoming message bubble white" },
+        "wallpaper": { "value": "#EFEAE2", "description": "WhatsApp chat area background tint" }
+      },
+      "border": {
+        "light": { "value": "rgba(24, 63, 53, 0.10)", "description": "Subtle card dividing hairline on light surfaces" },
+        "strong": { "value": "rgba(24, 63, 53, 0.20)", "description": "Defined boundary hairline for interactive inputs" },
+        "dark": { "value": "rgba(255, 255, 255, 0.12)", "description": "Luminous hairline rule on dark spruce surfaces" },
+        "gold": { "value": "rgba(179, 126, 40, 0.35)", "description": "Highlight border for trust guarantees" }
+      }
+    },
+    "typography": {
+      "font_family": {
+        "sans": {
+          "value": "'Plus Jakarta Sans', Aptos, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Noto Sans Oriya', sans-serif",
+          "description": "Primary sans typeface pairing geometric clarity with Indian vernacular glyph support"
+        },
+        "mono": {
+          "value": "'JetBrains Mono', 'Cascadia Code', 'SFMono-Regular', Consolas, monospace",
+          "description": "Monospaced technical stack for code, hashes, and payload contracts"
+        },
+        "brand_glyph": {
+          "value": "'Noto Sans Devanagari', 'Rozha One', 'Anek Devanagari', serif",
+          "description": "Sacred glyph typography for 'वा' brand emblem"
+        }
+      },
+      "font_size": {
+        "xs": { "value": "11px", "line_height": "16px", "letter_spacing": "0.02em" },
+        "sm": { "value": "13px", "line_height": "18px", "letter_spacing": "0.01em" },
+        "base": { "value": "15px", "line_height": "22px", "letter_spacing": "0" },
+        "md": { "value": "17px", "line_height": "24px", "letter_spacing": "-0.01em" },
+        "lg": { "value": "20px", "line_height": "28px", "letter_spacing": "-0.015em" },
+        "xl": { "value": "24px", "line_height": "32px", "letter_spacing": "-0.02em" },
+        "2xl": { "value": "32px", "line_height": "40px", "letter_spacing": "-0.025em" },
+        "3xl": { "value": "40px", "line_height": "48px", "letter_spacing": "-0.03em" },
+        "hero": { "value": "48px", "line_height": "56px", "letter_spacing": "-0.035em" }
+      },
+      "font_weight": {
+        "normal": { "value": "400" },
+        "medium": { "value": "500" },
+        "semibold": { "value": "600" },
+        "bold": { "value": "700" },
+        "extrabold": { "value": "800" }
+      }
+    },
+    "radii": {
+      "xs": { "value": "4px", "description": "Micro tags and code badges" },
+      "sm": { "value": "8px", "description": "Inner action buttons and slot chips" },
+      "md": { "value": "12px", "description": "Interactive list items and chat bubbles" },
+      "lg": { "value": "16px", "description": "Standard content cards and panels" },
+      "xl": { "value": "24px", "description": "Hero modals and device frames" },
+      "full": { "value": "9999px", "description": "Pill CTAs and status chips" },
+      "asymmetric_brand": {
+        "value": "14px 4px 14px 4px",
+        "description": "Signature Vaani brand emblem squircle: curved top-left and bottom-right, angled top-right and bottom-left"
+      }
+    },
+    "shadows": {
+      "subtle": { "value": "0 2px 8px -1px rgba(24, 63, 53, 0.05)" },
+      "card": { "value": "0 4px 20px -2px rgba(24, 63, 53, 0.08)" },
+      "elevated": { "value": "0 12px 32px -4px rgba(24, 63, 53, 0.12)" },
+      "brand_glow": { "value": "0 8px 24px -2px rgba(29, 109, 86, 0.25)" },
+      "terracotta_glow": { "value": "0 8px 24px -2px rgba(217, 119, 54, 0.25)" }
+    },
+    "timing": {
+      "atomic_hold_window": { "value": "120s", "description": "Hard distributed lock TTL for slot reservations" },
+      "transition_fast": { "value": "150ms", "easing": "ease-out" },
+      "transition_smooth": { "value": "250ms", "easing": "cubic-bezier(0.16, 1, 0.3, 1)" },
+      "transition_deliberate": { "value": "400ms", "easing": "cubic-bezier(0.16, 1, 0.3, 1)" }
+    }
+  }
+}

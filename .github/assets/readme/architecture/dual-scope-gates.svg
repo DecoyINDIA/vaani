@@ -1,0 +1,506 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 880" width="100%" height="100%">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Noto+Sans+Devanagari:wght@600;700&amp;display=swap');
+      
+      .canvas { fill: #FBF9F5; }
+      
+      /* Typography */
+      .font-sans { font-family: 'Plus Jakarta Sans', Aptos, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+      .font-mono { font-family: 'JetBrains Mono', 'Cascadia Code', 'SFMono-Regular', Consolas, monospace; }
+      .font-devanagari { font-family: 'Noto Sans Devanagari', 'Anek Devanagari', 'Rozha One', serif; }
+      
+      .title-main { font-weight: 800; font-size: 21px; fill: #183F35; letter-spacing: -0.02em; }
+      .title-sub { font-weight: 500; font-size: 13px; fill: #485C54; }
+      .section-header { font-weight: 700; font-size: 13px; fill: #183F35; letter-spacing: -0.01em; }
+      .badge-text { font-weight: 700; font-size: 11px; letter-spacing: 0.02em; }
+      
+      .node-title { font-weight: 700; font-size: 13px; fill: #183F35; }
+      .node-desc { font-weight: 500; font-size: 11px; fill: #485C54; line-height: 15px; }
+      .node-code { font-weight: 500; font-size: 10px; fill: #1D6D56; }
+      .node-code-terracotta { font-weight: 500; font-size: 10px; fill: #B85E24; }
+      
+      .card-bg { fill: #FFFFFF; stroke: rgba(24, 63, 53, 0.12); stroke-width: 1.2; rx: 12px; }
+      .gate1-bg { fill: #FDF9F5; stroke: #D97736; stroke-width: 1.8; rx: 14px; }
+      .gate2-bg { fill: #F4F9F7; stroke: #1D6D56; stroke-width: 1.8; rx: 14px; }
+      .sandbox-bg { fill: #FBF8F2; stroke: #B37E28; stroke-width: 1.5; stroke-dasharray: 5,4; rx: 14px; }
+      
+      .flow-line { fill: none; stroke: #1D6D56; stroke-width: 1.8; stroke-linecap: round; }
+      .flow-line-dashed { fill: none; stroke: #1D6D56; stroke-width: 1.8; stroke-dasharray: 4,3; stroke-linecap: round; }
+      .flow-line-orange { fill: none; stroke: #D97736; stroke-width: 1.8; stroke-linecap: round; }
+      .flow-line-red { fill: none; stroke: #A43A31; stroke-width: 1.8; stroke-linecap: round; }
+      .flow-line-blue { fill: none; stroke: #2B6CB0; stroke-width: 1.8; stroke-dasharray: 4,3; stroke-linecap: round; }
+      
+      .label-pill { font-weight: 600; font-size: 10px; }
+    </style>
+
+    <!-- Filters for drop shadows -->
+    <filter id="shadow-card" x="-6%" y="-6%" width="112%" height="116%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#183F35" flood-opacity="0.06"/>
+    </filter>
+    <filter id="shadow-elevated" x="-8%" y="-6%" width="116%" height="118%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#183F35" flood-opacity="0.10"/>
+    </filter>
+    <filter id="shadow-gate" x="-6%" y="-4%" width="112%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#183F35" flood-opacity="0.08"/>
+    </filter>
+
+    <!-- Markers for arrows -->
+    <marker id="arrow-jade" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#1D6D56"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#D97736"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#A43A31"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2B6CB0"/>
+    </marker>
+
+    <!-- Background Pattern -->
+    <pattern id="dot-grid" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#183F35" fill-opacity="0.06"/>
+    </pattern>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect width="1200" height="880" class="canvas"/>
+  <rect width="1200" height="880" fill="url(#dot-grid)"/>
+  
+  <!-- Outer Frame -->
+  <rect x="16" y="16" width="1168" height="848" rx="16" fill="none" stroke="rgba(24, 63, 53, 0.12)" stroke-width="1.5"/>
+
+  <!-- ==================== HEADER SECTION ==================== -->
+  <g transform="translate(36, 32)">
+    <!-- Brand Glyph Emblem -->
+    <rect x="0" y="2" width="46" height="46" rx="12" fill="#183F35" filter="url(#shadow-card)"/>
+    <rect x="2" y="4" width="42" height="42" rx="10" fill="none" stroke="#B37E28" stroke-width="1.2"/>
+    <text x="23" y="32" class="font-devanagari" font-size="24" font-weight="700" fill="#FCF6EB" text-anchor="middle">वा</text>
+    
+    <!-- Title & Subtitle -->
+    <text x="60" y="24" class="font-sans title-main">DUAL SCOPE GATES &amp; LANGGRAPH STATE MACHINE</text>
+    <text x="60" y="44" class="font-sans title-sub">Deterministic Topology Architecture · <tspan class="font-mono" fill="#1D6D56">app/agent/graph.py</tspan> · Compliance Enforced via Code Path, Not Prompts</text>
+    
+    <!-- Top Status Badges -->
+    <g transform="translate(770, 6)">
+      <!-- Badge 1: Pilot Gate G1 -->
+      <rect x="0" y="0" width="170" height="28" rx="14" fill="#ECF7F1" stroke="#207E56" stroke-width="1.2"/>
+      <circle cx="14" cy="14" r="4.5" fill="#207E56"/>
+      <text x="26" y="18" class="font-sans badge-text" fill="#14493A">PILOT G1: 0 HALLUCINATIONS</text>
+      
+      <!-- Badge 2: Deterministic Topo -->
+      <rect x="180" y="0" width="176" height="28" rx="14" fill="#EAF3EF" stroke="#1D6D56" stroke-width="1.2"/>
+      <circle cx="194" cy="14" r="4.5" fill="#1D6D56"/>
+      <text x="206" y="18" class="font-sans badge-text" fill="#14493A">7-NODE COMPILED GRAPH</text>
+    </g>
+  </g>
+
+  <!-- Divider Line -->
+  <line x1="36" y1="94" x2="1164" y2="94" stroke="rgba(24, 63, 53, 0.10)" stroke-width="1"/>
+
+  <!-- ==================== MAIN GRAPH PIPELINE ==================== -->
+
+  <!-- 1. INGRESS & CLASSIFICATION COLUMN (x=36, width=175) -->
+  <g transform="translate(36, 115)">
+    <text x="0" y="0" class="font-sans section-header">1. INGRESS &amp; TAXONOMY</text>
+    <text x="0" y="15" class="font-sans node-desc">Multi-channel normalizer</text>
+
+    <!-- Inbound Channel Node -->
+    <g transform="translate(0, 26)">
+      <rect x="0" y="0" width="175" height="74" class="card-bg" filter="url(#shadow-card)"/>
+      <rect x="0" y="0" width="5" height="74" rx="2" fill="#25D366"/>
+      <text x="14" y="22" class="font-sans node-title">Inbound Message</text>
+      <text x="14" y="40" class="font-sans node-desc">WhatsApp Cloud API (wa)</text>
+      <text x="14" y="55" class="font-sans node-desc">Exotel Telephony / Voice STT</text>
+      <text x="14" y="68" class="font-mono node-code">webhook_verify()</text>
+    </g>
+
+    <!-- Node 1: lang_detect -->
+    <g transform="translate(0, 130)">
+      <rect x="0" y="0" width="175" height="96" class="card-bg" filter="url(#shadow-card)"/>
+      <rect x="0" y="0" width="5" height="96" rx="2" fill="#1D6D56"/>
+      <rect x="120" y="8" width="46" height="18" rx="9" fill="#EAF3EF"/>
+      <text x="143" y="20" class="font-sans badge-text" fill="#1D6D56" text-anchor="middle">NODE 1</text>
+      
+      <text x="14" y="22" class="font-sans node-title">lang_detect</text>
+      <text x="14" y="40" class="font-sans node-desc">Script Regex + Lingua</text>
+      <text x="14" y="56" class="font-mono" font-size="10" fill="#485C54">• Devanagari → hi</text>
+      <text x="14" y="70" class="font-mono" font-size="10" fill="#485C54">• Odia script → or</text>
+      <text x="14" y="84" class="font-mono" font-size="10" fill="#485C54">• Latin script → en | hi-Latn</text>
+    </g>
+
+    <!-- Node 2: intent -->
+    <g transform="translate(0, 255)">
+      <rect x="0" y="0" width="175" height="110" class="card-bg" filter="url(#shadow-card)"/>
+      <rect x="0" y="0" width="5" height="110" rx="2" fill="#1D6D56"/>
+      <rect x="120" y="8" width="46" height="18" rx="9" fill="#EAF3EF"/>
+      <text x="143" y="20" class="font-sans badge-text" fill="#1D6D56" text-anchor="middle">NODE 2</text>
+      
+      <text x="14" y="22" class="font-sans node-title">intent classifier</text>
+      <text x="14" y="38" class="font-sans node-desc">Closed Set Taxonomy (10)</text>
+      <text x="14" y="54" class="font-mono" font-size="9.5" fill="#485C54">book · reschedule · cancel</text>
+      <text x="14" y="68" class="font-mono" font-size="9.5" fill="#485C54">booking_status · op_inquiry</text>
+      <text x="14" y="82" class="font-mono" font-size="9.5" fill="#B85E24">restricted_advice · abuse</text>
+      <text x="14" y="96" class="font-mono" font-size="9.5" fill="#B85E24">complaint · out_of_scope</text>
+    </g>
+
+    <!-- Connecting Arrows within Col 1 -->
+    <path d="M 87 100 L 87 128" class="flow-line" marker-end="url(#arrow-jade)"/>
+    <path d="M 87 226 L 87 253" class="flow-line" marker-end="url(#arrow-jade)"/>
+  </g>
+
+  <!-- Flow Arrow: intent -> Gate 1 -->
+  <path d="M 211 390 L 239 390" class="flow-line" marker-end="url(#arrow-jade)"/>
+
+
+  <!-- 2. GATE 1: INPUT SCOPE GATE (x=243, width=225) -->
+  <g transform="translate(243, 115)">
+    <text x="0" y="0" class="font-sans section-header">2. GATE 1 (INPUT SCOPE)</text>
+    <text x="0" y="15" class="font-sans node-desc">Meta-policy compliance by topology</text>
+
+    <!-- Gate 1 Main Shield Container -->
+    <g transform="translate(0, 26)">
+      <rect x="0" y="0" width="225" height="430" class="gate1-bg" filter="url(#shadow-gate)"/>
+      
+      <!-- Gate 1 Header Ribbon -->
+      <path d="M 0 14 Q 0 0 14 0 L 211 0 Q 225 0 225 14 L 225 44 L 0 44 Z" fill="#D97736"/>
+      <text x="14" y="24" class="font-sans" font-weight="800" font-size="13" fill="#FFFFFF">GATE 1: scope_gate.py</text>
+      <rect x="162" y="10" width="52" height="18" rx="9" fill="#FDF3ED"/>
+      <text x="188" y="22" class="font-sans badge-text" fill="#B85E24" text-anchor="middle">NODE 3</text>
+      <text x="14" y="38" class="font-sans" font-size="10" fill="#FDF3ED">1st Mandatory Compliance Barrier</text>
+
+      <!-- Inspection Rule 1: Confidence -->
+      <g transform="translate(12, 54)">
+        <rect x="0" y="0" width="201" height="66" rx="8" fill="#FFFFFF" stroke="rgba(217, 119, 54, 0.25)" stroke-width="1"/>
+        <text x="10" y="18" class="font-sans" font-weight="700" font-size="11.5" fill="#183F35">Rule 1: Confidence Guard</text>
+        <text x="10" y="34" class="font-mono node-code-terracotta">confidence &lt; 0.70 (2x)</text>
+        <text x="10" y="50" class="font-sans node-desc">Consecutive low confidence</text>
+        <text x="10" y="62" class="font-sans" font-size="9.5" font-weight="600" fill="#A43A31">→ Trigger Escalation to Staff</text>
+      </g>
+
+      <!-- Inspection Rule 2: Abuse / Complaint -->
+      <g transform="translate(12, 128)">
+        <rect x="0" y="0" width="201" height="74" rx="8" fill="#FFFFFF" stroke="rgba(217, 119, 54, 0.25)" stroke-width="1"/>
+        <text x="10" y="18" class="font-sans" font-weight="700" font-size="11.5" fill="#183F35">Rule 2: Incident Tracker</text>
+        <text x="10" y="34" class="font-mono node-code-terracotta">intent in [abuse, complaint]</text>
+        <text x="10" y="50" class="font-sans node-desc">1st: de-escalation template</text>
+        <text x="10" y="64" class="font-sans" font-size="9.5" font-weight="600" fill="#A43A31">2nd: Silent Handoff + Flag</text>
+      </g>
+
+      <!-- Inspection Rule 3: Restricted Advice -->
+      <g transform="translate(12, 210)">
+        <rect x="0" y="0" width="201" height="98" rx="8" fill="#FCF1F0" stroke="#A43A31" stroke-width="1.2"/>
+        <text x="10" y="18" class="font-sans" font-weight="700" font-size="11.5" fill="#A43A31">Rule 3: Restricted Advice</text>
+        <text x="10" y="34" class="font-sans node-desc">Medical, legal, financial advice</text>
+        <text x="10" y="48" class="font-mono" font-size="9.5" fill="#A43A31">"is dard ki dawai kya hai?"</text>
+        <line x1="10" y1="56" x2="191" y2="56" stroke="#FCB5AF" stroke-width="1"/>
+        <text x="10" y="70" class="font-sans" font-weight="700" font-size="10" fill="#A43A31">LLM UNREACHABLE BY GRAPH</text>
+        <text x="10" y="84" class="font-sans node-desc">Emits static refusal template</text>
+        <text x="10" y="94" class="font-sans" font-size="9.5" font-weight="600" fill="#A43A31">→ Auto-escalate to human staff</text>
+      </g>
+
+      <!-- Topology Invariant Badge -->
+      <g transform="translate(12, 316)">
+        <rect x="0" y="0" width="201" height="48" rx="8" fill="#FDF3ED" stroke="#D97736" stroke-width="1"/>
+        <text x="10" y="18" class="font-sans" font-weight="700" font-size="10.5" fill="#B85E24">COMPLIANCE BY TOPOLOGY</text>
+        <text x="10" y="32" class="font-sans node-desc">Out-of-scope requests cannot</text>
+        <text x="10" y="44" class="font-sans node-desc">physically route to responder!</text>
+      </g>
+
+      <!-- Bottom Valid Path Indicator -->
+      <g transform="translate(12, 372)">
+        <rect x="0" y="0" width="201" height="46" rx="8" fill="#ECF7F1" stroke="#207E56" stroke-width="1"/>
+        <text x="10" y="18" class="font-sans" font-weight="700" font-size="10.5" fill="#14493A">Permitted Operational Intents</text>
+        <text x="10" y="34" class="font-sans node-desc">book, reschedule, cancel, KB Qs</text>
+        <text x="10" y="44" class="font-mono" font-size="9" fill="#1D6D56">→ Proceed to tool_router</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Flow Arrows from Gate 1 -->
+  <!-- 1. Escalation path from Gate 1 to Handoff (red path underneath) -->
+  <path d="M 468 280 L 490 280 L 490 535 L 980 535" class="flow-line-red" marker-end="url(#arrow-red)"/>
+  <rect x="498" y="524" width="130" height="18" rx="4" fill="#FCF1F0" stroke="#A43A31" stroke-width="0.8"/>
+  <text x="563" y="537" class="font-sans label-pill" fill="#A43A31" text-anchor="middle">state['escalate'] == True</text>
+
+  <!-- 2. Static Template bypass path (orange dashed line straight to Gate 2) -->
+  <path d="M 468 350 L 500 350 L 500 110 L 735 110 L 735 170 L 748 170" class="flow-line-orange" stroke-dasharray="4,3" marker-end="url(#arrow-orange)"/>
+  <rect x="525" y="101" width="180" height="18" rx="4" fill="#FDF3ED" stroke="#D97736" stroke-width="0.8"/>
+  <text x="615" y="114" class="font-sans label-pill" fill="#B85E24" text-anchor="middle">state['response'] set (Static Template)</text>
+
+  <!-- 3. Permitted intent -> Tool Router -->
+  <path d="M 468 510 L 508 510 L 508 235 L 518 235" class="flow-line" marker-end="url(#arrow-jade)"/>
+
+
+  <!-- 3. TOOL ROUTER & LLM SANDBOX (x=520, width=205) -->
+  <g transform="translate(520, 115)">
+    <text x="0" y="0" class="font-sans section-header">3. EXECUTION &amp; RETRIEVAL</text>
+    <text x="0" y="15" class="font-sans node-desc">Tool binding &amp; LLM isolation</text>
+
+    <!-- Node 4: tool_router -->
+    <g transform="translate(0, 26)">
+      <rect x="0" y="0" width="205" height="162" class="card-bg" filter="url(#shadow-card)"/>
+      <rect x="0" y="0" width="5" height="162" rx="2" fill="#1D6D56"/>
+      <rect x="150" y="8" width="46" height="18" rx="9" fill="#EAF3EF"/>
+      <text x="173" y="20" class="font-sans badge-text" fill="#1D6D56" text-anchor="middle">NODE 4</text>
+      
+      <text x="14" y="22" class="font-sans node-title">tool_router</text>
+      <text x="14" y="38" class="font-sans node-desc">Deterministic Tool Binding</text>
+      
+      <!-- WhatsApp Short-Circuit Box -->
+      <g transform="translate(10, 48)">
+        <rect x="0" y="0" width="185" height="42" rx="6" fill="#EAF7EE" stroke="#25D366" stroke-width="1"/>
+        <text x="8" y="16" class="font-sans" font-weight="700" font-size="10" fill="#075E54">WA SHORT-CIRCUIT (TRD §4)</text>
+        <text x="8" y="30" class="font-sans" font-size="9.5" fill="#183F35">channel=='wa' &amp; booking intent</text>
+        <text x="8" y="39" class="font-mono" font-size="8.5" fill="#075E54">→ Bypasses LLM straight to UI!</text>
+      </g>
+
+      <text x="14" y="106" class="font-sans node-desc" font-weight="600">Standard Retrieval Tools:</text>
+      <text x="14" y="122" class="font-mono" font-size="9.5" fill="#485C54">• kb_search (clinic FAQs)</text>
+      <text x="14" y="136" class="font-mono" font-size="9.5" fill="#485C54">• slots_get (open schedules)</text>
+      <text x="14" y="150" class="font-mono" font-size="9.5" fill="#485C54">• payment_link_create</text>
+    </g>
+
+    <!-- Node 5: LLM Execution Sandbox (responder) -->
+    <g transform="translate(0, 222)">
+      <rect x="0" y="0" width="205" height="234" class="sandbox-bg" filter="url(#shadow-elevated)"/>
+      <rect x="150" y="8" width="46" height="18" rx="9" fill="#FCF6EB"/>
+      <text x="173" y="20" class="font-sans badge-text" fill="#B37E28" text-anchor="middle">NODE 5</text>
+      
+      <text x="14" y="22" class="font-sans node-title">responder (LLM)</text>
+      <text x="14" y="38" class="font-sans node-desc">Frontier Grounded Generation</text>
+      
+      <!-- Isolation Warning Tag -->
+      <rect x="10" y="46" width="185" height="26" rx="4" fill="#FCF6EB" stroke="#B37E28" stroke-width="0.8"/>
+      <text x="16" y="62" class="font-mono" font-size="9" font-weight="600" fill="#96671E">SANDBOX: CITED FACTS ONLY</text>
+
+      <text x="14" y="90" class="font-sans" font-weight="700" font-size="11" fill="#183F35">Mandatory Invariants:</text>
+      
+      <g transform="translate(12, 98)">
+        <circle cx="4" cy="6" r="3" fill="#1D6D56"/>
+        <text x="14" y="10" class="font-sans node-desc" font-weight="600">Strict Citation Rule:</text>
+        <text x="14" y="22" class="font-mono" font-size="9" fill="#1D6D56">[source_ref: doc_id]</text>
+      </g>
+
+      <g transform="translate(12, 130)">
+        <circle cx="4" cy="6" r="3" fill="#1D6D56"/>
+        <text x="14" y="10" class="font-sans node-desc" font-weight="600">Respectful Register:</text>
+        <text x="14" y="22" class="font-sans" font-size="9.5" fill="#485C54">Strict 'आप' / 'ଆପଣ' forms</text>
+      </g>
+
+      <g transform="translate(12, 162)">
+        <circle cx="4" cy="6" r="3" fill="#1D6D56"/>
+        <text x="14" y="10" class="font-sans node-desc" font-weight="600">Tenant Persona Context:</text>
+        <text x="14" y="22" class="font-mono" font-size="9" fill="#485C54">load_profile(tenant_id)</text>
+      </g>
+
+      <g transform="translate(12, 194)">
+        <rect x="0" y="0" width="181" height="28" rx="5" fill="#EAF3EF"/>
+        <text x="8" y="18" class="font-sans" font-size="9.5" font-weight="600" fill="#1D6D56">Output → Gate 2 for verification</text>
+      </g>
+    </g>
+
+    <!-- Arrow within Col 3: tool_router -> responder -->
+    <path d="M 102 188 L 102 220" class="flow-line" marker-end="url(#arrow-jade)"/>
+  </g>
+
+  <!-- Flow Arrows from Column 3 -->
+  <!-- 1. WA short-circuit path from tool_router to WA UI picker -->
+  <path d="M 725 180 L 740 180 L 740 310 L 980 310" class="flow-line" stroke="#25D366" stroke-width="2" marker-end="url(#arrow-jade)"/>
+  <rect x="805" y="300" width="140" height="18" rx="4" fill="#EAF7EE" stroke="#25D366" stroke-width="0.8"/>
+  <text x="875" y="313" class="font-sans label-pill" fill="#075E54" text-anchor="middle">wa booking → END</text>
+
+  <!-- 2. Responder -> Gate 2 -->
+  <path d="M 725 390 L 748 390" class="flow-line" marker-end="url(#arrow-jade)"/>
+
+
+  <!-- 4. GATE 2: OUTPUT SCOPE GATE (x=750, width=225) -->
+  <g transform="translate(750, 115)">
+    <text x="0" y="0" class="font-sans section-header">4. GATE 2 (OUTPUT SCOPE)</text>
+    <text x="0" y="15" class="font-sans node-desc">Grounding verification engine</text>
+
+    <!-- Gate 2 Main Shield Container -->
+    <g transform="translate(0, 26)">
+      <rect x="0" y="0" width="225" height="430" class="gate2-bg" filter="url(#shadow-gate)"/>
+      
+      <!-- Gate 2 Header Ribbon -->
+      <path d="M 0 14 Q 0 0 14 0 L 211 0 Q 225 0 225 14 L 225 44 L 0 44 Z" fill="#1D6D56"/>
+      <text x="14" y="24" class="font-sans" font-weight="800" font-size="13" fill="#FFFFFF">GATE 2: output_gate.py</text>
+      <rect x="162" y="10" width="52" height="18" rx="9" fill="#EAF3EF"/>
+      <text x="188" y="22" class="font-sans badge-text" fill="#1D6D56" text-anchor="middle">NODE 6</text>
+      <text x="14" y="38" class="font-sans" font-size="10" fill="#EAF3EF">Anti-Hallucination &amp; Grounding Validator</text>
+
+      <!-- Verification Step 1: Citation Check -->
+      <g transform="translate(12, 54)">
+        <rect x="0" y="0" width="201" height="66" rx="8" fill="#FFFFFF" stroke="rgba(29, 109, 86, 0.25)" stroke-width="1"/>
+        <text x="10" y="18" class="font-sans" font-weight="700" font-size="11" fill="#183F35">1. Citation Parser</text>
+        <text x="10" y="34" class="font-sans node-desc">Checks for factual claims:</text>
+        <text x="10" y="48" class="font-mono node-code">₹, INR, time, address, fees</text>
+        <text x="10" y="60" class="font-sans" font-size="9.5" fill="#485C54">Requires: <tspan class="font-mono" fill="#1D6D56">[source_ref: ...]</tspan></text>
+      </g>
+
+      <!-- Verification Step 2: Numeral Normalizer -->
+      <g transform="translate(12, 128)">
+        <rect x="0" y="0" width="201" height="74" rx="8" fill="#FFFFFF" stroke="rgba(29, 109, 86, 0.25)" stroke-width="1"/>
+        <text x="10" y="18" class="font-sans" font-weight="700" font-size="11" fill="#183F35">2. Indic Digit Normalizer</text>
+        <text x="10" y="34" class="font-mono" font-size="9.5" fill="#1D6D56">INDIC_DIGITS transliteration</text>
+        <text x="10" y="48" class="font-sans node-desc">Devanagari (०-९) → (0-9)</text>
+        <text x="10" y="62" class="font-sans node-desc">Odia numerals (୦-୯) → (0-9)</text>
+      </g>
+
+      <!-- Verification Step 3: Factual Grounding -->
+      <g transform="translate(12, 210)">
+        <rect x="0" y="0" width="201" height="78" rx="8" fill="#FFFFFF" stroke="rgba(29, 109, 86, 0.25)" stroke-width="1"/>
+        <text x="10" y="18" class="font-sans" font-weight="700" font-size="11" fill="#183F35">3. Strict Number Match</text>
+        <text x="10" y="34" class="font-sans node-desc">Normalized response numbers</text>
+        <text x="10" y="48" class="font-sans node-desc">MUST exist in cited source text!</text>
+        <text x="10" y="66" class="font-sans" font-size="9.5" font-weight="600" fill="#A43A31">Mismatch → Grounding Violation</text>
+      </g>
+
+      <!-- Violation Handling Branch -->
+      <g transform="translate(12, 296)">
+        <rect x="0" y="0" width="201" height="118" rx="8" fill="#FDF3ED" stroke="#D97736" stroke-width="1.2"/>
+        <text x="10" y="18" class="font-sans" font-weight="700" font-size="11" fill="#B85E24">Grounding Violation Protocol</text>
+        
+        <rect x="8" y="26" width="185" height="38" rx="5" fill="#FFFFFF" stroke="#D97736" stroke-width="0.8"/>
+        <text x="14" y="40" class="font-sans" font-size="10" font-weight="700" fill="#B85E24">Case A: retry_count &lt; 1</text>
+        <text x="14" y="54" class="font-sans" font-size="9.5" fill="#485C54">↺ Self-Regeneration back to LLM</text>
+
+        <rect x="8" y="70" width="185" height="38" rx="5" fill="#FCF1F0" stroke="#A43A31" stroke-width="0.8"/>
+        <text x="14" y="84" class="font-sans" font-size="10" font-weight="700" fill="#A43A31">Case B: retry_count ≥ 1</text>
+        <text x="14" y="98" class="font-sans" font-size="9.5" fill="#A43A31">Fallback to safe template (No Hallucination)</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Flow Arrows from Gate 2 -->
+  <!-- 1. Self-Regeneration Loop back to Responder (Blue dashed curve) -->
+  <path d="M 750 365 C 700 340, 700 480, 650 480 L 625 480" class="flow-line-blue" marker-end="url(#arrow-blue)"/>
+  <rect x="645" y="492" width="105" height="18" rx="4" fill="#EBF4FF" stroke="#2B6CB0" stroke-width="0.8"/>
+  <text x="697" y="504" class="font-sans label-pill" fill="#2B6CB0" text-anchor="middle">state['regenerate']</text>
+
+  <!-- 2. Gate 2 Verified Output -> Delivery END -->
+  <path d="M 975 235 L 988 235" class="flow-line" marker-end="url(#arrow-jade)"/>
+
+
+  <!-- 5. TERMINAL OUTPUTS (x=990, width=170) -->
+  <g transform="translate(990, 115)">
+    <text x="0" y="0" class="font-sans section-header">5. RESOLUTION</text>
+    <text x="0" y="15" class="font-sans node-desc">Verified outbound delivery</text>
+
+    <!-- Verified Delivery Box -->
+    <g transform="translate(0, 80)">
+      <rect x="0" y="0" width="170" height="88" class="card-bg" filter="url(#shadow-card)"/>
+      <rect x="0" y="0" width="5" height="88" rx="2" fill="#207E56"/>
+      <rect x="120" y="8" width="42" height="18" rx="9" fill="#ECF7F1"/>
+      <text x="141" y="20" class="font-sans badge-text" fill="#207E56" text-anchor="middle">END</text>
+      
+      <text x="14" y="24" class="font-sans node-title">Verified Output</text>
+      <text x="14" y="42" class="font-sans node-desc">WhatsApp Outbound API</text>
+      <text x="14" y="58" class="font-sans node-desc">Text or Voice synthesis</text>
+      <text x="14" y="74" class="font-mono node-code">delivery_worker.py</text>
+    </g>
+
+    <!-- WhatsApp Native Interactive Picker UI -->
+    <g transform="translate(0, 195)">
+      <rect x="0" y="0" width="170" height="92" class="card-bg" filter="url(#shadow-card)"/>
+      <rect x="0" y="0" width="5" height="92" rx="2" fill="#25D366"/>
+      <rect x="120" y="8" width="42" height="18" rx="9" fill="#EAF7EE"/>
+      <text x="141" y="20" class="font-sans badge-text" fill="#075E54" text-anchor="middle">END</text>
+      
+      <text x="14" y="24" class="font-sans node-title">Interactive UI</text>
+      <text x="14" y="42" class="font-sans node-desc">2-Tap WhatsApp Slot Picker</text>
+      <text x="14" y="58" class="font-sans node-desc">Instant delivery (p50 ≤ 3s)</text>
+      <text x="14" y="74" class="font-mono node-code" fill="#075E54">Zero-LLM latency</text>
+    </g>
+
+    <!-- Node 7: handoff (Escalation) -->
+    <g transform="translate(0, 310)">
+      <rect x="0" y="0" width="170" height="130" class="card-bg" filter="url(#shadow-card)"/>
+      <rect x="0" y="0" width="5" height="130" rx="2" fill="#A43A31"/>
+      <rect x="115" y="8" width="47" height="18" rx="9" fill="#FCF1F0"/>
+      <text x="138" y="20" class="font-sans badge-text" fill="#A43A31" text-anchor="middle">NODE 7</text>
+      
+      <text x="14" y="24" class="font-sans node-title">handoff node</text>
+      <text x="14" y="42" class="font-sans node-desc">Human Staff Escalation</text>
+      <text x="14" y="58" class="font-sans node-desc">• Persists to MongoDB</text>
+      <text x="14" y="72" class="font-mono" font-size="9.5" fill="#A43A31">  db['escalations']</text>
+      <text x="14" y="86" class="font-sans node-desc">• Owner Desk push alert</text>
+      <text x="14" y="100" class="font-sans node-desc">• WhatsApp staff alert</text>
+      <text x="14" y="118" class="font-mono node-code-terracotta">handoff.py → END</text>
+    </g>
+  </g>
+
+  <!-- ==================== BOTTOM ARCHITECTURAL LEDGER ==================== -->
+  <g transform="translate(36, 610)">
+    <!-- Container Card for Architectural Principles -->
+    <rect x="0" y="0" width="1128" height="230" rx="14" fill="#FFFFFF" stroke="rgba(24, 63, 53, 0.12)" stroke-width="1.2" filter="url(#shadow-card)"/>
+    
+    <!-- Ledger Header -->
+    <path d="M 0 14 Q 0 0 14 0 L 1114 0 Q 1128 0 1128 14 L 1128 40 L 0 40 Z" fill="#183F35"/>
+    <text x="20" y="25" class="font-sans" font-weight="700" font-size="13" fill="#FCF6EB">MATHEMATICAL &amp; TOPOLOGICAL INVARIANTS · SYSTEM ASSURANCE SPECIFICATION</text>
+    <text x="1098" y="25" class="font-mono" font-size="11" fill="#B37E28" text-anchor="end">06-engineering-plan §0 · TRD §4.2</text>
+
+    <!-- Column 1: Compliance by Topology -->
+    <g transform="translate(24, 56)">
+      <rect x="0" y="0" width="344" height="154" rx="10" fill="#FDF9F5" stroke="rgba(217, 119, 54, 0.25)" stroke-width="1"/>
+      <rect x="14" y="14" width="28" height="28" rx="6" fill="#FDF3ED"/>
+      <text x="28" y="33" class="font-sans" font-size="14" font-weight="800" fill="#D97736" text-anchor="middle">1</text>
+      
+      <text x="50" y="26" class="font-sans" font-weight="700" font-size="12" fill="#183F35">COMPLIANCE BY TOPOLOGY</text>
+      <text x="50" y="38" class="font-mono" font-size="10" fill="#B85E24">Rule 3: LLM Physical Isolation</text>
+      
+      <text x="14" y="66" class="font-sans" font-size="11" fill="#485C54">
+        <tspan x="14" dy="0">Meta-policy enforcement is not an LLM prompt</tspan>
+        <tspan x="14" dy="16">instruction. Restricted advice (medical/legal/tax)</tspan>
+        <tspan x="14" dy="16">has NO direct graph edge to the LLM node.</tspan>
+        <tspan x="14" dy="16" font-weight="600" fill="#183F35">Prompts cannot be jailbroken if unreachable.</tspan>
+      </text>
+      
+      <rect x="14" y="122" width="316" height="22" rx="4" fill="#FDF3ED"/>
+      <text x="22" y="137" class="font-mono" font-size="9.5" fill="#B85E24">Code invariant: responder in route_scope_gate == False</text>
+    </g>
+
+    <!-- Column 2: Grounding & Normalization -->
+    <g transform="translate(392, 56)">
+      <rect x="0" y="0" width="344" height="154" rx="10" fill="#F4F9F7" stroke="rgba(29, 109, 86, 0.25)" stroke-width="1"/>
+      <rect x="14" y="14" width="28" height="28" rx="6" fill="#EAF3EF"/>
+      <text x="28" y="33" class="font-sans" font-size="14" font-weight="800" fill="#1D6D56" text-anchor="middle">2</text>
+      
+      <text x="50" y="26" class="font-sans" font-weight="700" font-size="12" fill="#183F35">INDIC NORMALIZATION &amp; GROUNDING</text>
+      <text x="50" y="38" class="font-mono" font-size="10" fill="#1D6D56">Pilot Gate G1: 0 Hallucinations</text>
+      
+      <text x="14" y="66" class="font-sans" font-size="11" fill="#485C54">
+        <tspan x="14" dy="0">All factual claims require bracketed citation tags.</tspan>
+        <tspan x="14" dy="16">Numbers in Devanagari (०-९) and Odia (୦-୯)</tspan>
+        <tspan x="14" dy="16">are translated into Arabic digits before string verification.</tspan>
+        <tspan x="14" dy="16" font-weight="600" fill="#183F35">Ungrounded factual numbers fail Gate 2 immediately.</tspan>
+      </text>
+      
+      <rect x="14" y="122" width="316" height="22" rx="4" fill="#EAF3EF"/>
+      <text x="22" y="137" class="font-mono" font-size="9.5" fill="#1D6D56">Code invariant: INDIC_DIGITS translation match == True</text>
+    </g>
+
+    <!-- Column 3: 2-Tap Interactive UI -->
+    <g transform="translate(760, 56)">
+      <rect x="0" y="0" width="344" height="154" rx="10" fill="#FBF8F2" stroke="rgba(179, 126, 40, 0.25)" stroke-width="1"/>
+      <rect x="14" y="14" width="28" height="28" rx="6" fill="#FCF6EB"/>
+      <text x="28" y="33" class="font-sans" font-size="14" font-weight="800" fill="#B37E28" text-anchor="middle">3</text>
+      
+      <text x="50" y="26" class="font-sans" font-weight="700" font-size="12" fill="#183F35">2-TAP TAPS OVER TYPING UX</text>
+      <text x="50" y="38" class="font-mono" font-size="10" fill="#96671E">Deterministic Slot Picker Short-Circuit</text>
+      
+      <text x="14" y="66" class="font-sans" font-size="11" fill="#485C54">
+        <tspan x="14" dy="0">WhatsApp booking intents short-circuit directly from</tspan>
+        <tspan x="14" dy="16">tool_router to WhatsApp interactive slot buttons,</tspan>
+        <tspan x="14" dy="16">eliminating LLM generation time and latency jitter.</tspan>
+        <tspan x="14" dy="16" font-weight="600" fill="#183F35">Zero LLM tokens burned for slot selections.</tspan>
+      </text>
+      
+      <rect x="14" y="122" width="316" height="22" rx="4" fill="#FCF6EB"/>
+      <text x="22" y="137" class="font-mono" font-size="9.5" fill="#96671E">Performance guarantee: p50 latency ≤ 3.0 seconds</text>
+    </g>
+  </g>
+</svg>
